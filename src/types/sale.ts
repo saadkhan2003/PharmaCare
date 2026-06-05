@@ -49,18 +49,20 @@ export interface OwnerDashboardDto {
   today_profit: number;
   month_sales: number;
   low_stock_count: number;
-  expiring_count: number;
+  expiry_warning_count: number;
+  expiry_critical_count: number;
   top_sellers: TopSellerDto[];
 }
 
 export interface PharmacistDashboardDto {
   today_sales: number;
   low_stock_count: number;
-  expiring_count: number;
+  expiry_warning_count: number;
+  expiry_critical_count: number;
 }
 
 export interface TopSellerDto {
+  medicine_id: number;
   medicine_name: string;
   total_qty: number;
-  total_revenue: number;
 }
