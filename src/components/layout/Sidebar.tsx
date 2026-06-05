@@ -10,8 +10,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, PanelLeftClose, PanelLeft } from 'lucide-react';
 import type { SessionDto } from '@/types/session';
 
 interface NavItem {
@@ -79,6 +80,7 @@ interface SidebarProps {
 export function Sidebar({ session }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { state, toggleSidebar } = useSidebar();
 
   const visibleItems = navItems.filter((item) =>
     item.roles.includes(session.role)
@@ -127,8 +129,14 @@ export function Sidebar({ session }: SidebarProps) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="sm" className="text-xs text-sidebar-foreground/60">
-              <span>v0.1.0</span>
+            <SidebarMenuButton
+              size="sm"
+              onClick={toggleSidebar}
+              tooltip={state === 'expanded' ? 'Collapse sidebar' : 'Expand sidebar'}
+              className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
+            >
+              {state === 'expanded' ? <PanelLeftClose className="size-4" /> : <PanelLeft className="size-4" />}
+              <span>{state === 'expanded' ? 'Collapse' : 'Expand'}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
