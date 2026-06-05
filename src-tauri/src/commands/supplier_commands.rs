@@ -43,6 +43,18 @@ pub fn deactivate_supplier(
     supplier_service::deactivate_supplier(&db, supplier_id)
 }
 
+/// Hard deletes a supplier if no purchase records exist. Owner-only.
+#[tauri::command]
+pub fn delete_supplier(
+    state: State<'_, AppState>,
+    session_token: String,
+    supplier_id: i64,
+) -> Result<(), CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    supplier_service::delete_supplier(&db, supplier_id)
+}
+
 /// Lists all suppliers. Session required.
 #[tauri::command]
 pub fn list_suppliers(

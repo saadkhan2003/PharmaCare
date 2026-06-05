@@ -26,6 +26,7 @@ interface SupplierListProps {
   loading: boolean;
   onEdit: (id: number) => void;
   onDeactivate: (id: number) => void;
+  onDelete: (id: number) => Promise<void>;
 }
 
 export function SupplierList({
@@ -33,8 +34,12 @@ export function SupplierList({
   loading,
   onEdit,
   onDeactivate,
+  onDelete,
 }: SupplierListProps) {
   const [deactivateTarget, setDeactivateTarget] = useState<SupplierDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SupplierDto | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   if (loading) {
     return (
@@ -107,6 +112,15 @@ export function SupplierList({
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
+                  {supplier.is_active && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => { setDeleteError(null); setDeleteTarget(supplier); }}
+                    >
+                      <span className="text-xs text-destructive font-medium">Del</span>
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
@@ -149,6 +163,41 @@ export function SupplierList({
               }}
             >
               Deactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteError(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Supplier</DialogTitle>
+            <DialogDescription>
+              Permanently delete{' '}
+              <span className="font-medium text-foreground">{deleteTarget?.company_name}</span>
+              ? This action cannot be undone. Only possible if no purchase records exist.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{deleteError}</div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteError(null); }}>Cancel</Button>
+            <Button variant="destructive" disabled={deleting} onClick={async () => {
+              if (deleteTarget) {
+                setDeleting(true);
+                try {
+                  await onDelete(deleteTarget.id);
+                  setDeleteTarget(null);
+                } catch (err: unknown) {
+                  setDeleteError(err instanceof Error ? err.message : 'Delete failed');
+                } finally {
+                  setDeleting(false);
+                }
+              }
+            }}>
+              {deleting ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>

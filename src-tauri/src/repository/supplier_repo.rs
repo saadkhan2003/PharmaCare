@@ -162,3 +162,16 @@ pub fn deactivate(db: &Connection, id: i64) -> Result<(), rusqlite::Error> {
     )?;
     Ok(())
 }
+
+/// Checks if a supplier has any purchase records.
+pub fn has_related_records(db: &Connection, id: i64) -> Result<bool, rusqlite::Error> {
+    let mut stmt = db.prepare("SELECT COUNT(*) FROM purchases WHERE supplier_id = ?1")?;
+    let count: i64 = stmt.query_row(rusqlite::params![id], |row| row.get(0))?;
+    Ok(count > 0)
+}
+
+/// Hard deletes a supplier only if it has no related records.
+pub fn hard_delete(db: &Connection, id: i64) -> Result<(), rusqlite::Error> {
+    db.execute("DELETE FROM suppliers WHERE id = ?1", rusqlite::params![id])?;
+    Ok(())
+}

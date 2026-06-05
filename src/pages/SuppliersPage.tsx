@@ -60,6 +60,14 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
     [session.token]
   );
 
+  const handleDelete = useCallback(
+    async (id: number) => {
+      await tauri.suppliers.delete(session.token, id);
+      setRefreshKey((prev) => prev + 1);
+    },
+    [session.token]
+  );
+
   const handleAddClick = useCallback(() => {
     setEditingSupplierId(undefined);
     setFormOpen(true);
@@ -99,6 +107,7 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
           loading={loading}
           onEdit={handleEdit}
           onDeactivate={handleDeactivate}
+          onDelete={handleDelete}
         />
       </div>
 

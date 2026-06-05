@@ -45,6 +45,18 @@ pub fn deactivate_medicine(
     medicine_service::deactivate_medicine(&db, medicine_id)
 }
 
+/// Hard deletes a medicine if no related records exist. Owner-only.
+#[tauri::command]
+pub fn delete_medicine(
+    state: State<'_, AppState>,
+    session_token: String,
+    medicine_id: i64,
+) -> Result<(), CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    medicine_service::delete_medicine(&db, medicine_id)
+}
+
 /// Lists all medicines with current stock. Session required.
 #[tauri::command]
 pub fn list_medicines(

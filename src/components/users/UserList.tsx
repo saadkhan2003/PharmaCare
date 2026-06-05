@@ -35,6 +35,9 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
   const [deactivateTarget, setDeactivateTarget] = useState<UserDto | null>(null);
   const [deactivating, setDeactivating] = useState(false);
   const [deactivateError, setDeactivateError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserDto | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -69,6 +72,23 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
       setDeactivating(false);
     }
   }, [deactivateTarget, session.token, onUserChanged]);
+
+  const handleDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await tauri.users.delete(session.token, deleteTarget.id);
+      setDeleteTarget(null);
+      onUserChanged();
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error ? err.message : 'Failed to delete user'
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteTarget, session.token, onUserChanged]);
 
   if (loading) {
     return (
@@ -138,14 +158,25 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
               </TableCell>
               <TableCell className="text-right">
                 {user.is_active && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={user.id === session.user_id}
-                    onClick={() => setDeactivateTarget(user)}
-                  >
-                    Deactivate
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={user.id === session.user_id}
+                      onClick={() => setDeactivateTarget(user)}
+                    >
+                      Deactivate
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={user.id === session.user_id}
+                      onClick={() => { setDeleteError(null); setDeleteTarget(user); }}
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                    >
+                      Delete
+                    </Button>
+                  </>
                 )}
               </TableCell>
             </TableRow>
@@ -195,6 +226,29 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
               disabled={deactivating}
             >
               {deactivating ? 'Deactivating...' : 'Deactivate'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteError(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Permanently delete{' '}
+              <span className="font-medium text-foreground">{deleteTarget?.full_name}</span>
+              ? This action cannot be undone. Only possible if the user has no sales records.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{deleteError}</div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteError(null); }}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>

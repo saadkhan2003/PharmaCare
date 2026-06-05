@@ -43,6 +43,19 @@ pub fn deactivate_supplier(db: &Connection, id: i64) -> Result<(), CommandError>
     Ok(())
 }
 
+/// Hard deletes a supplier if it has no purchase records.
+pub fn delete_supplier(db: &Connection, id: i64) -> Result<(), CommandError> {
+    let _existing = supplier_repo::find_by_id(db, id)?
+        .ok_or_else(|| CommandError::not_found("Supplier"))?;
+    if supplier_repo::has_related_records(db, id)? {
+        return Err(CommandError::validation(
+            "Cannot delete: this supplier has purchase records. Deactivate it instead.",
+        ));
+    }
+    supplier_repo::hard_delete(db, id)?;
+    Ok(())
+}
+
 /// Lists all suppliers.
 pub fn list_suppliers(db: &Connection) -> Result<Vec<SupplierDto>, CommandError> {
     let suppliers = supplier_repo::find_all(db)?;

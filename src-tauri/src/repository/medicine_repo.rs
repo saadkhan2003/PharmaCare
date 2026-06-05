@@ -201,3 +201,18 @@ pub fn deactivate(db: &Connection, id: i64) -> Result<(), rusqlite::Error> {
     )?;
     Ok(())
 }
+
+/// Checks if a medicine has any related records (sales, purchases, stock movements).
+pub fn has_related_records(db: &Connection, id: i64) -> Result<bool, rusqlite::Error> {
+    let mut stmt = db.prepare(
+        "SELECT COUNT(*) FROM (SELECT id FROM batches WHERE medicine_id = ?1 LIMIT 1)"
+    )?;
+    let count: i64 = stmt.query_row(rusqlite::params![id], |row| row.get(0))?;
+    Ok(count > 0)
+}
+
+/// Hard deletes a medicine only if it has no related records.
+pub fn hard_delete(db: &Connection, id: i64) -> Result<(), rusqlite::Error> {
+    db.execute("DELETE FROM medicines WHERE id = ?1", rusqlite::params![id])?;
+    Ok(())
+}

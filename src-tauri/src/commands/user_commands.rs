@@ -40,6 +40,18 @@ pub fn deactivate_user(
     user_service::deactivate_user(&db, target_user_id, session.user_id)
 }
 
+/// Hard deletes a user if they have no sales records. Owner-only.
+#[tauri::command]
+pub fn delete_user(
+    state: State<'_, AppState>,
+    session_token: String,
+    target_user_id: i64,
+) -> Result<(), CommandError> {
+    let session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    user_service::delete_user(&db, target_user_id, session.user_id)
+}
+
 /// Lists all users (active and deactivated).
 /// Owner-only command.
 #[tauri::command]

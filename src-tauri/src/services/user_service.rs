@@ -100,6 +100,26 @@ pub fn deactivate_user(
     Ok(())
 }
 
+/// Hard deletes a user if they have no sales records.
+pub fn delete_user(
+    db: &Connection,
+    target_user_id: i64,
+    current_user_id: i64,
+) -> Result<(), CommandError> {
+    if target_user_id == current_user_id {
+        return Err(CommandError::validation("Cannot delete your own account"));
+    }
+    let _target = user_repo::find_by_id(db, target_user_id)?
+        .ok_or_else(|| CommandError::not_found("User"))?;
+    if user_repo::has_related_records(db, target_user_id)? {
+        return Err(CommandError::validation(
+            "Cannot delete: this user has sales records. Deactivate them instead.",
+        ));
+    }
+    user_repo::hard_delete(db, target_user_id)?;
+    Ok(())
+}
+
 /// Lists all users (active and inactive).
 pub fn list_users(db: &Connection) -> Result<Vec<UserDto>, CommandError> {
     let users = user_repo::list_all(db)?;

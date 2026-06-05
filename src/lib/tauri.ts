@@ -84,6 +84,8 @@ export const tauri = {
       invoke<UserDto>('create_user', { sessionToken, payload }),
     deactivate: (sessionToken: string, targetUserId: number) =>
       invoke<void>('deactivate_user', { sessionToken, targetUserId }),
+    delete: (sessionToken: string, targetUserId: number) =>
+      invoke<void>('delete_user', { sessionToken, targetUserId }),
     changePassword: (sessionToken: string, currentPassword: string, newPassword: string) =>
       invoke<void>('change_password', { sessionToken, currentPassword, newPassword }),
   },
@@ -105,6 +107,8 @@ export const tauri = {
       invoke<MedicineDto>('update_medicine', { sessionToken, medicineId, payload }),
     deactivate: (sessionToken: string, medicineId: number) =>
       invoke<void>('deactivate_medicine', { sessionToken, medicineId }),
+    delete: (sessionToken: string, medicineId: number) =>
+      invoke<void>('delete_medicine', { sessionToken, medicineId }),
     get: (sessionToken: string, medicineId: number) =>
       invoke<MedicineDto>('get_medicine', { sessionToken, medicineId }),
   },
@@ -120,6 +124,8 @@ export const tauri = {
       invoke<SupplierDto>('update_supplier', { sessionToken, supplierId, payload }),
     deactivate: (sessionToken: string, supplierId: number) =>
       invoke<void>('deactivate_supplier', { sessionToken, supplierId }),
+    delete: (sessionToken: string, supplierId: number) =>
+      invoke<void>('delete_supplier', { sessionToken, supplierId }),
   },
 
   purchases: {

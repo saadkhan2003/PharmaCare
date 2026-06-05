@@ -112,6 +112,19 @@ pub fn deactivate_medicine(db: &Connection, id: i64) -> Result<(), CommandError>
     Ok(())
 }
 
+/// Hard deletes a medicine if it has no related records.
+pub fn delete_medicine(db: &Connection, id: i64) -> Result<(), CommandError> {
+    let _existing = medicine_repo::find_by_id(db, id)?
+        .ok_or_else(|| CommandError::not_found("Medicine"))?;
+    if medicine_repo::has_related_records(db, id)? {
+        return Err(CommandError::validation(
+            "Cannot delete: this medicine has stock batches. Deactivate it instead.",
+        ));
+    }
+    medicine_repo::hard_delete(db, id)?;
+    Ok(())
+}
+
 /// Lists all medicines enriched with current stock.
 pub fn list_medicines(db: &Connection) -> Result<Vec<MedicineListItem>, CommandError> {
     let medicines = medicine_repo::find_all(db)?;

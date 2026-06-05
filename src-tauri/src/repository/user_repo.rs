@@ -92,6 +92,22 @@ pub fn deactivate(db: &Connection, id: i64) -> Result<bool, rusqlite::Error> {
     Ok(affected > 0)
 }
 
+/// Checks if a user has any related records (sales, stock movements).
+pub fn has_related_records(db: &Connection, id: i64) -> Result<bool, rusqlite::Error> {
+    let mut stmt = db.prepare(
+        "SELECT COUNT(*) FROM (SELECT id FROM sales WHERE user_id = ?1 LIMIT 1)"
+    )?;
+    let count: i64 = stmt.query_row(rusqlite::params![id], |row| row.get(0))?;
+    Ok(count > 0)
+}
+
+/// Hard deletes a user only if they have no related records.
+pub fn hard_delete(db: &Connection, id: i64) -> Result<(), rusqlite::Error> {
+    db.execute("DELETE FROM sessions WHERE user_id = ?1", rusqlite::params![id])?;
+    db.execute("DELETE FROM users WHERE id = ?1", rusqlite::params![id])?;
+    Ok(())
+}
+
 /// Lists all users (both active and inactive).
 /// Returns DTOs without password_hash for frontend consumption.
 pub fn list_all(db: &Connection) -> Result<Vec<UserDto>, rusqlite::Error> {

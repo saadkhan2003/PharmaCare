@@ -72,6 +72,14 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
     [session.token]
   );
 
+  const handleDelete = useCallback(
+    async (id: number) => {
+      await tauri.medicines.delete(session.token, id);
+      setRefreshKey((prev) => prev + 1);
+    },
+    [session.token]
+  );
+
   const handleAddClick = useCallback(() => {
     setEditingMedicineId(undefined);
     setFormOpen(true);
@@ -114,6 +122,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
           role={session.role}
           onEdit={handleEdit}
           onDeactivate={handleDeactivate}
+          onDelete={handleDelete}
         />
       </div>
 
