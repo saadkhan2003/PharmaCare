@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::errors::CommandError;
-use crate::guards::require_owner;
+use crate::guards::{require_owner, require_session};
 use crate::models::{CreateUserDto, UserDto};
 use crate::services::user_service;
 use crate::state::AppState;
@@ -51,4 +51,18 @@ pub fn list_users(
     let db = state.db.lock()?;
 
     user_service::list_users(&db)
+}
+
+/// Changes the current user's password.
+/// Uses require_session (not require_owner) — any logged-in user can change their own password (D-78, T-05-09).
+#[tauri::command]
+pub fn change_password(
+    state: State<'_, AppState>,
+    session_token: String,
+    current_password: String,
+    new_password: String,
+) -> Result<(), CommandError> {
+    let session = require_session(&state, &session_token)?;
+    let db = state.db.lock()?;
+    user_service::change_password(&db, session.user_id, &current_password, &new_password)
 }

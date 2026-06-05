@@ -9,3 +9,5 @@ pub mod batch_commands;
 pub mod purchase_commands;
 pub mod sale_commands;
 pub mod return_commands;
+pub mod report_commands;
+pub mod backup_commands;

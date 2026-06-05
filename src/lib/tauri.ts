@@ -14,6 +14,11 @@ import type {
 } from '../types/purchase';
 import type { SettingsMap } from '../types/settings';
 import type {
+  DailySalesRow, MonthlyPnLRow, TopSellerRow, SlowMovingRow,
+  LowStockRow, ExpiryReportDetailRow, SupplierPurchaseRow, SalesByUserRow,
+  ProfitMarginRow, UpdateSettingsPayload, BackupStatus, BackupResult, BackupFileInfo,
+} from '../types/report';
+import type {
   MedicinePosDto, ConfirmSaleDto, SaleReceiptDto,
   OwnerDashboardDto, PharmacistDashboardDto,
 } from '../types/sale';
@@ -79,6 +84,8 @@ export const tauri = {
       invoke<UserDto>('create_user', { sessionToken, payload }),
     deactivate: (sessionToken: string, targetUserId: number) =>
       invoke<void>('deactivate_user', { sessionToken, targetUserId }),
+    changePassword: (sessionToken: string, currentPassword: string, newPassword: string) =>
+      invoke<void>('change_password', { sessionToken, currentPassword, newPassword }),
   },
   audit: {
     getLoginAttempts: (sessionToken: string) =>
@@ -131,11 +138,51 @@ export const tauri = {
 
   settings: {
     get: () => invoke<SettingsMap>('get_settings'),
+    update: (sessionToken: string, payload: UpdateSettingsPayload) =>
+      invoke<void>('update_settings', { sessionToken, payload }),
   },
 
   expiry: {
     getReport: (sessionToken: string, minDays?: number, maxDays?: number) =>
       invoke<ExpiryReportRow[]>('get_expiry_report', { sessionToken, minDays, maxDays }),
+  },
+
+  reports: {
+    dailySales: (sessionToken: string, startDate: string, endDate: string) =>
+      invoke<DailySalesRow[]>('get_daily_sales_report', { sessionToken, startDate, endDate }),
+    monthlyPnl: (sessionToken: string, startDate: string, endDate: string) =>
+      invoke<MonthlyPnLRow[]>('get_monthly_pnl', { sessionToken, startDate, endDate }),
+    topSellers: (sessionToken: string, startDate: string, endDate: string) =>
+      invoke<TopSellerRow[]>('get_top_sellers', { sessionToken, startDate, endDate }),
+    slowMoving: (sessionToken: string, startDate: string, endDate: string) =>
+      invoke<SlowMovingRow[]>('get_slow_moving', { sessionToken, startDate, endDate }),
+    lowStock: (sessionToken: string) =>
+      invoke<LowStockRow[]>('get_low_stock', { sessionToken }),
+    expiryReport: (sessionToken: string, warningDays: number, criticalDays: number) =>
+      invoke<ExpiryReportDetailRow[]>('get_expiry_report_phase5', { sessionToken, warningDays, criticalDays }),
+    supplierPurchases: (sessionToken: string, startDate: string, endDate: string) =>
+      invoke<SupplierPurchaseRow[]>('get_supplier_purchases', { sessionToken, startDate, endDate }),
+    salesByUser: (sessionToken: string, startDate: string, endDate: string) =>
+      invoke<SalesByUserRow[]>('get_sales_by_user', { sessionToken, startDate, endDate }),
+    profitMargin: (sessionToken: string, startDate: string, endDate: string) =>
+      invoke<ProfitMarginRow[]>('get_profit_margin', { sessionToken, startDate, endDate }),
+  },
+
+  backup: {
+    trigger: (sessionToken: string) =>
+      invoke<BackupResult>('trigger_backup', { sessionToken }),
+    restore: (sessionToken: string, fileName: string, source: string) =>
+      invoke<BackupResult>('restore_backup', { sessionToken, fileName, source }),
+    connectDrive: (sessionToken: string, clientId: string, clientSecret: string) =>
+      invoke<string>('connect_drive', { sessionToken, clientId, clientSecret }),
+    disconnectDrive: (sessionToken: string) =>
+      invoke<void>('disconnect_drive', { sessionToken }),
+    completeDriveConnect: (sessionToken: string, authCode: string, clientId: string, clientSecret: string) =>
+      invoke<void>('complete_drive_connect', { sessionToken, authCode, clientId, clientSecret }),
+    listDriveBackups: (sessionToken: string) =>
+      invoke<BackupFileInfo[]>('list_drive_backups', { sessionToken }),
+    getStatus: (sessionToken: string) =>
+      invoke<BackupStatus>('get_backup_status', { sessionToken }),
   },
 
   sales: {

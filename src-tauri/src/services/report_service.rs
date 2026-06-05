@@ -14,11 +14,11 @@ pub fn get_daily_sales(
             date(s.created_at) as sale_date,
             COUNT(DISTINCT s.id) as sale_count,
             COUNT(si.id) as item_count,
-            SUM(si.line_total + si.item_discount) as gross_sales,
+            COALESCE(SUM(si.line_total + si.item_discount), 0) as gross_sales,
             COALESCE(SUM(si.item_discount), 0) + COALESCE(MAX(s.bill_discount), 0) as total_discounts,
             COALESCE(MAX(s.tax_amount), 0) as tax_amount,
-            SUM(si.line_total) as net_sales,
-            SUM(si.line_total - (si.purchase_cost * si.quantity)) as profit
+            COALESCE(SUM(si.line_total), 0) as net_sales,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as profit
         FROM sales s
         JOIN sale_items si ON si.sale_id = s.id
         WHERE date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
@@ -31,11 +31,11 @@ pub fn get_daily_sales(
             date: row.get(0)?,
             sale_count: row.get(1)?,
             item_count: row.get(2)?,
-            gross_sales: row.get::<_, f64>(3)?.unwrap_or(0.0),
-            discounts: row.get::<_, f64>(4)?.unwrap_or(0.0),
-            tax_amount: row.get::<_, f64>(5)?.unwrap_or(0.0),
-            net_sales: row.get::<_, f64>(6)?.unwrap_or(0.0),
-            profit: row.get::<_, f64>(7)?.unwrap_or(0.0),
+            gross_sales: row.get(3)?,
+            discounts: row.get(4)?,
+            tax_amount: row.get(5)?,
+            net_sales: row.get(6)?,
+            profit: row.get(7)?,
         })
     })?;
 
@@ -72,14 +72,12 @@ pub fn get_monthly_pnl(
         Ok(MonthlyPnLRow {
             month: row.get(0)?,
             sale_count: row.get(1)?,
-            total_revenue: row.get::<_, f64>(2)?.unwrap_or(0.0),
-            total_cogs: row.get::<_, f64>(3)?.unwrap_or(0.0),
-            gross_profit: row.get::<_, f64>(4)?.unwrap_or(0.0),
-            total_refunds: row.get::<_, f64>(5)?.unwrap_or(0.0),
-            write_off_losses: row.get::<_, f64>(6)?.unwrap_or(0.0),
-            net_profit: row.get::<_, f64>(4)?.unwrap_or(0.0)
-                - row.get::<_, f64>(5)?.unwrap_or(0.0)
-                - row.get::<_, f64>(6)?.unwrap_or(0.0),
+            total_revenue: row.get(2)?,
+            total_cogs: row.get(3)?,
+            gross_profit: row.get(4)?,
+            total_refunds: row.get(5)?,
+            write_off_losses: row.get(6)?,
+            net_profit: row.get::<_, f64>(4)? - row.get::<_, f64>(5)? - row.get::<_, f64>(6)?,
         })
     })?;
 
@@ -114,9 +112,9 @@ pub fn get_top_sellers(
             medicine_id: row.get(0)?,
             medicine_name: row.get(1)?,
             generic_name: row.get(2)?,
-            total_qty: row.get::<_, f64>(3)?.unwrap_or(0.0) as i64,
-            total_revenue: row.get::<_, f64>(4)?.unwrap_or(0.0),
-            total_profit: row.get::<_, f64>(5)?.unwrap_or(0.0),
+            total_qty: row.get::<_, i64>(3)?,
+            total_revenue: row.get(4)?,
+            total_profit: row.get(5)?,
         })
     })?;
 
@@ -156,8 +154,8 @@ pub fn get_slow_moving(
             medicine_id: row.get(0)?,
             medicine_name: row.get(1)?,
             category: row.get(2)?,
-            current_stock: row.get::<_, f64>(3)?.unwrap_or(0.0) as i64,
-            total_investment: row.get::<_, f64>(4)?.unwrap_or(0.0),
+            current_stock: row.get::<_, i64>(3)?,
+            total_investment: row.get(4)?,
         })
     })?;
 
@@ -188,13 +186,9 @@ pub fn get_low_stock(db: &Connection) -> Result<Vec<LowStockRow>, CommandError> 
             medicine_name: row.get(1)?,
             category: row.get(2)?,
             reorder_level: row.get(3)?,
-            current_stock: row.get::<_, f64>(4)?.unwrap_or(0.0) as i64,
+            current_stock: row.get::<_, i64>(4)?,
             unit: row.get(5)?,
-            deficit: {
-                let stock: i64 = row.get::<_, f64>(4)?.unwrap_or(0.0) as i64;
-                let reorder: i64 = row.get(3)?;
-                (reorder - stock).max(0)
-            },
+            deficit: (row.get::<_, i64>(3)? - row.get::<_, i64>(4)?).max(0),
         })
     })?;
 
@@ -240,10 +234,10 @@ pub fn get_expiry_report(
             batch_code: row.get(3)?,
             original_qty: row.get(4)?,
             remaining_qty: row.get(5)?,
-            unit_cost: row.get::<_, f64>(6)?.unwrap_or(0.0),
+            unit_cost: row.get(6)?,
             expiry_date: row.get(7)?,
             days_remaining: row.get(8)?,
-            potential_loss: row.get::<_, f64>(9)?.unwrap_or(0.0),
+            potential_loss: row.get(9)?,
             status: row.get(10)?,
         })
     })?;
@@ -264,7 +258,7 @@ pub fn get_supplier_purchases(
             COUNT(DISTINCT p.id) as purchase_count,
             COUNT(pi.id) as item_count,
             COALESCE(SUM(p.total_cost), 0) as total_spent,
-            COALESCE(AVG(p.total_cost), 0) as avg_order_value,
+            CASE WHEN COUNT(DISTINCT p.id) > 0 THEN COALESCE(AVG(p.total_cost), 0) ELSE 0 END as avg_order_value,
             MAX(p.purchase_date) as last_purchase_date
         FROM suppliers s
         LEFT JOIN purchases p ON p.supplier_id = s.id
@@ -281,8 +275,8 @@ pub fn get_supplier_purchases(
             company_name: row.get(1)?,
             purchase_count: row.get(2)?,
             item_count: row.get(3)?,
-            total_spent: row.get::<_, f64>(4)?.unwrap_or(0.0),
-            avg_order_value: row.get::<_, f64>(5)?.unwrap_or(0.0),
+            total_spent: row.get(4)?,
+            avg_order_value: row.get(5)?,
             last_purchase_date: row.get(6)?,
         })
     })?;
@@ -305,7 +299,10 @@ pub fn get_sales_by_user(
             COUNT(si.id) as item_count,
             COALESCE(SUM(si.line_total), 0) as total_sales,
             COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as total_profit,
-            COALESCE(AVG(si.line_total - (si.purchase_cost * si.quantity)), 0) as avg_profit_per_sale
+            CASE WHEN COUNT(DISTINCT s.id) > 0
+                THEN COALESCE(AVG(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                ELSE 0
+            END as avg_profit_per_sale
         FROM users u
         LEFT JOIN sales s ON s.user_id = u.id
             AND date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
@@ -322,9 +319,9 @@ pub fn get_sales_by_user(
             role: row.get(2)?,
             sale_count: row.get(3)?,
             item_count: row.get(4)?,
-            total_sales: row.get::<_, f64>(5)?.unwrap_or(0.0),
-            total_profit: row.get::<_, f64>(6)?.unwrap_or(0.0),
-            avg_profit_per_sale: row.get::<_, f64>(7)?.unwrap_or(0.0),
+            total_sales: row.get(5)?,
+            total_profit: row.get(6)?,
+            avg_profit_per_sale: row.get(7)?,
         })
     })?;
 
@@ -366,12 +363,12 @@ pub fn get_profit_margin(
             medicine_name: row.get(1)?,
             category: row.get(2)?,
             times_sold: row.get(3)?,
-            total_qty: row.get::<_, f64>(4)?.unwrap_or(0.0) as i64,
-            avg_sell_price: row.get::<_, f64>(5)?.unwrap_or(0.0),
-            avg_cost: row.get::<_, f64>(6)?.unwrap_or(0.0),
-            avg_margin_per_unit: row.get::<_, f64>(7)?.unwrap_or(0.0),
-            margin_pct: row.get::<_, f64>(8)?.unwrap_or(0.0),
-            total_profit: row.get::<_, f64>(9)?.unwrap_or(0.0),
+            total_qty: row.get::<_, i64>(4)?,
+            avg_sell_price: row.get(5)?,
+            avg_cost: row.get(6)?,
+            avg_margin_per_unit: row.get(7)?,
+            margin_pct: row.get(8)?,
+            total_profit: row.get(9)?,
         })
     })?;
 

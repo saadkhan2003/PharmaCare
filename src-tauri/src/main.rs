@@ -58,6 +58,7 @@ fn main() {
 
             Ok(())
         })
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             // Phase 1 commands
             commands::auth_commands::auth_login,
@@ -101,6 +102,28 @@ fn main() {
             commands::return_commands::search_sale_for_return,
             commands::return_commands::search_purchase_for_return,
             commands::return_commands::list_returns,
+            // Phase 5 report commands
+            commands::report_commands::get_daily_sales_report,
+            commands::report_commands::get_monthly_pnl,
+            commands::report_commands::get_top_sellers,
+            commands::report_commands::get_slow_moving,
+            commands::report_commands::get_low_stock,
+            commands::report_commands::get_expiry_report_phase5,
+            commands::report_commands::get_supplier_purchases,
+            commands::report_commands::get_sales_by_user,
+            commands::report_commands::get_profit_margin,
+            // Phase 5 backup commands
+            commands::backup_commands::trigger_backup,
+            commands::backup_commands::restore_backup,
+            commands::backup_commands::connect_drive,
+            commands::backup_commands::disconnect_drive,
+            commands::backup_commands::complete_drive_connect,
+            commands::backup_commands::list_drive_backups,
+            commands::backup_commands::get_backup_status,
+            // Phase 5 settings commands
+            commands::settings_commands::update_settings,
+            // Phase 5 user commands
+            commands::user_commands::change_password,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

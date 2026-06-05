@@ -146,7 +146,7 @@ pub fn copy_to_local(file_path: &Path, dest_dir: &Path) -> Result<(), CommandErr
 pub fn run_backup(
     db: &Connection,
     settings_db: &Connection,
-    upload_to_drive: bool,
+    should_upload: bool,
     local_path: Option<&Path>,
 ) -> Result<BackupResult, CommandError> {
     let backup_dir = std::env::temp_dir().join("pharmacare_backups");
@@ -172,7 +172,7 @@ pub fn run_backup(
     let mut message = String::new();
 
     // Upload to Drive if configured
-    if upload_to_drive {
+    if should_upload {
         match settings_repo::get_string(settings_db, "google_drive_token") {
             Ok(Some(token)) => {
                 // Parse token JSON to get access_token
@@ -188,20 +188,21 @@ pub fn run_backup(
                     // Try refresh if 401
                     if e.message.contains("401") || e.message.contains("Unauthorized") {
                         if let Err(refresh_err) = try_refresh_token(settings_db, &token_value) {
-                            message.push_str(&format!("Token refresh failed: {}. ", refresh_err));
+                            message.push_str(&format!("Token refresh failed: {}. ", refresh_err.message));
                         } else if let Ok(Some(new_token)) = settings_repo::get_string(settings_db, "google_drive_token") {
                             // Retry with refreshed token
-                            let new_val: serde_json::Value = serde_json::from_str(&new_token).ok();
-                            if let Some(new_at) = new_val.and_then(|v| v["access_token"].as_str().map(|s| s.to_string())) {
-                                if let Err(retry_err) = upload_to_drive(&gz_path, &new_at, &file_name) {
-                                    message.push_str(&format!("Drive upload failed after refresh: {}. ", retry_err));
-                                } else {
-                                    message.push_str("Uploaded to Drive. ");
+                            if let Ok(new_val) = serde_json::from_str::<serde_json::Value>(&new_token) {
+                                if let Some(new_at) = new_val["access_token"].as_str().map(|s| s.to_string()) {
+                                    if let Err(retry_err) = upload_to_drive(&gz_path, &new_at, &file_name) {
+                                        message.push_str(&format!("Drive upload failed after refresh: {}. ", retry_err.message));
+                                    } else {
+                                        message.push_str("Uploaded to Drive. ");
+                                    }
                                 }
                             }
                         }
                     } else {
-                        message.push_str(&format!("Drive upload failed: {}. ", e));
+                        message.push_str(&format!("Drive upload failed: {}. ", e.message));
                     }
                 } else {
                     message.push_str("Uploaded to Drive. ");
@@ -220,7 +221,7 @@ pub fn run_backup(
     if let Some(local) = local_path {
         match copy_to_local(&gz_path, local) {
             Ok(_) => message.push_str("Copied to local folder."),
-            Err(e) => message.push_str(&format!("Local copy failed: {}. ", e)),
+            Err(e) => message.push_str(&format!("Local copy failed: {}. ", e.message)),
         }
     }
 
@@ -314,19 +315,19 @@ fn validate_db(db_path: &Path) -> Result<(), CommandError> {
     Ok(())
 }
 
-/// Restores from a local gzip backup file: decompresses, validates, creates pre-restore backup, replaces DB.
-/// The restore process:
+/// Restores from a local gzip backup file into the live database.
+/// Process:
 /// 1. Decompress the .db.gz backup file
 /// 2. Validate with PRAGMA integrity_check
 /// 3. Create pre-restore backup of current DB (D-68, BAKP-08)
-/// 4. Close current connection (handled by caller)
-/// 5. Copy restored file over live DB
-/// Returns the path to the restored DB file.
+/// 4. Open the restored DB as a new connection and VACUUM INTO the live path
+/// This atomically replaces the live database content while the current connection lives.
 pub fn restore_from_local(
     db: &Connection,
     file_path: &Path,
+    live_db_path: &Path,
     app_dir: &Path,
-) -> Result<PathBuf, CommandError> {
+) -> Result<(), CommandError> {
     let temp_dir = std::env::temp_dir().join("pharmacare_restore");
     fs::create_dir_all(&temp_dir)?;
 
@@ -346,7 +347,13 @@ pub fn restore_from_local(
     );
     db.execute_batch(&pre_restore_sql)?;
 
-    Ok(restored_db)
+    // Step 4: Open restored DB and VACUUM INTO the live path
+    let restored_conn = Connection::open(&restored_db)?;
+    let live_path_str = live_db_path.to_string_lossy().replace("'", "''");
+    let swap_sql = format!("VACUUM INTO '{}'", live_path_str);
+    restored_conn.execute_batch(&swap_sql)?;
+
+    Ok(())
 }
 
 /// Restores from a Google Drive backup: downloads, decompresses, validates, replaces DB.
@@ -354,8 +361,9 @@ pub fn restore_from_drive(
     db: &Connection,
     file_id: &str,
     access_token: &str,
+    live_db_path: &Path,
     app_dir: &Path,
-) -> Result<PathBuf, CommandError> {
+) -> Result<(), CommandError> {
     let temp_dir = std::env::temp_dir().join("pharmacare_restore");
     fs::create_dir_all(&temp_dir)?;
 
@@ -379,7 +387,13 @@ pub fn restore_from_drive(
     );
     db.execute_batch(&pre_restore_sql)?;
 
-    Ok(restored_db)
+    // Step 5: Open restored DB and VACUUM INTO the live path
+    let restored_conn = Connection::open(&restored_db)?;
+    let live_path_str = live_db_path.to_string_lossy().replace("'", "''");
+    let swap_sql = format!("VACUUM INTO '{}'", live_path_str);
+    restored_conn.execute_batch(&swap_sql)?;
+
+    Ok(())
 }
 
 // ── Cleanup ──
@@ -395,7 +409,8 @@ pub fn cleanup_old_backups(backup_dir: &Path, keep_count: usize) -> Result<(), C
         let path = entry.path();
         if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
             if name.starts_with(BACKUP_PREFIX) && name.ends_with(".db.gz") {
-                backup_files.push((path, name.to_string()));
+                let name_owned = name.to_string();
+                backup_files.push((path.clone(), name_owned));
             }
         }
     }
@@ -442,7 +457,7 @@ pub fn is_backup_due(db: &Connection) -> Result<bool, CommandError> {
 
 /// Periodically checks if backup is due. Runs in a background thread.
 /// Checks every 60 seconds.
-pub fn start_backup_timer(app: tauri::AppHandle, db: Arc<Mutex<Connection>>) {
+pub fn start_backup_timer(_app: tauri::AppHandle, db: Arc<Mutex<Connection>>) {
     std::thread::spawn(move || {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(60));

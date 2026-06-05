@@ -82,3 +82,21 @@ impl From<Box<dyn std::error::Error>> for CommandError {
         }
     }
 }
+
+impl From<std::io::Error> for CommandError {
+    fn from(e: std::io::Error) -> Self {
+        CommandError {
+            code: "IO".into(),
+            message: format!("IO error: {}", e),
+        }
+    }
+}
+
+impl From<reqwest::Error> for CommandError {
+    fn from(e: reqwest::Error) -> Self {
+        CommandError {
+            code: "HTTP".into(),
+            message: format!("HTTP request error: {}", e),
+        }
+    }
+}
