@@ -90,7 +90,11 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
                     isActive={location.pathname === item.url}
                     onClick={() => navigate(item.url)}
                     tooltip={isCollapsed ? item.title : undefined}
-                    className={isCollapsed ? 'justify-center px-0' : ''}
+                    className={cn(
+                      'transition-all duration-150',
+                      isCollapsed ? 'justify-center px-0' : '',
+                      location.pathname === item.url && !isCollapsed && 'border-l-2 border-l-sidebar-primary rounded-l-none'
+                    )}
                   >
                     <item.icon />
                     {!isCollapsed && <span>{item.title}</span>}

@@ -102,7 +102,9 @@ export function DashboardPage({ session }: DashboardPageProps) {
     return (
       <Card
         className={
-          onClick && count > 0 ? 'cursor-pointer hover:shadow-md transition-shadow' : ''
+          onClick && count > 0
+            ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'
+            : 'transition-all duration-200 hover:shadow-sm'
         }
         onClick={count > 0 ? onClick : undefined}
       >
@@ -140,7 +142,7 @@ export function DashboardPage({ session }: DashboardPageProps) {
       Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2);
 
     return (
-      <Card>
+      <Card className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">{title}</CardTitle>
           <Icon className="h-4 w-4 text-muted-foreground" />
