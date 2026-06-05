@@ -8,3 +8,4 @@ pub mod settings_repo;
 pub mod stock_ledger_repo;
 pub mod purchase_repo;
 pub mod sale_repo;
+pub mod returns_repo;

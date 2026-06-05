@@ -132,6 +132,50 @@ pub fn find_fifo_eligible(db: &Connection, medicine_id: i64) -> Result<Vec<Batch
     Ok(results)
 }
 
+/// Increments remaining_qty on a batch by the given amount.
+/// Used for resellable customer returns (D-45).
+pub fn increment_remaining_qty(conn: &Connection, batch_id: i64, increment_by: i64) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "UPDATE batches SET remaining_qty = remaining_qty + ?2 WHERE id = ?1",
+        rusqlite::params![batch_id, increment_by],
+    )?;
+    Ok(())
+}
+
+/// Finds batches linked to a purchase with remaining stock (for supplier return lookup).
+pub fn find_by_purchase_id(
+    conn: &Connection,
+    purchase_id: i64,
+) -> Result<Vec<Batch>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT id, medicine_id, purchase_id, purchase_item_id, purchase_price, \
+                quantity, remaining_qty, expiry_date, received_date \
+         FROM batches \
+         WHERE purchase_id = ?1 AND remaining_qty > 0 \
+         ORDER BY id ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![purchase_id], |row| {
+        Ok(Batch {
+            id: row.get(0)?,
+            medicine_id: row.get(1)?,
+            purchase_id: row.get(2)?,
+            purchase_item_id: row.get(3)?,
+            purchase_price: row.get(4)?,
+            quantity: row.get(5)?,
+            remaining_qty: row.get(6)?,
+            expiry_date: row.get(7)?,
+            received_date: row.get(8)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
+}
+
 /// Decrements remaining_qty on a batch by the given amount.
 ///
 /// The CHECK remaining_qty >= ?2 prevents accidental over-deduction.
