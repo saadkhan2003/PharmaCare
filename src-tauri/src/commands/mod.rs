@@ -8,3 +8,4 @@ pub mod settings_commands;
 pub mod batch_commands;
 pub mod purchase_commands;
 pub mod sale_commands;
+pub mod return_commands;
