@@ -5,4 +5,15 @@ export interface SettingsMap {
   expiry_critical_days: number;
   default_reorder_level: number;
   currency_symbol: string;
+  pharmacy_name: string;
+  owner_name: string;
+  phone: string;
+  address: string;
+  logo_path: string;
+  auto_backup_time: string;
+  local_backup_path: string;
+  last_backup_time: string | null;
+  last_backup_status: string | null;
+  google_drive_connected: boolean;
+  tax_enabled_default: boolean;
 }

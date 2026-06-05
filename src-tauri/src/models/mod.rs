@@ -8,6 +8,7 @@ pub mod settings;
 pub mod purchase;
 pub mod sale;
 pub mod r#return;
+pub mod report;
 
 // Re-exports — used by services and commands in downstream plans
 #[allow(unused_imports)]
@@ -31,4 +32,4 @@ pub use sale::*;
 #[allow(unused_imports)]
 pub use r#return::*;
 #[allow(unused_imports)]
-pub use r#return::*;
+pub use report::*;
