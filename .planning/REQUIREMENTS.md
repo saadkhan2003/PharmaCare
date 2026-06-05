@@ -74,17 +74,17 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **REPT-01**: Owner dashboard shows today's sales, today's profit, monthly sales, low stock count, expiry count, top 5 selling medicines
 - [ ] **REPT-02**: Pharmacist dashboard shows today's sales total and low stock alerts
-- [ ] **REPT-03**: Owner can view Daily Sales Summary report (date-filterable, PDF export)
-- [ ] **REPT-04**: Owner can view Monthly P&L report (PDF export)
-- [ ] **REPT-05**: Owner can view Top Selling Medicines report (PDF export)
-- [ ] **REPT-06**: Owner can view Slow-Moving Stock report (PDF export)
-- [ ] **REPT-07**: Owner can view Low Stock report (PDF export)
-- [ ] **REPT-08**: Owner can view Expiry report (PDF export)
-- [ ] **REPT-09**: Owner can view Supplier Purchase History report (PDF export)
-- [ ] **REPT-10**: Owner can view Sales by User report (PDF export)
-- [ ] **REPT-11**: Owner can view Profit Margin report (PDF export)
-- [ ] **REPT-12**: All reports date-range filterable
-- [ ] **REPT-13**: Purchase prices and profit data visible to Owner role only
+- [ ] **REPT-03**: Owner can view Daily Sales Summary report (date-filterable, PDF export) *(Plan 05-01: backend — report_service + command with require_owner; UI deferred to Plan 05-02)*
+- [ ] **REPT-04**: Owner can view Monthly P&L report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-05**: Owner can view Top Selling Medicines report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-06**: Owner can view Slow-Moving Stock report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-07**: Owner can view Low Stock report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-08**: Owner can view Expiry report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-09**: Owner can view Supplier Purchase History report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-10**: Owner can view Sales by User report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-11**: Owner can view Profit Margin report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
+- [ ] **REPT-12**: All reports date-range filterable *(Plan 05-01: all 9 report services accept start_date/end_date params)*
+- [ ] **REPT-13**: Purchase prices and profit data visible to Owner role only *(Plan 05-01: require_owner on all 9 report commands)*
 
 ### User Management
 
@@ -95,15 +95,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Backup & Recovery
 
-- [ ] **BAKP-01**: Nightly auto-backup at 11 PM (if internet available)
-- [ ] **BAKP-02**: Owner can trigger manual backup anytime
-- [ ] **BAKP-03**: Backups named pharmaCare_backup_YYYY-MM-DD.db; last 30 kept
-- [ ] **BAKP-04**: Dashboard shows last backup status
-- [ ] **BAKP-05**: Missed-backup warning after 3 days without backup
-- [ ] **BAKP-06**: Owner can restore from backup with confirmation warning
-- [ ] **BAKP-07**: Optional local-folder/USB backup alongside Drive upload
-- [ ] **BAKP-08**: Pre-restore backup created before any restore
-- [ ] **BAKP-09**: Backup uses SQLite-safe snapshot (Online Backup API / VACUUM INTO)
+- [ ] **BAKP-01**: Nightly auto-backup at 11 PM (if internet available) *(Plan 05-01: is_backup_due + start_backup_timer; auto-trigger on schedule)*
+- [ ] **BAKP-02**: Owner can trigger manual backup anytime *(Plan 05-01: trigger_backup command with require_owner)*
+- [ ] **BAKP-03**: Backups named pharmaCare_backup_YYYY-MM-DD.db; last 30 kept *(Plan 05-01: naming convention + cleanup_old_backups)*
+- [ ] **BAKP-04**: Dashboard shows last backup status *(deferred to Plan 05-03 frontend backup widget)*
+- [ ] **BAKP-05**: Missed-backup warning after 3 days without backup *(deferred to Plan 05-03 frontend)*
+- [ ] **BAKP-06**: Owner can restore from backup with confirmation warning *(Plan 05-01: restore_backup command with require_owner; frontend deferred)*
+- [ ] **BAKP-07**: Optional local-folder/USB backup alongside Drive upload *(Plan 05-01: copy_to_local + run_backup with local_path param)*
+- [ ] **BAKP-08**: Pre-restore backup created before any restore *(Plan 05-01: VACUUM INTO pre-restore in restore_from_local/restore_from_drive)*
+- [ ] **BAKP-09**: Backup uses SQLite-safe snapshot (VACUUM INTO) *(Plan 05-01: create_snapshot uses VACUUM INTO for atomic snapshot)*
 
 ### Settings
 
@@ -113,8 +113,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SETT-04**: Owner configures expiry warning/critical thresholds (default 60/30 days) *(Plan 02-01: backend key-value read)*
 - [x] **SETT-05**: Owner configures default reorder level for new medicines *(Plan 02-01: backend key-value read)*
 - [x] **SETT-06**: Owner configures currency symbol (default Rs.) *(Plan 02-01: backend key-value read)*
-- [ ] **SETT-07**: Owner connects/disconnects Google Drive for backup
-- [ ] **SETT-08**: Owner configures auto-backup time
+- [ ] **SETT-07**: Owner connects/disconnects Google Drive for backup *(Plan 05-01: connect_drive/disconnect_drive commands with require_owner + OAuth flow; frontend deferred to Plan 05-03)*
+- [ ] **SETT-08**: Owner configures auto-backup time *(Plan 05-01: auto_backup_time in update_settings payload; frontend deferred to Plan 05-03)*
 
 ## v2 Requirements
 
@@ -198,38 +198,38 @@ Explicitly excluded. Documented to prevent scope creep.
 | RETN-08 | Phase 4 | Pending (Phase 5) |
 | REPT-01 | Phase 3 | Pending |
 | REPT-02 | Phase 3 | Pending |
-| REPT-03 | Phase 5 | Pending |
-| REPT-04 | Phase 5 | Pending |
-| REPT-05 | Phase 5 | Pending |
-| REPT-06 | Phase 5 | Pending |
-| REPT-07 | Phase 5 | Pending |
-| REPT-08 | Phase 5 | Pending |
-| REPT-09 | Phase 5 | Pending |
-| REPT-10 | Phase 5 | Pending |
-| REPT-11 | Phase 5 | Pending |
-| REPT-12 | Phase 5 | Pending |
-| REPT-13 | Phase 5 | Pending |
+| REPT-03 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-04 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-05 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-06 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-07 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-08 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-09 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-10 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-11 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-12 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-13 | Phase 5 | Backend done (Plan 05-01) |
 | USER-01 | Phase 1 | Complete (Plan 02) |
 | USER-02 | Phase 1 | Complete (Plan 02) |
 | USER-03 | Phase 1 | Complete (Plan 02) |
 | USER-04 | Phase 1 | Complete (Plan 02) |
-| BAKP-01 | Phase 5 | Pending |
-| BAKP-02 | Phase 5 | Pending |
-| BAKP-03 | Phase 5 | Pending |
-| BAKP-04 | Phase 5 | Pending |
-| BAKP-05 | Phase 5 | Pending |
-| BAKP-06 | Phase 5 | Pending |
-| BAKP-07 | Phase 5 | Pending |
-| BAKP-08 | Phase 5 | Pending |
-| BAKP-09 | Phase 5 | Pending |
+| BAKP-01 | Phase 5 | Backend done (Plan 05-01) |
+| BAKP-02 | Phase 5 | Backend done (Plan 05-01) |
+| BAKP-03 | Phase 5 | Backend done (Plan 05-01) |
+| BAKP-04 | Phase 5 | Pending (Plan 05-03 frontend) |
+| BAKP-05 | Phase 5 | Pending (Plan 05-03 frontend) |
+| BAKP-06 | Phase 5 | Backend done (Plan 05-01) |
+| BAKP-07 | Phase 5 | Backend done (Plan 05-01) |
+| BAKP-08 | Phase 5 | Backend done (Plan 05-01) |
+| BAKP-09 | Phase 5 | Backend done (Plan 05-01) |
 | SETT-01 | Phase 2 | Pending (UI deferred to Phase 5) |
 | SETT-02 | Phase 2 | Complete (Plan 02-01) |
 | SETT-03 | Phase 2 | Complete (Plan 02-01) |
 | SETT-04 | Phase 2 | Complete (Plan 02-01) |
 | SETT-05 | Phase 2 | Complete (Plan 02-01) |
 | SETT-06 | Phase 2 | Complete (Plan 02-01) |
-| SETT-07 | Phase 5 | Pending |
-| SETT-08 | Phase 5 | Pending |
+| SETT-07 | Phase 5 | Backend done (Plan 05-01) |
+| SETT-08 | Phase 5 | Backend done (Plan 05-01) |
 
 **Coverage:**
 - v1 requirements: 79 total
