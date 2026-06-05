@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 
 ## Current Position
 
-Phase: 5 of 5 (Reports, Backup & Administration)
+Phase: 5 of 5 (Reports, Backup & Administration) — **COMPLETE**
 Plan: 3/3 in current phase
-Status: Plan 02 complete — Wave 2 (frontend reports) done
-Last activity: 2026-06-05 — Phase 5 Plan 02 executed
+Status: Plan 03 complete — Settings UI + backup widget + password change + sidebar + routing
+Last activity: 2026-06-05 — Phase 5 Plan 03 executed (final plan)
 
 Progress: [████████████████████████████] 
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
+- Total plans completed: 13
 - Average duration: ~16m
-- Total execution time: ~165m
+- Total execution time: ~215m
 
 **By Phase:**
 
@@ -31,13 +31,15 @@ Progress: [███████████████████████
 | 2. Medicine Catalog & Stock Intake | 3 | 6 | ~10m |
 | 3. POS & Sales Engine | 3 | 9 | ~13m |
 | 4. Returns & Operational Corrections | 3 | 12 | ~12m |
-| 5. Reports, Backup & Admin | 2 | 2 | ~40m |
+| 5. Reports, Backup & Admin | 3 | 15 | ~30m |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 ✓ 03-02 ✓ 04-01 ✓ 04-02 ✓ 04-03 ✓ 05-01 ✓ 05-02 ✓
-- Trend: Accelerating (faster avg time)
+- Last 5 plans: 04-02 ✓ 04-03 ✓ 05-01 ✓ 05-02 ✓ 05-03 ✓
+- Trend: Consistent
 
-*Updated after Phase 5 Plan 02 execution*
+**Phase 5 Complete — All 15 v1 plans finished**
+
+*Updated after Phase 5 Plan 03 execution*
 
 ## Accumulated Context
 
@@ -95,6 +97,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 05-02]: Low stock rows color-coded: red bg when stock=0, amber bg when below reorder level
 - [Plan 05-02]: Expiry badges use 3-tier color: red=expired/critical, amber=warning, green=ok
 - [Plan 05-02]: Profit margin color-coded: green ≥20%, amber ≥10%, red <10%
+- [Plan 05-03]: Settings uses custom button-based tabs (no radix/base-ui tabs dependency)
+- [Plan 05-03]: Backup OAuth uses polling approach: open URL → poll get_backup_status every 2s for 60s max
+- [Plan 05-03]: Backup restore picks most recent Drive backup, shows confirmation dialog before proceeding
+- [Plan 05-03]: Missed-backup threshold is 72 hours (3 days) per D-71
+- [Plan 05-03]: Dashboard backup widget is read-only — backup triggers handled in Settings page
+- [Plan 05-03]: SessionDto uses token field (not session_token) — matched existing pattern
 
 ### Pending Todos
 
@@ -113,5 +121,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-05
-Stopped at: Phase 5 Plan 02 complete — Reports frontend with Recharts charts + PDF export
-Resume file: .planning/phases/05-reports-backup-admin/05-02-SUMMARY.md
+Stopped at: **Phase 5 Plan 03 complete — Settings UI + backup widget + password change + sidebar + routing (all v1 phases complete)**
+Resume file: .planning/phases/05-reports-backup-admin/05-03-SUMMARY.md
+
+**All 5 phases and 15 plans complete — v1 is feature-complete.**
