@@ -14,7 +14,7 @@ PharmaCare is built as a dependency-driven Windows desktop application where the
 - [ ] **Phase 1: Foundation & Access Control** - Tauri/React shell, SQLite, bcrypt auth, RBAC, user management
 - [ ] **Phase 2: Medicine Catalog & Stock Intake** - Medicine CRUD, suppliers, purchases, batch tracking, core settings
 - [/] **Phase 3: POS & Sales Engine** - Keyboard-first POS, FIFO stock deduction, expiry blocking, operational dashboards
-- [x] **Phase 4: Returns & Operational Corrections** - Customer/supplier returns, write-offs, stock restoration, loss logging
+- [x] **Phase 4: Returns & Operational Corrections** - Customer/supplier returns, write-offs, stock restoration, loss logging, return history
 - [ ] **Phase 5: Reports, Backup & Administration** - Analytics reports with PDF export, Google Drive backup, restore, settings UI
 
 ## Phase Details

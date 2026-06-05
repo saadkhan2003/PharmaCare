@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 
 Phase: 4 of 5 (Returns & Operational Corrections)
 Plan: 3/3 in current phase
-Status: Plans complete — awaiting Phase 5
-Last activity: 2026-06-05 — Plan 04-01 complete (backend returns infrastructure)
+Status: Phase 4 complete
+Last activity: 2026-06-05 — Plan 04-03 complete (returns frontend UI)
 
 Progress: [██████████] 100% (Phase 3), [██████████] 100% (Phase 4)
 
@@ -30,13 +30,13 @@ Progress: [██████████] 100% (Phase 3), [██████�
 | 1. Foundation & Access Control | 3 | 3 | ~27m |
 | 2. Medicine Catalog & Stock Intake | 3 | 6 | ~10m |
 | 3. POS & Sales Engine | 3 | 9 | ~13m |
-| 4. Returns & Operational Corrections | 3 | 12 | ~11m |
+| 4. Returns & Operational Corrections | 3 | 12 | ~12m |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 ✓ 03-02 ✓ 04-01 ✓ 04-02 ✓ 04-01 ✓
+- Last 5 plans: 03-01 ✓ 03-02 ✓ 04-01 ✓ 04-02 ✓ 04-03 ✓
 - Trend: Accelerating (faster avg time)
 
-*Updated after Phase 4 Plan 01 execution*
+*Updated after Phase 4 Plan 03 execution*
 
 ## Accumulated Context
 
@@ -81,6 +81,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 04-01]: Return backend uses returns table with CHECK constraints (customer/supplier/write_off, resellable/damaged/expired)
 - [Plan 04-01]: batch_repo::increment_remaining_qty for resellable customer returns — no CHECK constraint (remaining_qty can exceed original quantity for edge cases where returns arrive after stock was replenished from other purchases)
 - [Plan 04-01]: Zero-delta stock_movement for damaged/expired customer returns serves as P&L loss record (D-54)
+- [Plan 04-03]: Added list_returns Tauri command with require_owner guard for ReturnHistoryPage — 04-02 backend didn't include this
+- [Plan 04-03]: ReturnHistoryPage owner-only (matching list_returns require_owner guard vs plan's original intent of both roles)
 
 ### Pending Todos
 
@@ -99,5 +101,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-05
-Stopped at: Phase 4 Plan 01 complete — backend returns infrastructure
-Resume file: .planning/phases/04-returns-corrections/04-01-SUMMARY.md
+Stopped at: Phase 4 complete — all 3 plans executed
+Resume file: .planning/phases/04-returns-corrections/04-03-SUMMARY.md
