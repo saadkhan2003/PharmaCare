@@ -1,0 +1,128 @@
+use rusqlite::Connection;
+
+use crate::models::{Batch, ExpiryReportRow};
+
+/// Inserts a new batch. Returns the new row id.
+/// Accepts &Connection (works for both standalone Connection and Transaction via Deref).
+pub fn insert(
+    conn: &Connection,
+    medicine_id: i64,
+    purchase_id: i64,
+    purchase_item_id: Option<i64>,
+    purchase_price: f64,
+    quantity: i64,
+    remaining_qty: i64,
+    expiry_date: &str,
+) -> Result<i64, rusqlite::Error> {
+    conn.execute(
+        "INSERT INTO batches (medicine_id, purchase_id, purchase_item_id, purchase_price, quantity, remaining_qty, expiry_date) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        rusqlite::params![
+            medicine_id,
+            purchase_id,
+            purchase_item_id,
+            purchase_price,
+            quantity,
+            remaining_qty,
+            expiry_date,
+        ],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// Computes current stock for a medicine: sum of remaining_qty of non-expired batches.
+/// D-23: SELECT COALESCE(SUM(remaining_qty), 0) FROM batches WHERE medicine_id = ? AND expiry_date > date('now')
+pub fn get_current_stock(db: &Connection, medicine_id: i64) -> Result<i64, rusqlite::Error> {
+    let result: i64 = db.query_row(
+        "SELECT COALESCE(SUM(remaining_qty), 0) FROM batches \
+         WHERE medicine_id = ?1 AND expiry_date > date('now')",
+        rusqlite::params![medicine_id],
+        |row| row.get(0),
+    )?;
+    Ok(result)
+}
+
+/// Returns the expiry report sorted by days_remaining ASC.
+/// Optionally filtered by min_days (<=) and max_days (>=).
+pub fn get_expiry_report(
+    db: &Connection,
+    min_days: Option<i64>,
+    max_days: Option<i64>,
+) -> Result<Vec<ExpiryReportRow>, rusqlite::Error> {
+    let mut sql = String::from(
+        "SELECT b.id, m.id, m.name, m.generic_name, b.quantity, b.remaining_qty, \
+                b.purchase_price, b.expiry_date, \
+                CAST(julianday(b.expiry_date) - julianday('now') AS INTEGER) AS days_remaining \
+         FROM batches b \
+         JOIN medicines m ON m.id = b.medicine_id \
+         WHERE m.is_active = 1 \
+           AND b.remaining_qty > 0",
+    );
+
+    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if let Some(min) = min_days {
+        sql.push_str(&format!(" AND days_remaining <= ?{}", params.len() + 1));
+        params.push(Box::new(min));
+    }
+    if let Some(max) = max_days {
+        sql.push_str(&format!(" AND days_remaining >= ?{}", params.len() + 1));
+        params.push(Box::new(max));
+    }
+
+    sql.push_str(" ORDER BY days_remaining ASC");
+
+    let mut stmt = db.prepare(&sql)?;
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+
+    let rows = stmt.query_map(param_refs.as_slice(), |row| {
+        Ok(ExpiryReportRow {
+            batch_id: row.get(0)?,
+            medicine_id: row.get(1)?,
+            medicine_name: row.get(2)?,
+            generic_name: row.get(3)?,
+            quantity: row.get(4)?,
+            remaining_qty: row.get(5)?,
+            purchase_price: row.get(6)?,
+            expiry_date: row.get(7)?,
+            days_remaining: row.get(8)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
+}
+
+/// Finds all batches for a given medicine.
+pub fn find_by_medicine(db: &Connection, medicine_id: i64) -> Result<Vec<Batch>, rusqlite::Error> {
+    let mut stmt = db.prepare(
+        "SELECT id, medicine_id, purchase_id, purchase_item_id, purchase_price, \
+                quantity, remaining_qty, expiry_date, received_date \
+         FROM batches \
+         WHERE medicine_id = ?1 \
+         ORDER BY expiry_date ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![medicine_id], |row| {
+        Ok(Batch {
+            id: row.get(0)?,
+            medicine_id: row.get(1)?,
+            purchase_id: row.get(2)?,
+            purchase_item_id: row.get(3)?,
+            purchase_price: row.get(4)?,
+            quantity: row.get(5)?,
+            remaining_qty: row.get(6)?,
+            expiry_date: row.get(7)?,
+            received_date: row.get(8)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
+}

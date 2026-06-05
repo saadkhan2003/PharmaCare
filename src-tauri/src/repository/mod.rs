@@ -1,3 +1,8 @@
 pub mod user_repo;
 pub mod session_repo;
 pub mod audit_repo;
+pub mod medicine_repo;
+pub mod supplier_repo;
+pub mod batch_repo;
+pub mod settings_repo;
+pub mod stock_ledger_repo;
