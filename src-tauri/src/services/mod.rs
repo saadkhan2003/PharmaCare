@@ -5,3 +5,4 @@ pub mod medicine_service;
 pub mod supplier_service;
 pub mod settings_service;
 pub mod stock_ledger_service;
+pub mod purchase_service;
