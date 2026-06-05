@@ -11,3 +11,14 @@ pub struct StoredSession {
     pub full_name: String,
     pub created_at: String,
 }
+
+/// Session DTO returned to frontend after successful login.
+/// Contains the session token, user info, but NEVER the password_hash.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionDto {
+    pub token: String,
+    pub user_id: i64,
+    pub username: String,
+    pub role: String,
+    pub full_name: String,
+}
