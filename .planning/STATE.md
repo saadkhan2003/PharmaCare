@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 1 of 5 (Foundation & Access Control)
-Plan: 2/3 in current phase (Plan 01 complete)
+Plan: 2/3 in current phase (Plan 02 complete)
 Status: Executing
-Last activity: 2026-06-05 — Plan 01-01 complete (Tauri scaffold + SQLite + models + guards + migration)
+Last activity: 2026-06-05 — Plan 01-02 complete (Auth/user/audit services + commands + login/setup UI)
 
-Progress: [████▒▒▒▒▒▒] 25%
+Progress: [██████▒▒▒▒] 66%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 34m
-- Total execution time: 34m
+- Total plans completed: 2
+- Average duration: 29m
+- Total execution time: 59m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation & Access Control | 1 | 3 | 34m |
+| 1. Foundation & Access Control | 2 | 3 | 29m |
 
 **Recent Trend:**
-- Last 5 plans: 34m
+- Last 5 plans: 29m
 - Trend: —
 
 *Updated after each plan completion*
@@ -47,6 +47,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 01]: CommandError as unified error type with code/message pattern
 - [Plan 01]: Lock order: db Mutex first, sessions Mutex second throughout
 - [Plan 01]: All PRAGMAs (WAL, foreign_keys, busy_timeout) set before migration execution
+- [Plan 02]: Module-level functions (not service structs) for repos and services
+- [Plan 02]: AuthError enum with From<CommandError> conversion for ? propagation
+- [Plan 02]: Generic 'Invalid credentials' error for both wrong username and wrong password (T-01-06)
 
 ### Pending Todos
 
@@ -64,6 +67,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-05 13:43
-Stopped at: Plan 01-01 complete — Tauri scaffold + SQLite + models + guards + migration
-Resume file: .planning/phases/01-foundation-access-control/01-01-SUMMARY.md
+Last session: 2026-06-05 15:10
+Stopped at: Plan 01-02 complete — Auth/user/audit services + commands + login/setup UI
+Resume file: .planning/phases/01-foundation-access-control/01-02-SUMMARY.md

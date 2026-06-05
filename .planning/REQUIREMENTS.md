@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [-] **AUTH-01**: User can log in with username and password *(foundation: SQLite + AppState + migrations + bcrypt dep; login command in Plan 02)*
-- [-] **AUTH-02**: Passwords stored as bcrypt hashes — never plaintext *(foundation: bcrypt crate dependency + password_hash field in users table; hash on creation in Plan 02)*
-- [-] **AUTH-03**: Session persists until user logs out or app closes *(foundation: StoredSession model + sessions table + in-memory HashMap + guard functions; session creation in Plan 02)*
-- [ ] **AUTH-04**: All login attempts (success and failure) logged
-- [ ] **AUTH-05**: Inactive users cannot log in but historical records preserved
+- [x] **AUTH-01**: User can log in with username and password *(Plan 01: foundation; Plan 02: auth_service.login with bcrypt verify, UUID session, auth_login command)*
+- [x] **AUTH-02**: Passwords stored as bcrypt hashes — never plaintext *(Plan 01: bcrypt dep + password_hash field; Plan 02: bcrypt::hash with cost 12 in user_service.create_user)*
+- [x] **AUTH-03**: Session persists until user logs out or app closes *(Plan 01: StoredSession model + sessions table + in-memory HashMap + guards; Plan 02: session creation/clear in auth_service)*
+- [x] **AUTH-04**: All login attempts (success and failure) logged *(Plan 02: audit_repo.log_attempt called before auth_service.login returns per T-01-10)*
+- [x] **AUTH-05**: Inactive users cannot log in but historical records preserved *(Plan 02: auth_service.login checks is_active flag; user_repo.deactivate sets is_active=0)*
 
 ### Medicine Inventory
 
@@ -88,10 +88,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### User Management
 
-- [ ] **USER-01**: Owner can add user (full name, username, password, role)
-- [ ] **USER-02**: Owner can deactivate user (preserves sales history)
-- [ ] **USER-03**: Owner cannot delete their own account
-- [ ] **USER-04**: System requires at least one active Owner account
+- [x] **USER-01**: Owner can add user (full name, username, password, role) *(Plan 02: create_user command with require_owner guard + user_service.create_user)*
+- [x] **USER-02**: Owner can deactivate user (preserves sales history) *(Plan 02: deactivate_user command with user_service.deactivate_user, sets is_active=0)*
+- [x] **USER-03**: Owner cannot delete their own account *(Plan 02: deactivate_user rejects if target_user_id == current_user_id)*
+- [x] **USER-04**: System requires at least one active Owner account *(Plan 02: deactivate_user checks count_active_owners before deactivation)*
 
 ### Backup & Recovery
 
@@ -151,11 +151,11 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Foundation (Plan 01) |
-| AUTH-02 | Phase 1 | Foundation (Plan 01) |
-| AUTH-03 | Phase 1 | Foundation (Plan 01) |
-| AUTH-04 | Phase 1 | Pending |
-| AUTH-05 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete (Plan 02) |
+| AUTH-02 | Phase 1 | Complete (Plan 02) |
+| AUTH-03 | Phase 1 | Complete (Plan 02) |
+| AUTH-04 | Phase 1 | Complete (Plan 02) |
+| AUTH-05 | Phase 1 | Complete (Plan 02) |
 | INVT-01 | Phase 2 | Pending |
 | INVT-02 | Phase 2 | Pending |
 | INVT-03 | Phase 2 | Pending |
@@ -209,10 +209,10 @@ Explicitly excluded. Documented to prevent scope creep.
 | REPT-11 | Phase 5 | Pending |
 | REPT-12 | Phase 5 | Pending |
 | REPT-13 | Phase 5 | Pending |
-| USER-01 | Phase 1 | Pending |
-| USER-02 | Phase 1 | Pending |
-| USER-03 | Phase 1 | Pending |
-| USER-04 | Phase 1 | Pending |
+| USER-01 | Phase 1 | Complete (Plan 02) |
+| USER-02 | Phase 1 | Complete (Plan 02) |
+| USER-03 | Phase 1 | Complete (Plan 02) |
+| USER-04 | Phase 1 | Complete (Plan 02) |
 | BAKP-01 | Phase 5 | Pending |
 | BAKP-02 | Phase 5 | Pending |
 | BAKP-03 | Phase 5 | Pending |

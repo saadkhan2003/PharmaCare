@@ -34,7 +34,7 @@ PharmaCare is built as a dependency-driven Windows desktop application where the
 
 Plans:
 - [x] 01-01-PLAN.md — Tauri scaffold + SQLite + models + guards + migration
-- [ ] 01-02-PLAN.md — Auth/User/Audit services + commands + login/setup UI
+- [x] 01-02-PLAN.md — Auth/User/Audit services + commands + login/setup UI
 - [ ] 01-03-PLAN.md — Sidebar layout + user management + audit viewer
 
 ### Phase 2: Medicine Catalog & Stock Intake
@@ -97,7 +97,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Access Control | 1/3 | Executing | - |
+| 1. Foundation & Access Control | 2/3 | Executing | - |
 | 2. Medicine Catalog & Stock Intake | 0/TBD | Not started | - |
 | 3. POS & Sales Engine | 0/TBD | Not started | - |
 | 4. Returns & Operational Corrections | 0/TBD | Not started | - |
