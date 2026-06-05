@@ -1,0 +1,379 @@
+use rusqlite::Connection;
+
+use crate::errors::CommandError;
+use crate::models::*;
+
+/// Report 1: Daily Sales Summary (REPT-03)
+pub fn get_daily_sales(
+    db: &Connection,
+    start: &str,
+    end: &str,
+) -> Result<Vec<DailySalesRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            date(s.created_at) as sale_date,
+            COUNT(DISTINCT s.id) as sale_count,
+            COUNT(si.id) as item_count,
+            SUM(si.line_total + si.item_discount) as gross_sales,
+            COALESCE(SUM(si.item_discount), 0) + COALESCE(MAX(s.bill_discount), 0) as total_discounts,
+            COALESCE(MAX(s.tax_amount), 0) as tax_amount,
+            SUM(si.line_total) as net_sales,
+            SUM(si.line_total - (si.purchase_cost * si.quantity)) as profit
+        FROM sales s
+        JOIN sale_items si ON si.sale_id = s.id
+        WHERE date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
+        GROUP BY date(s.created_at)
+        ORDER BY sale_date ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![start, end], |row| {
+        Ok(DailySalesRow {
+            date: row.get(0)?,
+            sale_count: row.get(1)?,
+            item_count: row.get(2)?,
+            gross_sales: row.get::<_, f64>(3)?.unwrap_or(0.0),
+            discounts: row.get::<_, f64>(4)?.unwrap_or(0.0),
+            tax_amount: row.get::<_, f64>(5)?.unwrap_or(0.0),
+            net_sales: row.get::<_, f64>(6)?.unwrap_or(0.0),
+            profit: row.get::<_, f64>(7)?.unwrap_or(0.0),
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 2: Monthly P&L (REPT-04)
+pub fn get_monthly_pnl(
+    db: &Connection,
+    start: &str,
+    end: &str,
+) -> Result<Vec<MonthlyPnLRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            strftime('%Y-%m', s.created_at) as month,
+            COUNT(DISTINCT s.id) as sale_count,
+            COALESCE(SUM(si.line_total), 0) as total_revenue,
+            COALESCE(SUM(si.purchase_cost * si.quantity), 0) as total_cogs,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as gross_profit,
+            COALESCE((SELECT SUM(refund_amount) FROM returns
+                WHERE return_type = 'customer'
+                AND strftime('%Y-%m', return_date) = strftime('%Y-%m', s.created_at)), 0) as total_refunds,
+            COALESCE((SELECT SUM(ABS(refund_amount)) FROM returns
+                WHERE return_type = 'write_off'
+                AND strftime('%Y-%m', return_date) = strftime('%Y-%m', s.created_at)), 0) as write_off_losses
+        FROM sales s
+        JOIN sale_items si ON si.sale_id = s.id
+        WHERE strftime('%Y-%m', s.created_at) >= ?1 AND strftime('%Y-%m', s.created_at) <= ?2
+        GROUP BY strftime('%Y-%m', s.created_at)
+        ORDER BY month ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![start, end], |row| {
+        Ok(MonthlyPnLRow {
+            month: row.get(0)?,
+            sale_count: row.get(1)?,
+            total_revenue: row.get::<_, f64>(2)?.unwrap_or(0.0),
+            total_cogs: row.get::<_, f64>(3)?.unwrap_or(0.0),
+            gross_profit: row.get::<_, f64>(4)?.unwrap_or(0.0),
+            total_refunds: row.get::<_, f64>(5)?.unwrap_or(0.0),
+            write_off_losses: row.get::<_, f64>(6)?.unwrap_or(0.0),
+            net_profit: row.get::<_, f64>(4)?.unwrap_or(0.0)
+                - row.get::<_, f64>(5)?.unwrap_or(0.0)
+                - row.get::<_, f64>(6)?.unwrap_or(0.0),
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 3: Top Selling Medicines (REPT-05) — LIMIT 50
+pub fn get_top_sellers(
+    db: &Connection,
+    start: &str,
+    end: &str,
+) -> Result<Vec<TopSellerRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            m.id as medicine_id,
+            m.name as medicine_name,
+            m.generic_name,
+            COALESCE(SUM(si.quantity), 0) as total_qty,
+            COALESCE(SUM(si.line_total), 0) as total_revenue,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as total_profit
+        FROM sale_items si
+        JOIN medicines m ON m.id = si.medicine_id
+        JOIN sales s ON s.id = si.sale_id
+        WHERE date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
+        GROUP BY m.id
+        ORDER BY total_qty DESC
+        LIMIT 50",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![start, end], |row| {
+        Ok(TopSellerRow {
+            medicine_id: row.get(0)?,
+            medicine_name: row.get(1)?,
+            generic_name: row.get(2)?,
+            total_qty: row.get::<_, f64>(3)?.unwrap_or(0.0) as i64,
+            total_revenue: row.get::<_, f64>(4)?.unwrap_or(0.0),
+            total_profit: row.get::<_, f64>(5)?.unwrap_or(0.0),
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 4: Slow-Moving Stock (REPT-06)
+pub fn get_slow_moving(
+    db: &Connection,
+    start: &str,
+    end: &str,
+) -> Result<Vec<SlowMovingRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            m.id as medicine_id,
+            m.name as medicine_name,
+            m.category,
+            COALESCE(SUM(b.remaining_qty), 0) as current_stock,
+            COALESCE(SUM(b.remaining_qty * b.purchase_price), 0) as total_investment
+        FROM medicines m
+        LEFT JOIN batches b ON b.medicine_id = m.id AND b.remaining_qty > 0
+        LEFT JOIN (
+            SELECT si.medicine_id, SUM(si.quantity) as total_qty
+            FROM sale_items si
+            JOIN sales s ON s.id = si.sale_id
+            WHERE date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
+            GROUP BY si.medicine_id
+        ) sold ON sold.medicine_id = m.id
+        WHERE m.is_active = 1
+            AND (sold.total_qty IS NULL OR sold.total_qty = 0)
+        GROUP BY m.id
+        ORDER BY m.name ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![start, end], |row| {
+        Ok(SlowMovingRow {
+            medicine_id: row.get(0)?,
+            medicine_name: row.get(1)?,
+            category: row.get(2)?,
+            current_stock: row.get::<_, f64>(3)?.unwrap_or(0.0) as i64,
+            total_investment: row.get::<_, f64>(4)?.unwrap_or(0.0),
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 5: Low Stock (REPT-07) — current state, no date params
+pub fn get_low_stock(db: &Connection) -> Result<Vec<LowStockRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            m.id as medicine_id,
+            m.name as medicine_name,
+            m.category,
+            m.reorder_level,
+            COALESCE(SUM(b.remaining_qty), 0) as current_stock,
+            m.unit
+        FROM medicines m
+        LEFT JOIN batches b ON b.medicine_id = m.id AND b.remaining_qty > 0
+        WHERE m.is_active = 1
+        GROUP BY m.id
+        HAVING current_stock <= m.reorder_level
+        ORDER BY current_stock ASC",
+    )?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(LowStockRow {
+            medicine_id: row.get(0)?,
+            medicine_name: row.get(1)?,
+            category: row.get(2)?,
+            reorder_level: row.get(3)?,
+            current_stock: row.get::<_, f64>(4)?.unwrap_or(0.0) as i64,
+            unit: row.get(5)?,
+            deficit: {
+                let stock: i64 = row.get::<_, f64>(4)?.unwrap_or(0.0) as i64;
+                let reorder: i64 = row.get(3)?;
+                (reorder - stock).max(0)
+            },
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 6: Expiry Report (REPT-08) — uses warning/critical day thresholds
+pub fn get_expiry_report(
+    db: &Connection,
+    warning_days: i64,
+    critical_days: i64,
+) -> Result<Vec<ExpiryReportDetailRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            b.id as batch_id,
+            m.id as medicine_id,
+            m.name as medicine_name,
+            b.batch_code,
+            b.quantity as original_qty,
+            b.remaining_qty,
+            b.purchase_price as unit_cost,
+            b.expiry_date,
+            CAST(julianday(b.expiry_date) - julianday('now') AS INTEGER) as days_remaining,
+            (b.remaining_qty * b.purchase_price) as potential_loss,
+            CASE
+                WHEN julianday(b.expiry_date) - julianday('now') < 0 THEN 'expired'
+                WHEN julianday(b.expiry_date) - julianday('now') <= ?2 THEN 'critical'
+                WHEN julianday(b.expiry_date) - julianday('now') <= ?1 THEN 'warning'
+                ELSE 'ok'
+            END as status
+        FROM batches b
+        JOIN medicines m ON m.id = b.medicine_id
+        WHERE b.remaining_qty > 0
+            AND julianday(b.expiry_date) - julianday('now') <= ?1
+        ORDER BY b.expiry_date ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![warning_days, critical_days], |row| {
+        Ok(ExpiryReportDetailRow {
+            batch_id: row.get(0)?,
+            medicine_id: row.get(1)?,
+            medicine_name: row.get(2)?,
+            batch_code: row.get(3)?,
+            original_qty: row.get(4)?,
+            remaining_qty: row.get(5)?,
+            unit_cost: row.get::<_, f64>(6)?.unwrap_or(0.0),
+            expiry_date: row.get(7)?,
+            days_remaining: row.get(8)?,
+            potential_loss: row.get::<_, f64>(9)?.unwrap_or(0.0),
+            status: row.get(10)?,
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 7: Supplier Purchase History (REPT-09)
+pub fn get_supplier_purchases(
+    db: &Connection,
+    start: &str,
+    end: &str,
+) -> Result<Vec<SupplierPurchaseRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            s.id as supplier_id,
+            s.company_name,
+            COUNT(DISTINCT p.id) as purchase_count,
+            COUNT(pi.id) as item_count,
+            COALESCE(SUM(p.total_cost), 0) as total_spent,
+            COALESCE(AVG(p.total_cost), 0) as avg_order_value,
+            MAX(p.purchase_date) as last_purchase_date
+        FROM suppliers s
+        LEFT JOIN purchases p ON p.supplier_id = s.id
+            AND (p.purchase_date >= ?1 AND p.purchase_date <= ?2)
+        LEFT JOIN purchase_items pi ON pi.purchase_id = p.id
+        WHERE s.is_active = 1
+        GROUP BY s.id
+        ORDER BY total_spent DESC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![start, end], |row| {
+        Ok(SupplierPurchaseRow {
+            supplier_id: row.get(0)?,
+            company_name: row.get(1)?,
+            purchase_count: row.get(2)?,
+            item_count: row.get(3)?,
+            total_spent: row.get::<_, f64>(4)?.unwrap_or(0.0),
+            avg_order_value: row.get::<_, f64>(5)?.unwrap_or(0.0),
+            last_purchase_date: row.get(6)?,
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 8: Sales by User (REPT-10)
+pub fn get_sales_by_user(
+    db: &Connection,
+    start: &str,
+    end: &str,
+) -> Result<Vec<SalesByUserRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            u.id as user_id,
+            u.full_name,
+            u.role,
+            COUNT(DISTINCT s.id) as sale_count,
+            COUNT(si.id) as item_count,
+            COALESCE(SUM(si.line_total), 0) as total_sales,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as total_profit,
+            COALESCE(AVG(si.line_total - (si.purchase_cost * si.quantity)), 0) as avg_profit_per_sale
+        FROM users u
+        LEFT JOIN sales s ON s.user_id = u.id
+            AND date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
+        LEFT JOIN sale_items si ON si.sale_id = s.id
+        WHERE u.is_active = 1
+        GROUP BY u.id
+        ORDER BY total_sales DESC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![start, end], |row| {
+        Ok(SalesByUserRow {
+            user_id: row.get(0)?,
+            full_name: row.get(1)?,
+            role: row.get(2)?,
+            sale_count: row.get(3)?,
+            item_count: row.get(4)?,
+            total_sales: row.get::<_, f64>(5)?.unwrap_or(0.0),
+            total_profit: row.get::<_, f64>(6)?.unwrap_or(0.0),
+            avg_profit_per_sale: row.get::<_, f64>(7)?.unwrap_or(0.0),
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}
+
+/// Report 9: Profit Margin (REPT-11)
+pub fn get_profit_margin(
+    db: &Connection,
+    start: &str,
+    end: &str,
+) -> Result<Vec<ProfitMarginRow>, CommandError> {
+    let mut stmt = db.prepare(
+        "SELECT
+            m.id as medicine_id,
+            m.name as medicine_name,
+            m.category,
+            COUNT(si.id) as times_sold,
+            COALESCE(SUM(si.quantity), 0) as total_qty,
+            COALESCE(AVG(si.unit_price), 0) as avg_sell_price,
+            COALESCE(AVG(si.purchase_cost), 0) as avg_cost,
+            COALESCE(AVG(si.unit_price - si.purchase_cost), 0) as avg_margin_per_unit,
+            CASE WHEN COALESCE(AVG(si.purchase_cost), 0) > 0
+                THEN ROUND(((AVG(si.unit_price) - AVG(si.purchase_cost)) / AVG(si.purchase_cost)) * 100, 1)
+                ELSE 0
+            END as margin_pct,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as total_profit
+        FROM sale_items si
+        JOIN medicines m ON m.id = si.medicine_id
+        JOIN sales s ON s.id = si.sale_id
+        WHERE date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
+        GROUP BY m.id
+        ORDER BY margin_pct DESC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![start, end], |row| {
+        Ok(ProfitMarginRow {
+            medicine_id: row.get(0)?,
+            medicine_name: row.get(1)?,
+            category: row.get(2)?,
+            times_sold: row.get(3)?,
+            total_qty: row.get::<_, f64>(4)?.unwrap_or(0.0) as i64,
+            avg_sell_price: row.get::<_, f64>(5)?.unwrap_or(0.0),
+            avg_cost: row.get::<_, f64>(6)?.unwrap_or(0.0),
+            avg_margin_per_unit: row.get::<_, f64>(7)?.unwrap_or(0.0),
+            margin_pct: row.get::<_, f64>(8)?.unwrap_or(0.0),
+            total_profit: row.get::<_, f64>(9)?.unwrap_or(0.0),
+        })
+    })?;
+
+    rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
+}

@@ -1,4 +1,4 @@
-use bcrypt::{hash, DEFAULT_COST};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use rusqlite::Connection;
 
 use crate::errors::CommandError;
@@ -104,4 +104,42 @@ pub fn deactivate_user(
 pub fn list_users(db: &Connection) -> Result<Vec<UserDto>, CommandError> {
     let users = user_repo::list_all(db)?;
     Ok(users)
+}
+
+/// Changes the current user's password.
+/// Verifies current_password, hashes new_password (bcrypt cost 12), updates DB.
+/// Minimum 6 char validation on new_password.
+pub fn change_password(
+    db: &Connection,
+    user_id: i64,
+    current_password: &str,
+    new_password: &str,
+) -> Result<(), CommandError> {
+    // Validate new password minimum length (D-06)
+    if new_password.len() < 6 {
+        return Err(CommandError::validation(
+            "New password must be at least 6 characters",
+        ));
+    }
+
+    // Get stored password hash
+    let stored_hash = user_repo::get_password_hash(db, user_id)?
+        .ok_or_else(|| CommandError::not_found("User"))?;
+
+    // Verify current password
+    let is_valid = verify(current_password, &stored_hash)
+        .map_err(|e| CommandError::internal(&format!("Failed to verify password: {}", e)))?;
+
+    if !is_valid {
+        return Err(CommandError::validation("Current password is incorrect"));
+    }
+
+    // Hash new password
+    let new_hash = hash(new_password, DEFAULT_COST)
+        .map_err(|e| CommandError::internal(&format!("Failed to hash password: {}", e)))?;
+
+    // Update in database
+    user_repo::update_password_hash(db, user_id, &new_hash)?;
+
+    Ok(())
 }

@@ -126,3 +126,25 @@ pub fn count_active_owners(db: &Connection) -> Result<i64, rusqlite::Error> {
         |row| row.get(0),
     )
 }
+
+/// Retrieves the password hash for a user by ID.
+pub fn get_password_hash(db: &Connection, user_id: i64) -> Result<Option<String>, rusqlite::Error> {
+    let mut stmt = db.prepare("SELECT password_hash FROM users WHERE id = ?1")?;
+    let mut rows = stmt.query_map(rusqlite::params![user_id], |row| {
+        row.get::<_, String>(0)
+    })?;
+    match rows.next() {
+        Some(Ok(hash)) => Ok(Some(hash)),
+        Some(Err(e)) => Err(e),
+        None => Ok(None),
+    }
+}
+
+/// Updates the password hash for a user by ID.
+pub fn update_password_hash(db: &Connection, user_id: i64, new_hash: &str) -> Result<(), rusqlite::Error> {
+    db.execute(
+        "UPDATE users SET password_hash = ?1 WHERE id = ?2",
+        rusqlite::params![new_hash, user_id],
+    )?;
+    Ok(())
+}
