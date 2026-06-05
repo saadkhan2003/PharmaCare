@@ -78,3 +78,16 @@ pub fn change_password(
     let db = state.db.lock()?;
     user_service::change_password(&db, session.user_id, &current_password, &new_password)
 }
+
+/// Owner-only password reset for any user. Does NOT require current password.
+#[tauri::command]
+pub fn reset_password(
+    state: State<'_, AppState>,
+    session_token: String,
+    target_user_id: i64,
+    new_password: String,
+) -> Result<(), CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    user_service::reset_password(&db, target_user_id, &new_password)
+}

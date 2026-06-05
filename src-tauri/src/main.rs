@@ -131,6 +131,7 @@ fn main() {
             commands::settings_commands::update_settings,
             // Phase 5 user commands
             commands::user_commands::change_password,
+            commands::user_commands::reset_password,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { EyeOff, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -39,6 +41,11 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
   const [deleteTarget, setDeleteTarget] = useState<UserDto | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [resetTarget, setResetTarget] = useState<UserDto | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -56,6 +63,22 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers, refreshKey]);
+
+  const handleResetPassword = useCallback(async () => {
+    if (!resetTarget) return;
+    if (newPassword.length < 6) { setResetError('Password must be at least 6 characters'); return; }
+    setResetting(true);
+    setResetError(null);
+    setResetSuccess(false);
+    try {
+      await tauri.users.resetPassword(session.token, resetTarget.id, newPassword);
+      setResetSuccess(true);
+    } catch (err: unknown) {
+      setResetError(err instanceof Error ? err.message : 'Failed to reset password');
+    } finally {
+      setResetting(false);
+    }
+  }, [resetTarget, newPassword, session.token]);
 
   const handleDeactivate = useCallback(async () => {
     if (!deactivateTarget) return;
@@ -178,6 +201,15 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={user.id === session.user_id}
+                      onClick={() => { setResetTarget(user); setNewPassword(''); setResetError(null); }}
+                      title="Reset password"
+                    >
+                      <span className="text-xs font-medium">🔑</span>
+                    </Button>
                   </>
                 )}
               </TableCell>
@@ -251,6 +283,39 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
             <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteError(null); }}>Cancel</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting ? 'Deleting...' : 'Delete Permanently'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password dialog */}
+      <Dialog open={resetTarget !== null} onOpenChange={(open) => { if (!open) { setResetTarget(null); setResetError(null); setResetSuccess(false); setNewPassword(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for <span className="font-medium text-foreground">{resetTarget?.full_name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Min 6 characters"
+                minLength={6}
+              />
+            </div>
+            {resetError && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{resetError}</div>}
+            {resetSuccess && <div className="rounded-md bg-green-50 p-3 text-sm text-green-700 border border-green-200">Password reset successfully</div>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResetTarget(null); setResetError(null); setResetSuccess(false); setNewPassword(''); }}>Cancel</Button>
+            <Button onClick={handleResetPassword} disabled={resetting || resetSuccess}>
+              {resetting ? 'Resetting...' : 'Reset Password'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -88,6 +88,8 @@ export const tauri = {
       invoke<void>('delete_user', { sessionToken, targetUserId }),
     changePassword: (sessionToken: string, currentPassword: string, newPassword: string) =>
       invoke<void>('change_password', { sessionToken, currentPassword, newPassword }),
+    resetPassword: (sessionToken: string, targetUserId: number, newPassword: string) =>
+      invoke<void>('reset_password', { sessionToken, targetUserId, newPassword }),
   },
   audit: {
     getLoginAttempts: (sessionToken: string) =>

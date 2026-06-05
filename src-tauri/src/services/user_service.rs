@@ -163,3 +163,23 @@ pub fn change_password(
 
     Ok(())
 }
+
+/// Owner-only password reset — does NOT require current password.
+/// Used when a user forgets their credentials.
+pub fn reset_password(
+    db: &Connection,
+    target_user_id: i64,
+    new_password: &str,
+) -> Result<(), CommandError> {
+    if new_password.len() < 6 {
+        return Err(CommandError::validation(
+            "New password must be at least 6 characters",
+        ));
+    }
+    let _target = user_repo::find_by_id(db, target_user_id)?
+        .ok_or_else(|| CommandError::not_found("User"))?;
+    let new_hash = hash(new_password, DEFAULT_COST)
+        .map_err(|e| CommandError::internal(&format!("Failed to hash password: {}", e)))?;
+    user_repo::update_password_hash(db, target_user_id, &new_hash)?;
+    Ok(())
+}
