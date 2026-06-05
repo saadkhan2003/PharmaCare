@@ -15,7 +15,7 @@ PharmaCare is built as a dependency-driven Windows desktop application where the
 - [ ] **Phase 2: Medicine Catalog & Stock Intake** - Medicine CRUD, suppliers, purchases, batch tracking, core settings
 - [/] **Phase 3: POS & Sales Engine** - Keyboard-first POS, FIFO stock deduction, expiry blocking, operational dashboards
 - [x] **Phase 4: Returns & Operational Corrections** - Customer/supplier returns, write-offs, stock restoration, loss logging, return history
-- [ ] **Phase 5: Reports, Backup & Administration** - Analytics reports with PDF export, Google Drive backup, restore, settings UI
+- [/] **Phase 5: Reports, Backup & Administration** - Analytics reports with PDF export, Google Drive backup, restore, settings UI
 
 ## Phase Details
 
@@ -109,7 +109,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 05-01-PLAN.md — Backend infrastructure: report DTOs + 9 aggregation services + backup service (VACUUM INTO + gzip + Drive upload + restore) + settings write + password change + commands + main.rs registration + TypeScript contracts
+- [x] 05-01-PLAN.md — Backend infrastructure: report DTOs + 9 aggregation services + backup service (VACUUM INTO + gzip + Drive upload + restore) + settings write + password change + commands + main.rs registration + TypeScript contracts
 - [ ] 05-02-PLAN.md — Frontend Reports page: 9 report components with Recharts charts + @react-pdf/renderer PDF export + master-detail layout + date-range filtering + route
 - [ ] 05-03-PLAN.md — Settings UI + Admin: tabbed settings page (Pharmacy, Financial, Inventory, Backup) + ChangePasswordDialog + dashboard backup widget + missed-backup warning + sidebar nav + routing
 
@@ -121,7 +121,7 @@ Plans:
 | 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
 | 3. POS & Sales Engine | 2/3 | Executing (Wave 2 — POS UI done) | - |
 | 4. Returns & Operational Corrections | 3/3 | Complete | 2026-06-05 |
-| 5. Reports, Backup & Administration | 0/3 | Not started | - |
+| 5. Reports, Backup & Administration | 1/3 | Executing (Wave 1 — backend done) | - |
 
 ---
 

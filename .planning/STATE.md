@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 5 of 5 (Reports, Backup & Administration)
-Plan: 3/3 in current phase
-Status: Ready to execute
-Last activity: 2026-06-05 — Phase 5 planned (3 plans, 3 waves)
+Plan: 2/3 in current phase
+Status: Plan 01 complete — Wave 2 (frontend) ready
+Last activity: 2026-06-05 — Phase 5 Plan 01 executed
 
-Progress: [██████████] 100% (Phase 4)
+Progress: [████████████████████████████] 
 
 ## Performance Metrics
 
@@ -31,12 +31,13 @@ Progress: [██████████] 100% (Phase 4)
 | 2. Medicine Catalog & Stock Intake | 3 | 6 | ~10m |
 | 3. POS & Sales Engine | 3 | 9 | ~13m |
 | 4. Returns & Operational Corrections | 3 | 12 | ~12m |
+| 5. Reports, Backup & Admin | 1 | 1 | ~45m |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 ✓ 03-02 ✓ 04-01 ✓ 04-02 ✓ 04-03 ✓
+- Last 5 plans: 03-01 ✓ 03-02 ✓ 04-01 ✓ 04-02 ✓ 04-03 ✓ 05-01 ✓
 - Trend: Accelerating (faster avg time)
 
-*Updated after Phase 4 Plan 03 execution*
+*Updated after Phase 5 Plan 01 execution*
 
 ## Accumulated Context
 
@@ -83,6 +84,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 04-01]: Zero-delta stock_movement for damaged/expired customer returns serves as P&L loss record (D-54)
 - [Plan 04-03]: Added list_returns Tauri command with require_owner guard for ReturnHistoryPage — 04-02 backend didn't include this
 - [Plan 04-03]: ReturnHistoryPage owner-only (matching list_returns require_owner guard vs plan's original intent of both roles)
+- [Plan 05-01]: Report commands use require_owner guard per T-05-01 — never just hide UI buttons
+- [Plan 05-01]: Backup service uses VACUUM INTO for atomic snapshot, flate2 gzip for compression (D-66/D-67)
+- [Plan 05-01]: Restore flow opens restored DB as separate connection, VACUUM INTO for atomic swap; pre-restore backup created first
+- [Plan 05-01]: OAuth token stores client_id/client_secret alongside tokens for unattended auto-refresh
+- [Plan 05-01]: Expiry report command named get_expiry_report_phase5 to avoid conflict with existing batch_commands version
+- [Plan 05-01]: Password change uses require_session (not require_owner) — any logged-in user can change their own password per D-78
 
 ### Pending Todos
 
@@ -101,5 +108,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-05
-Stopped at: Phase 4 complete — all 3 plans executed
-Resume file: .planning/phases/04-returns-corrections/04-03-SUMMARY.md
+Stopped at: Phase 5 Plan 01 complete — Backend services, commands, types done
+Resume file: .planning/phases/05-reports-backup-admin/05-01-SUMMARY.md
