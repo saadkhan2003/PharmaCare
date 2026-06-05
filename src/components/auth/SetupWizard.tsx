@@ -23,6 +23,7 @@ export function SetupWizard({ onComplete, error, loading }: SetupWizardProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleWelcomeNext = () => {
@@ -53,6 +54,7 @@ export function SetupWizard({ onComplete, error, loading }: SetupWizardProps) {
       full_name: fullName.trim(),
       username: username.trim(),
       password,
+      owner_email: ownerEmail.trim() || null,
     });
   };
 
@@ -159,6 +161,24 @@ export function SetupWizard({ onComplete, error, loading }: SetupWizardProps) {
           minLength={6}
           disabled={loading}
         />
+      </div>
+
+      <div>
+        <label htmlFor="ownerEmail" className="block text-sm font-medium text-gray-700 mb-1">
+          Recovery Email <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          id="ownerEmail"
+          type="email"
+          value={ownerEmail}
+          onChange={(e) => setOwnerEmail(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          placeholder="owner@pharmacy.com"
+          disabled={loading}
+        />
+        <p className="text-xs text-gray-400 mt-1">
+          Used for password recovery. Requires internet to send reset code.
+        </p>
       </div>
 
       {(validationError || error) && (

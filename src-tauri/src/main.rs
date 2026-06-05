@@ -74,6 +74,9 @@ fn main() {
             commands::user_commands::list_users,
             commands::setup_commands::check_setup_status,
             commands::setup_commands::create_initial_owner,
+            commands::setup_commands::request_recovery_code,
+            commands::setup_commands::verify_recovery_code,
+            commands::setup_commands::reset_with_recovery_code,
             commands::audit_commands::get_login_attempts,
             // Phase 2 commands
             commands::medicine_commands::create_medicine,

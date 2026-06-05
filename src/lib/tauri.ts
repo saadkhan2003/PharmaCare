@@ -42,6 +42,7 @@ export interface CreateOwnerDto {
   full_name: string;
   username: string;
   password: string;
+  owner_email?: string | null;
 }
 
 // ExpiryReportRow returned by get_expiry_report
@@ -76,6 +77,12 @@ export const tauri = {
       invoke<SetupStatus>('check_setup_status'),
     createOwner: (payload: CreateOwnerDto) =>
       invoke<SessionDto>('create_initial_owner', { payload }),
+    requestRecoveryCode: () =>
+      invoke<{ code: string; owner_email: string | null; masked_email: string | null }>('request_recovery_code'),
+    verifyRecoveryCode: (code: string) =>
+      invoke<number[]>('verify_recovery_code', { code }),
+    resetWithRecoveryCode: (userId: number, code: string, newPassword: string) =>
+      invoke<void>('reset_with_recovery_code', { userId, code, newPassword }),
   },
   users: {
     list: (sessionToken: string) =>
