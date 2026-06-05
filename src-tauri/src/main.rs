@@ -16,6 +16,10 @@ mod errors;
 mod guards;
 mod migrations;
 
+#[cfg(test)]
+#[path = "test_helpers.rs"]
+mod test_helpers;
+
 use state::AppState;
 use models::StoredSession;
 

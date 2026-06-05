@@ -199,3 +199,87 @@ pub fn get_medicine_by_id(db: &Connection, id: i64) -> Result<MedicineDto, Comma
     result.current_stock = current_stock;
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers;
+
+    #[test]
+    fn test_create_medicine_validation() {
+        let db = test_helpers::setup_test_db();
+        let dto = CreateMedicineDto {
+            name: "Test Med".into(),
+            generic_name: None,
+            brand_name: None,
+            category: "Tablet".into(),
+            unit: "Strip".into(),
+            retail_price: 5.0,
+            purchase_price: 10.0,
+            reorder_level: None,
+            shelf_location: None,
+            notes: None,
+            initial_stock: None,
+            initial_expiry_date: None,
+        };
+        let result = create_medicine(&db, &dto, 1);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_create_medicine_with_initial_stock() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(),
+            generic_name: None,
+            brand_name: None,
+            category: "Tablet".into(),
+            unit: "Strip".into(),
+            retail_price: 10.0,
+            purchase_price: 5.0,
+            reorder_level: Some(10),
+            shelf_location: None,
+            notes: None,
+            initial_stock: Some(100),
+            initial_expiry_date: Some("2027-12-31".into()),
+        };
+        let result = create_medicine(&db, &dto, uid).unwrap();
+        assert_eq!(result.name, "Panadol");
+        assert_eq!(result.current_stock, 100);
+    }
+
+    #[test]
+    fn test_list_medicines() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Test Med".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        create_medicine(&db, &dto, uid).unwrap();
+        let list = list_medicines(&db).unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].name, "Test Med");
+    }
+
+    #[test]
+    fn test_pharmacist_dto_hides_purchase_price() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        create_medicine(&db, &dto, uid).unwrap();
+        let results = search_medicines_pharmacist(&db, "Panadol").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "Panadol");
+    }
+}

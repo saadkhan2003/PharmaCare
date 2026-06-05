@@ -9,6 +9,9 @@ pub mod services;
 pub mod repository;
 pub mod migrations;
 
+#[cfg(test)]
+pub mod test_helpers;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()

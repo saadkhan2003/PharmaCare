@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct Batch {
     pub id: i64,
     pub medicine_id: i64,
-    pub purchase_id: i64,
+    pub purchase_id: Option<i64>,
     pub purchase_item_id: Option<i64>,
     pub purchase_price: f64,
     pub quantity: i64,

@@ -135,3 +135,48 @@ pub fn check_session(
         })
         .ok_or_else(CommandError::unauthorized)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers;
+
+    #[test]
+    fn test_login_success() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let mut sessions: HashMap<String, StoredSession> = HashMap::new();
+        let result = login(&db, &mut sessions, "owner", "password123");
+        assert!(result.is_ok());
+        let session = result.unwrap();
+        assert_eq!(session.user_id, uid);
+        assert_eq!(session.role, "owner");
+    }
+
+    #[test]
+    fn test_login_wrong_password() {
+        let db = test_helpers::setup_test_db();
+        let mut sessions: HashMap<String, StoredSession> = HashMap::new();
+        test_helpers::seed_owner(&db);
+        let result = login(&db, &mut sessions, "owner", "wrongpassword");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_login_inactive_user() {
+        let db = test_helpers::setup_test_db();
+        test_helpers::seed_owner(&db);
+        db.execute("UPDATE users SET is_active = 0 WHERE username = 'owner'", []).unwrap();
+        let mut sessions: HashMap<String, StoredSession> = HashMap::new();
+        let result = login(&db, &mut sessions, "owner", "password123");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_login_no_user() {
+        let db = test_helpers::setup_test_db();
+        let mut sessions: HashMap<String, StoredSession> = HashMap::new();
+        let result = login(&db, &mut sessions, "nonexistent", "password");
+        assert!(result.is_err());
+    }
+}

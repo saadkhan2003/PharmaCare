@@ -376,3 +376,24 @@ pub fn get_pharmacist_dashboard(db: &Connection) -> Result<PharmacistDashboardDt
         expiry_critical_count,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers;
+
+    #[test]
+    fn test_confirm_sale_empty_cart() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let payload = ConfirmSaleDto {
+            items: vec![],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let result = confirm_sale(&mut db, &payload, uid, "owner");
+        assert!(result.is_err());
+    }
+}

@@ -209,7 +209,8 @@ pub fn process_supplier_return(
         }
 
         // Verify batch belongs to this purchase
-        if batch.purchase_id != payload.purchase_id {
+        let batch_purchase_id = batch.purchase_id.unwrap_or(0);
+        if batch_purchase_id != payload.purchase_id {
             return Err(CommandError::validation(&format!(
                 "Item {}: batch ID {} does not belong to purchase ID {}",
                 i + 1, item.batch_id, payload.purchase_id
@@ -471,4 +472,30 @@ pub fn search_purchase_for_return(
         invoice_number: purchase.invoice_number,
         items,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers;
+
+    #[test]
+    fn test_search_sale_for_return_not_found() {
+        let db = test_helpers::setup_test_db();
+        let result = search_sale_for_return(&db, 999);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_process_customer_return_invalid_sale() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let mut db_mut = db;
+        let dto = CustomerReturnDto {
+            sale_id: 999,
+            items: vec![],
+        };
+        let result = process_customer_return(&mut db_mut, &dto, uid);
+        assert!(result.is_err());
+    }
 }
