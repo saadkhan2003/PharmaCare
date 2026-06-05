@@ -53,6 +53,8 @@ export interface CreateMedicineDto {
   reorder_level: number | null;
   shelf_location: string | null;
   notes: string | null;
+  initial_stock?: number | null;
+  initial_expiry_date?: string | null;
 }
 
 export interface UpdateMedicineDto {

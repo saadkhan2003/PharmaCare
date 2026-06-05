@@ -15,9 +15,9 @@ pub fn create_medicine(
     session_token: String,
     payload: CreateMedicineDto,
 ) -> Result<MedicineDto, CommandError> {
-    let _session = require_owner(&state, &session_token)?;
+    let session = require_owner(&state, &session_token)?;
     let db = state.db.lock()?;
-    medicine_service::create_medicine(&db, &payload)
+    medicine_service::create_medicine(&db, &payload, session.user_id)
 }
 
 /// Updates an existing medicine. Owner-only command.

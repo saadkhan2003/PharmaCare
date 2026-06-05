@@ -40,6 +40,8 @@ interface FormState {
   reorder_level: string;
   shelf_location: string;
   notes: string;
+  initial_stock: string;
+  initial_expiry_date: string;
 }
 
 interface FormErrors {
@@ -62,6 +64,8 @@ const emptyForm: FormState = {
   reorder_level: '10',
   shelf_location: '',
   notes: '',
+  initial_stock: '',
+  initial_expiry_date: '',
 };
 
 export function MedicineForm({
@@ -97,6 +101,8 @@ export function MedicineForm({
             reorder_level: medicine.reorder_level.toString(),
             shelf_location: medicine.shelf_location || '',
             notes: medicine.notes || '',
+            initial_stock: '',
+            initial_expiry_date: '',
           });
         })
         .catch((err: Error) => {
@@ -166,6 +172,7 @@ export function MedicineForm({
         };
         await tauri.medicines.update(sessionToken, medicineId, payload);
       } else {
+        const initialStock = form.initial_stock ? parseInt(form.initial_stock) : null;
         const payload: CreateMedicineDto = {
           name: form.name.trim(),
           generic_name: form.generic_name.trim() || null,
@@ -177,6 +184,8 @@ export function MedicineForm({
           reorder_level: parseInt(form.reorder_level) || null,
           shelf_location: form.shelf_location.trim() || null,
           notes: form.notes.trim() || null,
+          initial_stock: initialStock && initialStock > 0 ? initialStock : null,
+          initial_expiry_date: form.initial_expiry_date.trim() || null,
         };
         await tauri.medicines.create(sessionToken, payload);
       }
@@ -348,6 +357,45 @@ export function MedicineForm({
                   <p className="text-xs text-destructive">{errors.purchase_price}</p>
                 )}
               </div>
+            )}
+
+            {/* Initial Stock & Expiry (only for new medicines) */}
+            {!isEdit && (
+              <>
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium text-foreground mb-3">Opening Stock</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="initial_stock">Quantity</Label>
+                      <Input
+                        id="initial_stock"
+                        type="number"
+                        min="0"
+                        placeholder="100"
+                        value={form.initial_stock}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, initial_stock: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="initial_expiry_date">Expiry Date</Label>
+                      <Input
+                        id="initial_expiry_date"
+                        type="date"
+                        value={form.initial_expiry_date}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, initial_expiry_date: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Set initial stock to add this medicine to inventory immediately.
+                    Stock is tracked in batches for expiry control.
+                  </p>
+                </div>
+              </>
             )}
 
             {/* Reorder Level */}

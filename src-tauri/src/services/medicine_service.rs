@@ -5,6 +5,7 @@ use crate::models::{
     CreateMedicineDto, MedicineDto, MedicineListItem, MedicinePharmacistDto, UpdateMedicineDto,
 };
 use crate::repository::{batch_repo, medicine_repo};
+use crate::services::stock_ledger_service;
 
 /// Valid categories for defense-in-depth (D-13 also has CHECK constraint).
 const VALID_CATEGORIES: &[&str] = &["Tablet", "Syrup", "Injection", "OTC", "Prescription"];
@@ -15,6 +16,7 @@ const VALID_UNITS: &[&str] = &["Strip", "Bottle", "Vial", "Box", "Sachet"];
 pub fn create_medicine(
     db: &Connection,
     dto: &CreateMedicineDto,
+    user_id: i64,
 ) -> Result<MedicineDto, CommandError> {
     // Validate retail_price >= purchase_price using integer-cent comparison (D-16)
     let retail_cents = (dto.retail_price * 100.0).round() as i64;
@@ -42,11 +44,31 @@ pub fn create_medicine(
     }
 
     let id = medicine_repo::insert(db, dto)?;
+
+    // If initial_stock provided, create an opening batch and record stock movement
+    if let Some(qty) = dto.initial_stock {
+        if qty > 0 {
+            let expiry = dto.initial_expiry_date.as_deref().unwrap_or("2099-12-31");
+            batch_repo::insert(db, id, 0, None, dto.purchase_price, qty, qty, expiry)?;
+            stock_ledger_service::record_movement(
+                db,
+                "purchase",
+                id,
+                None,
+                qty,
+                "medicine_creation",
+                None,
+                Some(&format!("Opening stock for {}", dto.name)),
+                user_id,
+            )?;
+        }
+    }
+
     let medicine = medicine_repo::find_by_id(db, id)?
         .ok_or_else(|| CommandError::internal("Medicine created but not found"))?;
 
     let mut dto = MedicineDto::from(medicine);
-    dto.current_stock = 0; // new medicine has no batches yet
+    dto.current_stock = batch_repo::get_current_stock(db, id)?;
     Ok(dto)
 }
 

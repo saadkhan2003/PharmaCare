@@ -119,6 +119,12 @@ pub struct CreateMedicineDto {
     pub reorder_level: Option<i64>,
     pub shelf_location: Option<String>,
     pub notes: Option<String>,
+    /// Optional initial stock quantity for opening stock (creates a batch).
+    #[serde(default)]
+    pub initial_stock: Option<i64>,
+    /// Optional expiry date for the initial stock batch (YYYY-MM-DD).
+    #[serde(default)]
+    pub initial_expiry_date: Option<String>,
 }
 
 /// Payload for updating a medicine (owner-only).
