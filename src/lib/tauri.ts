@@ -2,6 +2,17 @@ import { invoke } from '@tauri-apps/api/core';
 import type { SessionDto, SetupStatus } from '../types/session';
 import type { UserDto, CreateUserDto, LoginAttemptDto } from '../types/user';
 import type { LoginDto } from '../types/session';
+import type {
+  MedicineDto, MedicineListItem, MedicinePharmacistDto,
+  CreateMedicineDto, UpdateMedicineDto,
+} from '../types/medicine';
+import type {
+  SupplierDto, CreateSupplierDto, UpdateSupplierDto,
+} from '../types/supplier';
+import type {
+  CreatePurchaseDto, PurchaseReceiptDto, PurchaseListDto, PurchaseDetailDto,
+} from '../types/purchase';
+import type { SettingsMap } from '../types/settings';
 
 // SessionInfo returned by check_session — matches Rust SessionInfo struct
 export interface SessionInfo {
@@ -16,6 +27,19 @@ export interface CreateOwnerDto {
   full_name: string;
   username: string;
   password: string;
+}
+
+// ExpiryReportRow returned by get_expiry_report
+export interface ExpiryReportRow {
+  batch_id: number;
+  medicine_id: number;
+  medicine_name: string;
+  generic_name: string | null;
+  quantity: number;
+  remaining_qty: number;
+  purchase_price: number;
+  expiry_date: string;
+  days_remaining: number;
 }
 
 /** Typed wrappers for all Tauri commands.
@@ -49,5 +73,58 @@ export const tauri = {
   audit: {
     getLoginAttempts: (sessionToken: string) =>
       invoke<LoginAttemptDto[]>('get_login_attempts', { sessionToken }),
+  },
+
+  medicines: {
+    list: (sessionToken: string) =>
+      invoke<MedicineListItem[]>('list_medicines', { sessionToken }),
+    search: (sessionToken: string, query: string) =>
+      invoke<MedicineListItem[]>('search_medicines', { sessionToken, query }),
+    searchPharmacist: (sessionToken: string, query: string) =>
+      invoke<MedicinePharmacistDto[]>('search_medicines_pharmacist', { sessionToken, query }),
+    create: (sessionToken: string, payload: CreateMedicineDto) =>
+      invoke<MedicineDto>('create_medicine', { sessionToken, payload }),
+    update: (sessionToken: string, medicineId: number, payload: UpdateMedicineDto) =>
+      invoke<MedicineDto>('update_medicine', { sessionToken, medicineId, payload }),
+    deactivate: (sessionToken: string, medicineId: number) =>
+      invoke<void>('deactivate_medicine', { sessionToken, medicineId }),
+    get: (sessionToken: string, medicineId: number) =>
+      invoke<MedicineDto>('get_medicine', { sessionToken, medicineId }),
+  },
+
+  suppliers: {
+    list: (sessionToken: string) =>
+      invoke<SupplierDto[]>('list_suppliers', { sessionToken }),
+    search: (sessionToken: string, query: string) =>
+      invoke<SupplierDto[]>('search_suppliers', { sessionToken, query }),
+    create: (sessionToken: string, payload: CreateSupplierDto) =>
+      invoke<SupplierDto>('create_supplier', { sessionToken, payload }),
+    update: (sessionToken: string, supplierId: number, payload: UpdateSupplierDto) =>
+      invoke<SupplierDto>('update_supplier', { sessionToken, supplierId, payload }),
+    deactivate: (sessionToken: string, supplierId: number) =>
+      invoke<void>('deactivate_supplier', { sessionToken, supplierId }),
+  },
+
+  purchases: {
+    record: (sessionToken: string, payload: CreatePurchaseDto) =>
+      invoke<PurchaseReceiptDto>('record_purchase', { sessionToken, payload }),
+    list: (sessionToken: string) =>
+      invoke<PurchaseListDto[]>('list_purchases', { sessionToken }),
+    getDetail: (sessionToken: string, purchaseId: number) =>
+      invoke<PurchaseDetailDto>('get_purchase_detail', { sessionToken, purchaseId }),
+  },
+
+  stock: {
+    getCurrentStock: (sessionToken: string, medicineId: number) =>
+      invoke<number>('get_current_stock', { sessionToken, medicineId }),
+  },
+
+  settings: {
+    get: () => invoke<SettingsMap>('get_settings'),
+  },
+
+  expiry: {
+    getReport: (sessionToken: string, minDays?: number, maxDays?: number) =>
+      invoke<ExpiryReportRow[]>('get_expiry_report', { sessionToken, minDays, maxDays }),
   },
 };

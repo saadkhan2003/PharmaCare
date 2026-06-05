@@ -5,6 +5,10 @@ import { SetupWizardPage } from './pages/SetupWizardPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { AuditLogPage } from './pages/AuditLogPage';
+import { MedicinesPage } from './pages/MedicinesPage';
+import { SuppliersPage } from './pages/SuppliersPage';
+import { PurchasesPage } from './pages/PurchasesPage';
+import { ExpiryReportPage } from './pages/ExpiryReportPage';
 import { AppShell } from './components/layout/AppShell';
 import { tauri } from './lib/tauri';
 import type { CreateOwnerDto } from './lib/tauri';
@@ -18,10 +22,14 @@ function AuthenticatedApp({ session, onLogout }: { session: import('./types/sess
       <AppShell session={session} onLogout={onLogout}>
         <Routes>
           <Route path="/dashboard" element={<DashboardPage session={session} />} />
+          <Route path="/medicines" element={<MedicinesPage session={session} />} />
           {session.role === 'owner' && (
             <>
               <Route path="/users" element={<UsersPage session={session} />} />
               <Route path="/audit" element={<AuditLogPage session={session} />} />
+              <Route path="/suppliers" element={<SuppliersPage session={session} />} />
+              <Route path="/purchases" element={<PurchasesPage session={session} />} />
+              <Route path="/expiry-report" element={<ExpiryReportPage session={session} />} />
             </>
           )}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
