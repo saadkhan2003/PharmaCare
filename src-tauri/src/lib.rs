@@ -1,4 +1,11 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+pub mod state;
+pub mod models;
+pub mod errors;
+pub mod guards;
+pub mod commands;
+pub mod services;
+pub mod repository;
+pub mod migrations;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
