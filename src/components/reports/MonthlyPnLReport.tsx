@@ -67,7 +67,7 @@ export function MonthlyPnLReport({ session, startDate, endDate }: MonthlyPnLRepo
               <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(v: number) => `${currencySymbol}${v.toFixed(2)}`} />
+                <Tooltip formatter={(value: any) => `${currencySymbol}${Number(value).toFixed(2)}`} />
                 <Legend />
                 <Bar dataKey="revenue" name="Revenue" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="profit" name="Net Profit" fill="#16a34a" radius={[2, 2, 0, 0]} />

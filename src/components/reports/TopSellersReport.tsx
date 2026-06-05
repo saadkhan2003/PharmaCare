@@ -64,7 +64,7 @@ export function TopSellersReport({ session, startDate, endDate }: TopSellersRepo
               <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} width={90} />
-                <Tooltip formatter={(v: number) => v.toLocaleString('en-IN')} />
+                <Tooltip formatter={(value: any) => Number(value).toLocaleString('en-IN')} />
                 <Legend />
                 <Bar dataKey="quantity" name="Quantity Sold" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
               </BarChart>

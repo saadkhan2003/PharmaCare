@@ -1,4 +1,3 @@
-import React from 'react';
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles, formatCurrency } from './CommonStyles';
 import type { ExpiryReportDetailRow } from '../../types/report';

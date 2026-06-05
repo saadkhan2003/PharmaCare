@@ -13,7 +13,7 @@ export function ExpiryReportPage({ session }: ExpiryReportPageProps) {
         Monitor medicine batches approaching expiry.
       </p>
 
-      <ExpiryReport sessionToken={session.token} />
+      <ExpiryReport session={session} />
     </div>
   );
 }

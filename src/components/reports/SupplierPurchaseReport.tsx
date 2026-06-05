@@ -65,7 +65,7 @@ export function SupplierPurchaseReport({ session, startDate, endDate }: Supplier
               <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} width={90} />
-                <Tooltip formatter={(v: number) => `${currencySymbol}${v.toFixed(2)}`} />
+                <Tooltip formatter={(value: any) => `${currencySymbol}${Number(value).toFixed(2)}`} />
                 <Bar dataKey="total_spent" name="Total Spent" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>

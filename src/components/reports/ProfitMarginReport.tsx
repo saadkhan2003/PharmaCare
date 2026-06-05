@@ -69,7 +69,7 @@ export function ProfitMarginReport({ session, startDate, endDate }: ProfitMargin
               <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 40, left: 0 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-25} textAnchor="end" interval={0} height={50} />
                 <YAxis tick={{ fontSize: 10 }} unit="%" />
-                <Tooltip formatter={(v: number) => `${v.toFixed(1)}%`} />
+                <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
                 <Legend />
                 <Bar dataKey="margin_pct" name="Margin %" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
               </BarChart>

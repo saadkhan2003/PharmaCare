@@ -21,7 +21,6 @@ interface LowStockReportProps {
 
 export function LowStockReport({ session }: LowStockReportProps) {
   const { settings } = useSettings();
-  const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
 
   const { data, error, loading, execute } = useTauriCommand<LowStockRow[]>();

@@ -18,6 +18,17 @@ export function useSettings() {
           expiry_critical_days: 30,
           default_reorder_level: 10,
           currency_symbol: 'Rs.',
+          pharmacy_name: 'PharmaCare',
+          owner_name: '',
+          phone: '',
+          address: '',
+          logo_path: '',
+          auto_backup_time: '',
+          local_backup_path: '',
+          last_backup_time: null,
+          last_backup_status: null,
+          google_drive_connected: false,
+          tax_enabled_default: false,
         });
       })
       .finally(() => setLoading(false));

@@ -1,6 +1,5 @@
-import React from 'react';
 import { Document, Page, Text, View } from '@react-pdf/renderer';
-import { pdfStyles, formatCurrency } from './CommonStyles';
+import { pdfStyles } from './CommonStyles';
 import type { LowStockRow } from '../../types/report';
 
 interface LowStockPDFProps {
