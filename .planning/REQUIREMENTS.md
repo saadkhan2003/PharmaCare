@@ -9,9 +9,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can log in with username and password
-- [ ] **AUTH-02**: Passwords stored as bcrypt hashes — never plaintext
-- [ ] **AUTH-03**: Session persists until user logs out or app closes
+- [-] **AUTH-01**: User can log in with username and password *(foundation: SQLite + AppState + migrations + bcrypt dep; login command in Plan 02)*
+- [-] **AUTH-02**: Passwords stored as bcrypt hashes — never plaintext *(foundation: bcrypt crate dependency + password_hash field in users table; hash on creation in Plan 02)*
+- [-] **AUTH-03**: Session persists until user logs out or app closes *(foundation: StoredSession model + sessions table + in-memory HashMap + guard functions; session creation in Plan 02)*
 - [ ] **AUTH-04**: All login attempts (success and failure) logged
 - [ ] **AUTH-05**: Inactive users cannot log in but historical records preserved
 
@@ -151,9 +151,9 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Foundation (Plan 01) |
+| AUTH-02 | Phase 1 | Foundation (Plan 01) |
+| AUTH-03 | Phase 1 | Foundation (Plan 01) |
 | AUTH-04 | Phase 1 | Pending |
 | AUTH-05 | Phase 1 | Pending |
 | INVT-01 | Phase 2 | Pending |
