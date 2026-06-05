@@ -82,6 +82,22 @@ pub struct ReturnReceiptDto {
     pub total_refund: f64,
 }
 
+/// Return list item for return history display.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReturnListItemDto {
+    pub id: i64,
+    pub return_type: String,
+    pub reference_id: Option<i64>,
+    pub medicine_id: i64,
+    pub medicine_name: String,
+    pub batch_id: Option<i64>,
+    pub quantity: i64,
+    pub condition: Option<String>,
+    pub refund_amount: f64,
+    pub processed_by: i64,
+    pub return_date: String,
+}
+
 /// Sale data returned for customer return lookup.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SaleForReturnDto {

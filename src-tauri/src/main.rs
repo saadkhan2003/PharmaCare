@@ -100,6 +100,7 @@ fn main() {
             commands::return_commands::process_write_off,
             commands::return_commands::search_sale_for_return,
             commands::return_commands::search_purchase_for_return,
+            commands::return_commands::list_returns,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

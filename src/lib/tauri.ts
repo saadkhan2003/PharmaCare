@@ -21,6 +21,7 @@ import type {
   CustomerReturnDto, ReturnReceiptDto,
   SaleForReturnDto, SupplierReturnDto,
   PurchaseForReturnDto, WriteOffDto,
+  ReturnListItemDto,
 } from '../types/return';
 
 // SessionInfo returned by check_session — matches Rust SessionInfo struct
@@ -159,5 +160,7 @@ export const tauri = {
       invoke<SaleForReturnDto>('search_sale_for_return', { sessionToken, saleId }),
     searchPurchaseForReturn: (sessionToken: string, purchaseId: number) =>
       invoke<PurchaseForReturnDto>('search_purchase_for_return', { sessionToken, purchaseId }),
+    listReturns: (sessionToken: string) =>
+      invoke<ReturnListItemDto[]>('list_returns', { sessionToken }),
   },
 };

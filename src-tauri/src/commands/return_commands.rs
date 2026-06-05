@@ -44,6 +44,18 @@ pub fn process_write_off(
     return_service::process_write_off(&mut *db, &payload, session.user_id)
 }
 
+/// Lists all returns for history display. Owner only.
+#[tauri::command]
+pub fn list_returns(
+    state: State<'_, AppState>,
+    session_token: String,
+) -> Result<Vec<ReturnListItemDto>, CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    crate::repository::returns_repo::list_all(&db)
+        .map_err(|e| CommandError::internal(&format!("Failed to list returns: {}", e)))
+}
+
 /// Searches for a sale by ID to display items eligible for return.
 /// Both roles can search (D-44: sale search for customer return).
 #[tauri::command]

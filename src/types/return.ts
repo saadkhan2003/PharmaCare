@@ -84,6 +84,22 @@ export interface WriteOffDto {
   items: WriteOffItemDto[];
 }
 
+// --- Return History ---
+
+export interface ReturnListItemDto {
+  id: number;
+  return_type: string;
+  reference_id: number | null;
+  medicine_id: number;
+  medicine_name: string;
+  batch_id: number | null;
+  quantity: number;
+  condition: string | null;
+  refund_amount: number;
+  processed_by: number;
+  return_date: string;
+}
+
 // --- Receipt (shared) ---
 
 export interface ReturnReceiptDto {

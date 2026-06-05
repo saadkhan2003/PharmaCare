@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-use crate::models::r#return::Return;
+use crate::models::r#return::{Return, ReturnListItemDto};
 
 /// Inserts one return row. Returns the new id.
 ///
@@ -65,6 +65,42 @@ pub fn find_by_sale_item(
             batch_id: row.get(4)?,
             quantity: row.get(5)?,
             reason: row.get(6)?,
+            condition: row.get(7)?,
+            refund_amount: row.get(8)?,
+            processed_by: row.get(9)?,
+            return_date: row.get(10)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
+}
+
+/// Lists all returns ordered by date descending (most recent first).
+/// Used by ReturnHistoryPage to display all return activity.
+pub fn list_all(conn: &Connection) -> Result<Vec<ReturnListItemDto>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT r.id, r.return_type, r.reference_id, r.medicine_id,
+                COALESCE(m.name, 'Unknown') as medicine_name,
+                r.batch_id, r.quantity, r.condition, r.refund_amount,
+                r.processed_by, r.return_date
+         FROM returns r
+         LEFT JOIN medicines m ON m.id = r.medicine_id
+         ORDER BY r.return_date DESC",
+    )?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(ReturnListItemDto {
+            id: row.get(0)?,
+            return_type: row.get(1)?,
+            reference_id: row.get(2)?,
+            medicine_id: row.get(3)?,
+            medicine_name: row.get(4)?,
+            batch_id: row.get(5)?,
+            quantity: row.get(6)?,
             condition: row.get(7)?,
             refund_amount: row.get(8)?,
             processed_by: row.get(9)?,
