@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
 import { MEDICINE_CATEGORIES, MEDICINE_UNITS } from '@/types/medicine';
 import type { MedicineDto, CreateMedicineDto, UpdateMedicineDto } from '@/types/medicine';
@@ -458,10 +459,11 @@ export function MedicineForm({
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button
+           <Button
             onClick={handleSubmit}
             disabled={submitting || loadingData}
           >
+            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {submitting
               ? 'Saving...'
               : isEdit

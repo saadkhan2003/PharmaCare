@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search as SearchIcon, RotateCcw } from 'lucide-react';
+import { Loader2, Search as SearchIcon, RotateCcw } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
 import type {
   PurchaseForReturnDto, PurchaseItemForReturnDto,
@@ -382,7 +382,7 @@ export function SupplierReturnForm({
               onClick={handleSubmit}
               disabled={!isFormValid || submitting}
             >
-              <RotateCcw className="mr-2 h-4 w-4" />
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
               {submitting ? 'Processing...' : 'Process Supplier Return'}
             </Button>
           </div>

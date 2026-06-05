@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search as SearchIcon, Undo2 } from 'lucide-react';
+import { Loader2, Search as SearchIcon, Undo2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
 import type {
   SaleForReturnDto, SaleItemForReturnDto,
@@ -426,7 +426,7 @@ export function CustomerReturnForm({
               onClick={handleSubmit}
               disabled={!isFormValid || submitting}
             >
-              <Undo2 className="mr-2 h-4 w-4" />
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
               {submitting ? 'Processing...' : 'Process Return'}
             </Button>
           </div>

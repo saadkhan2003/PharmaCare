@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -203,6 +204,7 @@ export function AddUserDialog({ session, onUserAdded }: AddUserDialogProps) {
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={submitting}>
+            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {submitting ? 'Creating...' : 'Create User'}
           </Button>
         </DialogFooter>

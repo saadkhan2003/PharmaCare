@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -43,7 +44,7 @@ export function POSPaymentForm({
   onPaymentMethodChange,
   customerName,
   onCustomerNameChange,
-  onConfirm,
+  onConfirm: _onConfirm,
   billDiscountRef,
   taxToggleRef,
   paymentRef,
@@ -188,8 +189,8 @@ export function POSPaymentForm({
         ref={confirmRef}
         className="w-full h-14 text-xl font-bold"
         disabled={loading || cartItems.length === 0}
-        onClick={onConfirm}
       >
+        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
         {loading ? 'Processing...' : 'Confirm Sale (Enter)'}
       </Button>
     </div>

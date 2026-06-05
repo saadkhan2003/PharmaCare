@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Loader2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
 import type { SupplierDto, CreateSupplierDto, UpdateSupplierDto } from '@/types/supplier';
 
@@ -257,6 +258,7 @@ export function SupplierForm({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={submitting || loadingData}>
+            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {submitting
               ? 'Saving...'
               : isEdit
