@@ -1,12 +1,35 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
 import { SetupWizardPage } from './pages/SetupWizardPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { UsersPage } from './pages/UsersPage';
+import { AuditLogPage } from './pages/AuditLogPage';
+import { AppShell } from './components/layout/AppShell';
 import { tauri } from './lib/tauri';
 import type { CreateOwnerDto } from './lib/tauri';
 import { useState, useCallback } from 'react';
 import { useTauriCommand } from './hooks/useTauriCommand';
 import './App.css';
+
+function AuthenticatedApp({ session, onLogout }: { session: import('./types/session').SessionDto; onLogout: () => void }) {
+  return (
+    <BrowserRouter>
+      <AppShell session={session} onLogout={onLogout}>
+        <Routes>
+          <Route path="/dashboard" element={<DashboardPage session={session} />} />
+          {session.role === 'owner' && (
+            <>
+              <Route path="/users" element={<UsersPage session={session} />} />
+              <Route path="/audit" element={<AuditLogPage session={session} />} />
+            </>
+          )}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AppShell>
+    </BrowserRouter>
+  );
+}
 
 function App() {
   const { session, isSetupNeeded, loading, error, login, logout, loginLoading, onSetupComplete } = useAuth();
@@ -52,36 +75,8 @@ function App() {
     return <LoginPage onLogin={login} error={error} loading={loginLoading} />;
   }
 
-  // Authenticated: show dashboard with logout
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold text-gray-900">PharmaCare</h1>
-          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded capitalize">
-            {session.role}
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">
-            {session.full_name}
-          </span>
-          <button
-            onClick={logout}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
-
-      {/* Page content */}
-      <main>
-        <DashboardPage session={session} />
-      </main>
-    </div>
-  );
+  // Authenticated: show AppShell with routing
+  return <AuthenticatedApp session={session} onLogout={logout} />;
 }
 
 export default App;
