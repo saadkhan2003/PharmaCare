@@ -29,8 +29,13 @@ PharmaCare is built as a dependency-driven Windows desktop application where the
   3. All login attempts (success and failure) are logged to an audit table
   4. Owner can add, view, and deactivate user accounts; deactivated users cannot log in
   5. System blocks deletion of the last active Owner account; at least one Owner always exists
-**Plans**: TBD
+**Plans**: 3 plans (2 autonomous, 1 with checkpoint)
 **UI hint**: yes
+
+Plans:
+- [ ] 01-01-PLAN.md — Tauri scaffold + SQLite + models + guards + migration
+- [ ] 01-02-PLAN.md — Auth/User/Audit services + commands + login/setup UI
+- [ ] 01-03-PLAN.md — Sidebar layout + user management + audit viewer
 
 ### Phase 2: Medicine Catalog & Stock Intake
 **Goal**: Owner can manage the complete medicine catalog, record supplier purchases with batch-level tracking, and configure core pharmacy settings
@@ -92,7 +97,7 @@ PharmaCare is built as a dependency-driven Windows desktop application where the
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Access Control | 0/TBD | Not started | - |
+| 1. Foundation & Access Control | 0/3 | Planned | - |
 | 2. Medicine Catalog & Stock Intake | 0/TBD | Not started | - |
 | 3. POS & Sales Engine | 0/TBD | Not started | - |
 | 4. Returns & Operational Corrections | 0/TBD | Not started | - |
