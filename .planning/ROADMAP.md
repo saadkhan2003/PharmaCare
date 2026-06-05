@@ -53,7 +53,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Backend CRUD infrastructure (migration 002 + models + repos + services + commands for medicines, suppliers, settings, batches, StockLedgerService, expiry report query)
-- [ ] 02-02-PLAN.md — Purchase intake backend (atomic transaction for purchase + items + batches + stock movements)
+- [x] 02-02-PLAN.md — Purchase intake backend (atomic transaction for purchase + items + batches + stock movements)
 - [ ] 02-03-PLAN.md — Frontend UI (medicine catalog, supplier management, purchase form with inline item table, expiry report, sidebar nav)
 
 ### Phase 3: POS & Sales Engine

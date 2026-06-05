@@ -17,14 +17,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Medicine Inventory
 
-- [ ] **INVT-01**: Owner can add medicine with name, generic name, brand, category, unit, retail/purchase price, reorder level, shelf location, notes
-- [ ] **INVT-02**: Owner can edit existing medicine details
-- [ ] **INVT-03**: Owner can view searchable medicine list
-- [ ] **INVT-04**: Owner can deactivate medicine (soft delete — preserves sales history)
-- [ ] **INVT-05**: Retail price must always be >= purchase price
-- [ ] **INVT-06**: Pharmacist can view medicine list (read-only, purchase prices/margins hidden)
-- [ ] **INVT-07**: Medicines categorized as Tablet, Syrup, Injection, OTC, Prescription
-- [ ] **INVT-08**: Medicines assigned unit type: Strip, Bottle, Vial, Box, Sachet
+- [x] **INVT-01**: Owner can add medicine with name, generic name, brand, category, unit, retail/purchase price, reorder level, shelf location, notes *(Plan 02-01: medicine_service + medicine_commands)*
+- [x] **INVT-02**: Owner can edit existing medicine details *(Plan 02-01: update_medicine with dynamic UPDATE)*
+- [x] **INVT-03**: Owner can view searchable medicine list *(Plan 02-01: list_medicines + search command)*
+- [x] **INVT-04**: Owner can deactivate medicine (soft delete — preserves sales history) *(Plan 02-01: deactivate_medicine command)*
+- [x] **INVT-05**: Retail price must always be >= purchase price *(Plan 02-01: validated in medicine_service)*
+- [x] **INVT-06**: Pharmacist can view medicine list (read-only, purchase prices/margins hidden) *(Plan 02-01: MedicinePharmacistDto in search_medicines_pharmacist)*
+- [x] **INVT-07**: Medicines categorized as Tablet, Syrup, Injection, OTC, Prescription *(Plan 02-01: CHECK constraint + shadcn Select)*
+- [x] **INVT-08**: Medicines assigned unit type: Strip, Bottle, Vial, Box, Sachet *(Plan 02-01: CHECK constraint + shadcn Select)*
 
 ### Point of Sale
 
@@ -44,18 +44,18 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Suppliers & Purchases
 
-- [ ] **SUPP-01**: Owner can add/edit/view suppliers (company name, contact person, phone, address, payment terms, notes)
-- [ ] **SUPP-02**: Owner can record purchase with supplier, invoice number, date, items, total cost, payment status
-- [ ] **SUPP-03**: Each purchase creates batch records with expiry dates
-- [ ] **SUPP-04**: Purchase automatically increases stock counts
-- [ ] **SUPP-05**: Purchase price stored per-batch (prices may vary between orders)
+- [x] **SUPP-01**: Owner can add/edit/view suppliers (company name, contact person, phone, address, payment terms, notes) *(Plan 02-01: supplier_service + supplier_commands)*
+- [x] **SUPP-02**: Owner can record purchase with supplier, invoice number, date, items, total cost, payment status *(Plan 02-02: record_purchase atomic transaction)*
+- [x] **SUPP-03**: Each purchase creates batch records with expiry dates *(Plan 02-02: batch_repo::insert inside purchase transaction)*
+- [x] **SUPP-04**: Purchase automatically increases stock counts *(Plan 02-02: stock_ledger_service::record_movement inside transaction, D-22)*
+- [x] **SUPP-05**: Purchase price stored per-batch (prices may vary between orders) *(Plan 02-02: batches.purchase_price per order)*
 
 ### Batch & Expiry Tracking
 
-- [ ] **BATC-01**: Stock tracked at batch level with expiry date per batch
-- [ ] **BATC-02**: Dashboard shows expiry warnings — yellow at 60 days, red at 30 days, dark red (blocked) past expiry
-- [ ] **BATC-03**: Expired medicines automatically blocked from sale
-- [ ] **BATC-04**: Owner can view expiry report sorted by days remaining
+- [x] **BATC-01**: Stock tracked at batch level with expiry date per batch *(Plan 02-01: batches table; Plan 02-02: purchase creates batches with remaining_qty=quantity)*
+- [ ] **BATC-02**: Dashboard shows expiry warnings — yellow at 60 days, red at 30 days, dark red (blocked) past expiry *(deferred to Phase 3)*
+- [ ] **BATC-03**: Expired medicines automatically blocked from sale *(deferred to Phase 3 POS)*
+- [x] **BATC-04**: Owner can view expiry report sorted by days remaining *(Plan 02-01: batch_commands::get_expiry_report with julianday)*
 - [ ] **BATC-05**: Owner can mark batch as returned to supplier or written off
 - [ ] **BATC-06**: Written-off stock deducted from inventory and logged as loss
 
@@ -107,12 +107,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Settings
 
-- [ ] **SETT-01**: Owner configures pharmacy info (name, owner name, phone, address, logo)
-- [ ] **SETT-02**: Owner configures default tax rate and tax-enabled default
-- [ ] **SETT-03**: Owner configures cashier discount permission (toggle)
-- [ ] **SETT-04**: Owner configures expiry warning/critical thresholds (default 60/30 days)
-- [ ] **SETT-05**: Owner configures default reorder level for new medicines
-- [ ] **SETT-06**: Owner configures currency symbol (default Rs.)
+- [ ] **SETT-01**: Owner configures pharmacy info (name, owner name, phone, address, logo) *(backend reads from settings table; full UI deferred to Phase 5)*
+- [x] **SETT-02**: Owner configures default tax rate and tax-enabled default *(Plan 02-01: backend key-value read from settings table)*
+- [x] **SETT-03**: Owner configures cashier discount permission (toggle) *(Plan 02-01: backend key-value read)*
+- [x] **SETT-04**: Owner configures expiry warning/critical thresholds (default 60/30 days) *(Plan 02-01: backend key-value read)*
+- [x] **SETT-05**: Owner configures default reorder level for new medicines *(Plan 02-01: backend key-value read)*
+- [x] **SETT-06**: Owner configures currency symbol (default Rs.) *(Plan 02-01: backend key-value read)*
 - [ ] **SETT-07**: Owner connects/disconnects Google Drive for backup
 - [ ] **SETT-08**: Owner configures auto-backup time
 
@@ -156,14 +156,14 @@ Explicitly excluded. Documented to prevent scope creep.
 | AUTH-03 | Phase 1 | Complete (Plan 02) |
 | AUTH-04 | Phase 1 | Complete (Plan 02) |
 | AUTH-05 | Phase 1 | Complete (Plan 02) |
-| INVT-01 | Phase 2 | Pending |
-| INVT-02 | Phase 2 | Pending |
-| INVT-03 | Phase 2 | Pending |
-| INVT-04 | Phase 2 | Pending |
-| INVT-05 | Phase 2 | Pending |
-| INVT-06 | Phase 2 | Pending |
-| INVT-07 | Phase 2 | Pending |
-| INVT-08 | Phase 2 | Pending |
+| INVT-01 | Phase 2 | Complete (Plan 02-01) |
+| INVT-02 | Phase 2 | Complete (Plan 02-01) |
+| INVT-03 | Phase 2 | Complete (Plan 02-01) |
+| INVT-04 | Phase 2 | Complete (Plan 02-01) |
+| INVT-05 | Phase 2 | Complete (Plan 02-01) |
+| INVT-06 | Phase 2 | Complete (Plan 02-01) |
+| INVT-07 | Phase 2 | Complete (Plan 02-01) |
+| INVT-08 | Phase 2 | Complete (Plan 02-01) |
 | POS-01 | Phase 3 | Pending |
 | POS-02 | Phase 3 | Pending |
 | POS-03 | Phase 3 | Pending |
@@ -177,12 +177,12 @@ Explicitly excluded. Documented to prevent scope creep.
 | POS-11 | Phase 3 | Pending |
 | POS-12 | Phase 3 | Pending |
 | POS-13 | Phase 3 | Pending |
-| SUPP-01 | Phase 2 | Pending |
-| SUPP-02 | Phase 2 | Pending |
-| SUPP-03 | Phase 2 | Pending |
-| SUPP-04 | Phase 2 | Pending |
-| SUPP-05 | Phase 2 | Pending |
-| BATC-01 | Phase 2 | Pending |
+| SUPP-01 | Phase 2 | Complete (Plan 02-01) |
+| SUPP-02 | Phase 2 | Complete (Plan 02-02) |
+| SUPP-03 | Phase 2 | Complete (Plan 02-02) |
+| SUPP-04 | Phase 2 | Complete (Plan 02-02) |
+| SUPP-05 | Phase 2 | Complete (Plan 02-02) |
+| BATC-01 | Phase 2 | Complete (Plan 02-02) |
 | BATC-02 | Phase 3 | Pending |
 | BATC-03 | Phase 3 | Pending |
 | BATC-04 | Phase 2 | Pending |
@@ -222,12 +222,12 @@ Explicitly excluded. Documented to prevent scope creep.
 | BAKP-07 | Phase 5 | Pending |
 | BAKP-08 | Phase 5 | Pending |
 | BAKP-09 | Phase 5 | Pending |
-| SETT-01 | Phase 2 | Pending |
-| SETT-02 | Phase 2 | Pending |
-| SETT-03 | Phase 2 | Pending |
-| SETT-04 | Phase 2 | Pending |
-| SETT-05 | Phase 2 | Pending |
-| SETT-06 | Phase 2 | Pending |
+| SETT-01 | Phase 2 | Pending (UI deferred to Phase 5) |
+| SETT-02 | Phase 2 | Complete (Plan 02-01) |
+| SETT-03 | Phase 2 | Complete (Plan 02-01) |
+| SETT-04 | Phase 2 | Complete (Plan 02-01) |
+| SETT-05 | Phase 2 | Complete (Plan 02-01) |
+| SETT-06 | Phase 2 | Complete (Plan 02-01) |
 | SETT-07 | Phase 5 | Pending |
 | SETT-08 | Phase 5 | Pending |
 

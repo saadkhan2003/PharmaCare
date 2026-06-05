@@ -10,31 +10,31 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 2 of 5 (Medicine Catalog & Stock Intake)
-Plan: 2/3 in current phase (Plan 02-01 complete)
+Plan: 3/3 in current phase (Plan 02-02 complete)
 Status: Partially executed
-Last activity: 2026-06-05 — Plan 02-01 (Wave 1) executed
+Last activity: 2026-06-05 — Plan 02-02 (Wave 2) executed
 
-Progress: [██▒▒▒▒▒▒▒▒] 33% (Phase 2 — 1/3 plans)
+Progress: [████▒▒▒▒▒▒] 67% (Phase 2 — 2/3 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: ~20m
-- Total execution time: ~84m
+- Total plans completed: 5
+- Average duration: ~17m
+- Total execution time: ~92m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation & Access Control | 3 | 3 | ~27m |
-| 2. Medicine Catalog & Stock Intake | 1 | 4 | ~4m |
+| 2. Medicine Catalog & Stock Intake | 2 | 5 | ~6m |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 ✓ 01-02 ✓ 01-01 ✓ 02-01 ✓
+- Last 5 plans: 01-03 ✓ 01-02 ✓ 01-01 ✓ 02-01 ✓ 02-02 ✓
 - Trend: Consistent completion
 
-*Updated after Phase 2, Plan 01 completion*
+*Updated after Phase 2, Plan 02 completion*
 
 ## Accumulated Context
 
@@ -56,6 +56,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 02-01]: StockLedgerService accepts &Connection — Transaction works via Deref
 - [Plan 02-01]: Settings command has no auth guard (T-02-07 accepted — no sensitive data)
 - [Plan 02-01]: Payment status defaults to 'Pending' per pharmacy purchase credit convention
+- [Plan 02-02]: record_purchase takes &mut Connection — rusqlite::Connection::transaction() requires &mut self
+- [Plan 02-02]: Server-side total_cost recalculation: sum(qty × purchase_price), never trust frontend value (T-02-08)
+- [Plan 02-02]: Transaction auto-rollback via Transaction::Drop — no explicit rollback needed
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-05 19:21
-Stopped at: Phase 2 Plan 01 (Wave 1) complete — backend CRUD infrastructure done
-Resume file: .planning/phases/02-medicine-catalog-stock-intake/02-01-SUMMARY.md
+Last session: 2026-06-05
+Stopped at: Phase 2 Plan 02 (Wave 2) complete — purchase intake atomic transaction
+Resume file: .planning/phases/02-medicine-catalog-stock-intake/02-02-SUMMARY.md
