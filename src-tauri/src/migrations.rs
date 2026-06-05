@@ -12,6 +12,7 @@ pub fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/003_sales_engine/up.sql")),
         M::up(include_str!("../migrations/004_returns/up.sql")),
         M::up(include_str!("../migrations/005_opening_stock/up.sql")),
+        M::up(include_str!("../migrations/006_debt_tracking/up.sql")),
     ])
 }
 

@@ -20,7 +20,7 @@ export function usePOSKeyboard() {
   const itemDiscountRef = useRef<HTMLInputElement>(null);
   const billDiscountRef = useRef<HTMLInputElement>(null);
   const taxToggleRef = useRef<HTMLButtonElement>(null);
-  const paymentRef = useRef<HTMLSelectElement>(null);
+  const paymentRef = useRef<HTMLButtonElement>(null);
   const customerNameRef = useRef<HTMLInputElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
 
