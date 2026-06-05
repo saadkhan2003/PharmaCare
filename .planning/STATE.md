@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 5 of 5 (Reports, Backup & Administration)
-Plan: 2/3 in current phase
-Status: Plan 01 complete — Wave 2 (frontend) ready
-Last activity: 2026-06-05 — Phase 5 Plan 01 executed
+Plan: 3/3 in current phase
+Status: Plan 02 complete — Wave 2 (frontend reports) done
+Last activity: 2026-06-05 — Phase 5 Plan 02 executed
 
 Progress: [████████████████████████████] 
 
@@ -31,13 +31,13 @@ Progress: [███████████████████████
 | 2. Medicine Catalog & Stock Intake | 3 | 6 | ~10m |
 | 3. POS & Sales Engine | 3 | 9 | ~13m |
 | 4. Returns & Operational Corrections | 3 | 12 | ~12m |
-| 5. Reports, Backup & Admin | 1 | 1 | ~45m |
+| 5. Reports, Backup & Admin | 2 | 2 | ~40m |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 ✓ 03-02 ✓ 04-01 ✓ 04-02 ✓ 04-03 ✓ 05-01 ✓
+- Last 5 plans: 03-01 ✓ 03-02 ✓ 04-01 ✓ 04-02 ✓ 04-03 ✓ 05-01 ✓ 05-02 ✓
 - Trend: Accelerating (faster avg time)
 
-*Updated after Phase 5 Plan 01 execution*
+*Updated after Phase 5 Plan 02 execution*
 
 ## Accumulated Context
 
@@ -90,6 +90,11 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 05-01]: OAuth token stores client_id/client_secret alongside tokens for unattended auto-refresh
 - [Plan 05-01]: Expiry report command named get_expiry_report_phase5 to avoid conflict with existing batch_commands version
 - [Plan 05-01]: Password change uses require_session (not require_owner) — any logged-in user can change their own password per D-78
+- [Plan 05-02]: PDF components use Helvetica (built-in standard PDF font, no registration needed per D-59)
+- [Plan 05-02]: Date filter hidden for Low Stock and Expiry reports (current-state snapshots with no date params)
+- [Plan 05-02]: Low stock rows color-coded: red bg when stock=0, amber bg when below reorder level
+- [Plan 05-02]: Expiry badges use 3-tier color: red=expired/critical, amber=warning, green=ok
+- [Plan 05-02]: Profit margin color-coded: green ≥20%, amber ≥10%, red <10%
 
 ### Pending Todos
 
@@ -108,5 +113,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-05
-Stopped at: Phase 5 Plan 01 complete — Backend services, commands, types done
-Resume file: .planning/phases/05-reports-backup-admin/05-01-SUMMARY.md
+Stopped at: Phase 5 Plan 02 complete — Reports frontend with Recharts charts + PDF export
+Resume file: .planning/phases/05-reports-backup-admin/05-02-SUMMARY.md

@@ -110,7 +110,7 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — Backend infrastructure: report DTOs + 9 aggregation services + backup service (VACUUM INTO + gzip + Drive upload + restore) + settings write + password change + commands + main.rs registration + TypeScript contracts
-- [ ] 05-02-PLAN.md — Frontend Reports page: 9 report components with Recharts charts + @react-pdf/renderer PDF export + master-detail layout + date-range filtering + route
+- [x] 05-02-PLAN.md — Frontend Reports page: 9 report components with Recharts charts + @react-pdf/renderer PDF export + master-detail layout + date-range filtering + route
 - [ ] 05-03-PLAN.md — Settings UI + Admin: tabbed settings page (Pharmacy, Financial, Inventory, Backup) + ChangePasswordDialog + dashboard backup widget + missed-backup warning + sidebar nav + routing
 
 ## Progress
@@ -121,7 +121,7 @@ Plans:
 | 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
 | 3. POS & Sales Engine | 2/3 | Executing (Wave 2 — POS UI done) | - |
 | 4. Returns & Operational Corrections | 3/3 | Complete | 2026-06-05 |
-| 5. Reports, Backup & Administration | 1/3 | Executing (Wave 1 — backend done) | - |
+| 5. Reports, Backup & Administration | 2/3 | Executing (Wave 2 — frontend reports done) | - |
 
 ---
 

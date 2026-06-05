@@ -74,17 +74,17 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **REPT-01**: Owner dashboard shows today's sales, today's profit, monthly sales, low stock count, expiry count, top 5 selling medicines
 - [ ] **REPT-02**: Pharmacist dashboard shows today's sales total and low stock alerts
-- [ ] **REPT-03**: Owner can view Daily Sales Summary report (date-filterable, PDF export) *(Plan 05-01: backend — report_service + command with require_owner; UI deferred to Plan 05-02)*
-- [ ] **REPT-04**: Owner can view Monthly P&L report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-05**: Owner can view Top Selling Medicines report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-06**: Owner can view Slow-Moving Stock report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-07**: Owner can view Low Stock report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-08**: Owner can view Expiry report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-09**: Owner can view Supplier Purchase History report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-10**: Owner can view Sales by User report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-11**: Owner can view Profit Margin report (PDF export) *(Plan 05-01: backend; UI deferred to Plan 05-02)*
-- [ ] **REPT-12**: All reports date-range filterable *(Plan 05-01: all 9 report services accept start_date/end_date params)*
-- [ ] **REPT-13**: Purchase prices and profit data visible to Owner role only *(Plan 05-01: require_owner on all 9 report commands)*
+- [x] **REPT-03**: Owner can view Daily Sales Summary report (date-filterable, PDF export) *(Plan 05-01: backend — report_service + command with require_owner; Plan 05-02: frontend with BarChart + PDF export)*
+- [x] **REPT-04**: Owner can view Monthly P&L report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with BarChart + PDF)*
+- [x] **REPT-05**: Owner can view Top Selling Medicines report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with horizontal BarChart + PDF)*
+- [x] **REPT-06**: Owner can view Slow-Moving Stock report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend table + PDF)*
+- [x] **REPT-07**: Owner can view Low Stock report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with color-coded table + PDF)*
+- [x] **REPT-08**: Owner can view Expiry report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with stacked BarChart + color-coded table + PDF)*
+- [x] **REPT-09**: Owner can view Supplier Purchase History report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with horizontal BarChart + PDF)*
+- [x] **REPT-10**: Owner can view Sales by User report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with grouped BarChart + PDF)*
+- [x] **REPT-11**: Owner can view Profit Margin report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with BarChart + color-coded table + PDF)*
+- [x] **REPT-12**: All reports date-range filterable *(Plan 05-01: backend params; Plan 05-02: DateRangePicker with quick-select)*
+- [x] **REPT-13**: Purchase prices and profit data visible to Owner role only *(Plan 05-01: require_owner on all 9 report commands; Plan 05-02: route inside owner block)*
 
 ### User Management
 
@@ -198,17 +198,17 @@ Explicitly excluded. Documented to prevent scope creep.
 | RETN-08 | Phase 4 | Pending (Phase 5) |
 | REPT-01 | Phase 3 | Pending |
 | REPT-02 | Phase 3 | Pending |
-| REPT-03 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-04 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-05 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-06 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-07 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-08 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-09 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-10 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-11 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-12 | Phase 5 | Backend done (Plan 05-01) |
-| REPT-13 | Phase 5 | Backend done (Plan 05-01) |
+| REPT-03 | Phase 5 | Complete (Plan 05-02) |
+| REPT-04 | Phase 5 | Complete (Plan 05-02) |
+| REPT-05 | Phase 5 | Complete (Plan 05-02) |
+| REPT-06 | Phase 5 | Complete (Plan 05-02) |
+| REPT-07 | Phase 5 | Complete (Plan 05-02) |
+| REPT-08 | Phase 5 | Complete (Plan 05-02) |
+| REPT-09 | Phase 5 | Complete (Plan 05-02) |
+| REPT-10 | Phase 5 | Complete (Plan 05-02) |
+| REPT-11 | Phase 5 | Complete (Plan 05-02) |
+| REPT-12 | Phase 5 | Complete (Plan 05-02) |
+| REPT-13 | Phase 5 | Complete (Plan 05-02) |
 | USER-01 | Phase 1 | Complete (Plan 02) |
 | USER-02 | Phase 1 | Complete (Plan 02) |
 | USER-03 | Phase 1 | Complete (Plan 02) |
