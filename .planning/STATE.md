@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 3 of 5 (POS & Sales Engine)
-Plan: 2/3 in current phase
-Status: Wave 1 complete — backend sale engine done
-Last activity: 2026-06-05 — Plan 03-01 executed (migration + sale service + dashboard commands)
+Plan: 3/3 in current phase
+Status: Wave 2 complete — POS frontend UI done
+Last activity: 2026-06-05 — Plan 03-02 executed (POS UI with search panel, cart, payment, receipt)
 
-Progress: [██▒▒▒▒▒▒▒▒] 33% (Phase 3 — 1/3 plans)
+Progress: [████▒▒▒▒▒▒] 66% (Phase 3 — 2/3 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: ~17m
-- Total execution time: ~110m
+- Total plans completed: 7
+- Average duration: ~16m
+- Total execution time: ~125m
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [██▒▒▒▒▒▒▒▒] 33% (Phase 3 — 1/3 plans)
 |-------|-------|-------|----------|
 | 1. Foundation & Access Control | 3 | 3 | ~27m |
 | 2. Medicine Catalog & Stock Intake | 3 | 6 | ~10m |
-| 3. POS & Sales Engine | 1 | ~5m | ~5m |
+| 3. POS & Sales Engine | 2 | ~20m | ~10m |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 ✓ 01-02 ✓ 01-01 ✓ 02-01 ✓ 02-02 ✓ 02-03 ✓
+- Last 5 plans: 01-03 ✓ 02-01 ✓ 02-02 ✓ 02-03 ✓ 03-01 ✓ 03-02 ✓
 - Trend: Consistent completion
 
-*Updated after Phase 2 completion*
+*Updated after Phase 3 Plan 02 execution*
 
 ## Accumulated Context
 
@@ -68,6 +68,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 03-01]: Discount gated by role: owner always allowed, pharmacist requires cashier_discount_enabled setting (D-38)
 - [Plan 03-01]: Payment methods validated via CHECK constraint; Credit requires customer_name (D-39/D-40)
 - [Plan 03-01]: Owner dashboard includes profit (require_owner); Pharmacist dashboard excludes profit fields (D-41/D-42)
+- [Plan 03-02]: Dashboard DTOs (OwnerDashboardDto, PharmacistDashboardDto, TopSellerDto) defined in sale.ts as cross-plan contract for Plan 03-03
+- [Plan 03-02]: paymentRef typed as HTMLButtonElement (shadcn SelectTrigger uses @base-ui/react, forwards ButtonElement ref)
+- [Plan 03-02]: Tax toggle uses custom accessible Switch implementation (no shadcn Switch component installed)
 
 ### Pending Todos
 
@@ -86,5 +89,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-05
-Stopped at: Phase 3 Plan 01 complete — POS backend engine (migration + sale service + dashboard commands)
-Resume file: .planning/phases/03-pos-sales-engine/03-01-SUMMARY.md
+Stopped at: Phase 3 Plan 02 complete — POS frontend (two-panel keyboard-first interface)
+Resume file: .planning/phases/03-pos-sales-engine/03-02-SUMMARY.md

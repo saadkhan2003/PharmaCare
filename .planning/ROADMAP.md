@@ -13,7 +13,7 @@ PharmaCare is built as a dependency-driven Windows desktop application where the
 
 - [ ] **Phase 1: Foundation & Access Control** - Tauri/React shell, SQLite, bcrypt auth, RBAC, user management
 - [ ] **Phase 2: Medicine Catalog & Stock Intake** - Medicine CRUD, suppliers, purchases, batch tracking, core settings
-- [ ] **Phase 3: POS & Sales Engine** - Keyboard-first POS, FIFO stock deduction, expiry blocking, operational dashboards
+- [/] **Phase 3: POS & Sales Engine** - Keyboard-first POS, FIFO stock deduction, expiry blocking, operational dashboards
 - [ ] **Phase 4: Returns & Operational Corrections** - Customer/supplier returns, write-offs, stock restoration, loss logging
 - [ ] **Phase 5: Reports, Backup & Administration** - Analytics reports with PDF export, Google Drive backup, restore, settings UI
 
@@ -71,8 +71,8 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01-PLAN.md — Sale backend (migration 003, models, repos, services, commands)
-- [ ] 03-02-PLAN.md — POS UI (two-panel keyboard-first interface)
+- [x] 03-01-PLAN.md — Sale backend (migration 003, models, repos, services, commands)
+- [x] 03-02-PLAN.md — POS UI (two-panel keyboard-first interface)
 - [ ] 03-03-PLAN.md — Dashboards (owner + pharmacist with Recharts)
 
 ### Phase 4: Returns & Operational Corrections
@@ -109,7 +109,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation & Access Control | 2/3 | Executing | - |
 | 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
-| 3. POS & Sales Engine | 0/TBD | Not started | - |
+| 3. POS & Sales Engine | 2/3 | Executing (Wave 2 — POS UI done) | - |
 | 4. Returns & Operational Corrections | 0/TBD | Not started | - |
 | 5. Reports, Backup & Administration | 0/TBD | Not started | - |
 
