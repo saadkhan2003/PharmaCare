@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle } from 'lucide-react';
 import type { SessionDto } from '@/types/session';
 
 interface NavItem {
@@ -22,6 +22,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {
+    title: 'POS',
+    url: '/pos',
+    icon: ShoppingCart,
+    roles: ['owner', 'pharmacist'],
+  },
   {
     title: 'Dashboard',
     url: '/dashboard',

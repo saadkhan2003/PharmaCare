@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
 import { SetupWizardPage } from './pages/SetupWizardPage';
+import { POSPage } from './pages/POSPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { AuditLogPage } from './pages/AuditLogPage';
@@ -21,6 +22,7 @@ function AuthenticatedApp({ session, onLogout }: { session: import('./types/sess
     <BrowserRouter>
       <AppShell session={session} onLogout={onLogout}>
         <Routes>
+          <Route path="/pos" element={<POSPage session={session} />} />
           <Route path="/dashboard" element={<DashboardPage session={session} />} />
           <Route path="/medicines" element={<MedicinesPage session={session} />} />
           {session.role === 'owner' && (

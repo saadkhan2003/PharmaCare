@@ -13,6 +13,10 @@ import type {
   CreatePurchaseDto, PurchaseReceiptDto, PurchaseListDto, PurchaseDetailDto,
 } from '../types/purchase';
 import type { SettingsMap } from '../types/settings';
+import type {
+  MedicinePosDto, ConfirmSaleDto, SaleReceiptDto,
+  OwnerDashboardDto, PharmacistDashboardDto,
+} from '../types/sale';
 
 // SessionInfo returned by check_session — matches Rust SessionInfo struct
 export interface SessionInfo {
@@ -126,5 +130,16 @@ export const tauri = {
   expiry: {
     getReport: (sessionToken: string, minDays?: number, maxDays?: number) =>
       invoke<ExpiryReportRow[]>('get_expiry_report', { sessionToken, minDays, maxDays }),
+  },
+
+  sales: {
+    searchMedicinesPos: (sessionToken: string, query: string) =>
+      invoke<MedicinePosDto[]>('search_medicines_pos', { sessionToken, query }),
+    confirmSale: (sessionToken: string, payload: ConfirmSaleDto) =>
+      invoke<SaleReceiptDto>('confirm_sale', { sessionToken, payload }),
+    getOwnerDashboard: (sessionToken: string) =>
+      invoke<OwnerDashboardDto>('get_owner_dashboard', { sessionToken }),
+    getPharmacistDashboard: (sessionToken: string) =>
+      invoke<PharmacistDashboardDto>('get_pharmacist_dashboard', { sessionToken }),
   },
 };
