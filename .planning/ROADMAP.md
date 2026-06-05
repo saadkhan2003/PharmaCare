@@ -105,8 +105,13 @@ Plans:
   5. Owner can restore from a backup with confirmation warning; a pre-restore backup is automatically created before any restore operation
   6. Optional local-folder/USB backup path works alongside Google Drive upload; all backups use SQLite Online Backup API or VACUUM INTO for consistent snapshots
   7. Owner can connect/disconnect Google Drive for backup and configure the auto-backup time
-**Plans**: TBD
+**Plans**: 3 plans (3 autonomous)
 **UI hint**: yes
+
+Plans:
+- [ ] 05-01-PLAN.md — Backend infrastructure: report DTOs + 9 aggregation services + backup service (VACUUM INTO + gzip + Drive upload + restore) + settings write + password change + commands + main.rs registration + TypeScript contracts
+- [ ] 05-02-PLAN.md — Frontend Reports page: 9 report components with Recharts charts + @react-pdf/renderer PDF export + master-detail layout + date-range filtering + route
+- [ ] 05-03-PLAN.md — Settings UI + Admin: tabbed settings page (Pharmacy, Financial, Inventory, Backup) + ChangePasswordDialog + dashboard backup widget + missed-backup warning + sidebar nav + routing
 
 ## Progress
 
@@ -116,7 +121,7 @@ Plans:
 | 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
 | 3. POS & Sales Engine | 2/3 | Executing (Wave 2 — POS UI done) | - |
 | 4. Returns & Operational Corrections | 3/3 | Complete | 2026-06-05 |
-| 5. Reports, Backup & Administration | 0/TBD | Not started | - |
+| 5. Reports, Backup & Administration | 0/3 | Not started | - |
 
 ---
 
