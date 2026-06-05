@@ -57,7 +57,17 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![
+            commands::auth_commands::auth_login,
+            commands::auth_commands::auth_logout,
+            commands::auth_commands::check_session,
+            commands::user_commands::create_user,
+            commands::user_commands::deactivate_user,
+            commands::user_commands::list_users,
+            commands::setup_commands::check_setup_status,
+            commands::setup_commands::create_initial_owner,
+            commands::audit_commands::get_login_attempts,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");
 }
