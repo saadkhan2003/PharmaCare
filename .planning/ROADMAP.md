@@ -89,8 +89,8 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md — Backend returns infrastructure (migration, models, repos, return_service)
-- [ ] 04-02-PLAN.md — Return commands + TypeScript bindings + Tauri registration
+- [x] 04-01-PLAN.md — Backend returns infrastructure (migration, models, repos, return_service)
+- [x] 04-02-PLAN.md — Return commands + TypeScript bindings + Tauri registration
 - [ ] 04-03-PLAN.md — Frontend UI (CustomerReturn, SupplierReturn, WriteOff forms)
 
 ### Phase 5: Reports, Backup & Administration
@@ -115,7 +115,7 @@ Plans:
 | 1. Foundation & Access Control | 2/3 | Executing | - |
 | 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
 | 3. POS & Sales Engine | 2/3 | Executing (Wave 2 — POS UI done) | - |
-| 4. Returns & Operational Corrections | 0/3 | Planning complete | - |
+| 4. Returns & Operational Corrections | 2/3 | Executing (Wave 2 — commands + types done) | 2026-06-05 |
 | 5. Reports, Backup & Administration | 0/TBD | Not started | - |
 
 ---

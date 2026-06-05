@@ -12,9 +12,9 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 Phase: 4 of 5 (Returns & Operational Corrections)
 Plan: 3/3 in current phase
 Status: Ready to execute
-Last activity: 2026-06-05 — Phase 4 planned (3 plans, 3 waves)
+Last activity: 2026-06-05 — Plan 04-02 complete (Tauri commands + frontend types)
 
-Progress: [██████████] 100% (Phase 3)
+Progress: [██████████] 100% (Phase 3), [████████░░] 67% (Phase 4)
 
 ## Performance Metrics
 
@@ -30,6 +30,7 @@ Progress: [██████████] 100% (Phase 3)
 | 1. Foundation & Access Control | 3 | 3 | ~27m |
 | 2. Medicine Catalog & Stock Intake | 3 | 6 | ~10m |
 | 3. POS & Sales Engine | 3 | 9 | ~13m |
+| 4. Returns & Operational Corrections | 2 | 11 | ~6m |
 
 **Recent Trend:**
 - Last 5 plans: 02-03 ✓ 03-01 ✓ 03-02 ✓ 03-03 ✓ (1 in Phase 3)
@@ -71,6 +72,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 03-02]: Dashboard DTOs (OwnerDashboardDto, PharmacistDashboardDto, TopSellerDto) defined in sale.ts as cross-plan contract for Plan 03-03
 - [Plan 03-02]: paymentRef typed as HTMLButtonElement (shadcn SelectTrigger uses @base-ui/react, forwards ButtonElement ref)
 - [Plan 03-02]: Tax toggle uses custom accessible Switch implementation (no shadcn Switch component installed)
+- [Plan 04-02]: return_commands.rs follows existing command patterns (purchase_commands, sale_commands)
+- [Plan 04-02]: Customer return commands use require_session (both roles) per D-44
+- [Plan 04-02]: Supplier return + write-off commands use require_owner per D-50/D-53
+- [Plan 04-02]: Frontend types in return.ts match Rust DTOs field-for-field (snake_case)
+- [Plan 04-02]: tauri.ts returns object provides 5 typed invoke wrappers
+- [Plan 04-02]: return_service.rs follows atomic transaction pattern (validate → open tx → mutate → commit)
 
 ### Pending Todos
 
@@ -89,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-05
-Stopped at: Phase 3 Plan 02 complete — POS frontend (two-panel keyboard-first interface)
-Resume file: .planning/phases/03-pos-sales-engine/03-02-SUMMARY.md
+Stopped at: Phase 4 Plan 02 complete — Tauri commands + frontend types
+Resume file: .planning/phases/04-returns-corrections/04-02-SUMMARY.md

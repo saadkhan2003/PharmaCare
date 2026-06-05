@@ -56,19 +56,19 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **BATC-02**: Dashboard shows expiry warnings — yellow at 60 days, red at 30 days, dark red (blocked) past expiry *(deferred to Phase 3)*
 - [ ] **BATC-03**: Expired medicines automatically blocked from sale *(deferred to Phase 3 POS)*
 - [x] **BATC-04**: Owner can view expiry report sorted by days remaining *(Plan 02-01: batch_commands::get_expiry_report with julianday)*
-- [ ] **BATC-05**: Owner can mark batch as returned to supplier or written off
-- [ ] **BATC-06**: Written-off stock deducted from inventory and logged as loss
+- [x] **BATC-05**: Owner can mark batch as returned to supplier or written off *(Plan 04-01/02: return_service + return_commands for supplier_return and write_off)*
+- [x] **BATC-06**: Written-off stock deducted from inventory and logged as loss *(Plan 04-01/02: write_off logic decrements batch + logs stock_movement)*
 
 ### Returns & Refunds
 
-- [ ] **RETN-01**: User can process customer return by searching original sale
-- [ ] **RETN-02**: Customer return records condition: resellable, damaged, expired
-- [ ] **RETN-03**: Resellable returns restore stock to inventory
-- [ ] **RETN-04**: Damaged/expired returns write off stock and log as loss
-- [ ] **RETN-05**: Owner can process supplier return with credit note
-- [ ] **RETN-06**: Returns cannot exceed original quantity sold
-- [ ] **RETN-07**: All returns logged with reason, date, processing user
-- [ ] **RETN-08**: Financial reports reflect refunds accurately (not double-counted)
+- [x] **RETN-01**: User can process customer return by searching original sale *(Plan 04-01/02: search_sale_for_return service + command)*
+- [x] **RETN-02**: Customer return records condition: resellable, damaged, expired *(Plan 04-01/02: condition field with CHECK constraint + validation)*
+- [x] **RETN-03**: Resellable returns restore stock to inventory *(Plan 04-01/02: increment_remaining_qty + positive stock_movement)*
+- [x] **RETN-04**: Damaged/expired returns write off stock and log as loss *(Plan 04-01/02: loss-only path with write_off stock_movement)*
+- [x] **RETN-05**: Owner can process supplier return with credit note *(Plan 04-01/02: require_owner guarded supplier_return command)*
+- [x] **RETN-06**: Returns cannot exceed original quantity sold *(Plan 04-01/02: server-side validation in return_service)*
+- [x] **RETN-07**: All returns logged with reason, date, processing user *(Plan 04-01/02: returns table with reason, return_date, processed_by)*
+- [ ] **RETN-08**: Financial reports reflect refunds accurately (not double-counted) *(deferred to Phase 5 reports)*
 
 ### Analytics & Reports
 
@@ -186,16 +186,16 @@ Explicitly excluded. Documented to prevent scope creep.
 | BATC-02 | Phase 3 | Pending |
 | BATC-03 | Phase 3 | Pending |
 | BATC-04 | Phase 2 | Pending |
-| BATC-05 | Phase 4 | Pending |
-| BATC-06 | Phase 4 | Pending |
-| RETN-01 | Phase 4 | Pending |
-| RETN-02 | Phase 4 | Pending |
-| RETN-03 | Phase 4 | Pending |
-| RETN-04 | Phase 4 | Pending |
-| RETN-05 | Phase 4 | Pending |
-| RETN-06 | Phase 4 | Pending |
-| RETN-07 | Phase 4 | Pending |
-| RETN-08 | Phase 4 | Pending |
+| BATC-05 | Phase 4 | Complete (Plan 04-02) |
+| BATC-06 | Phase 4 | Complete (Plan 04-02) |
+| RETN-01 | Phase 4 | Complete (Plan 04-02) |
+| RETN-02 | Phase 4 | Complete (Plan 04-02) |
+| RETN-03 | Phase 4 | Complete (Plan 04-02) |
+| RETN-04 | Phase 4 | Complete (Plan 04-02) |
+| RETN-05 | Phase 4 | Complete (Plan 04-02) |
+| RETN-06 | Phase 4 | Complete (Plan 04-02) |
+| RETN-07 | Phase 4 | Complete (Plan 04-02) |
+| RETN-08 | Phase 4 | Pending (Phase 5) |
 | REPT-01 | Phase 3 | Pending |
 | REPT-02 | Phase 3 | Pending |
 | REPT-03 | Phase 5 | Pending |
