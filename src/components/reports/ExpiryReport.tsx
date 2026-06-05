@@ -1,206 +1,172 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback } from 'react';
+import { useTauriCommand } from '../../hooks/useTauriCommand';
+import { useSettings } from '../../hooks/useSettings';
+import { tauri } from '../../lib/tauri';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ArrowUpDown } from 'lucide-react';
-import { tauri } from '@/lib/tauri';
-import type { ExpiryReportRow } from '@/lib/tauri';
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+} from 'recharts';
+import { FileDown } from 'lucide-react';
+import { ExpiryPDF } from '../../lib/pdf/ExpiryPDF';
+import type { SessionDto } from '../../types/session';
+import type { ExpiryReportDetailRow } from '../../types/report';
 
 interface ExpiryReportProps {
-  sessionToken: string;
+  session: SessionDto;
 }
 
-type SortField = 'medicine_name' | 'remaining_qty' | 'expiry_date' | 'days_remaining';
-type SortDir = 'asc' | 'desc';
+export function ExpiryReport({ session }: ExpiryReportProps) {
+  const { settings } = useSettings();
+  const currencySymbol = settings?.currency_symbol ?? 'Rs.';
+  const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+  const warningDays = settings?.expiry_warning_days ?? 60;
+  const criticalDays = settings?.expiry_critical_days ?? 30;
 
-const FILTER_OPTIONS = [
-  { label: 'All', minDays: undefined as number | undefined, maxDays: undefined as number | undefined },
-  { label: 'Within 30 days', minDays: undefined, maxDays: 30 },
-  { label: 'Within 60 days', minDays: undefined, maxDays: 60 },
-  { label: 'Within 90 days', minDays: undefined, maxDays: 90 },
-  { label: 'Expired only', minDays: -999, maxDays: 0 },
-] as const;
+  const { data, error, loading, execute } = useTauriCommand<ExpiryReportDetailRow[]>();
 
-function getDaysColor(days: number): string {
-  if (days <= 0) return 'bg-red-700 text-white';
-  if (days <= 30) return 'bg-red-100 text-red-800 border-red-300';
-  if (days <= 60) return 'bg-amber-100 text-amber-800 border-amber-300';
-  return 'bg-green-100 text-green-800 border-green-300';
-}
+  const fetchData = useCallback(() => {
+    execute(() => tauri.reports.expiryReport(session.token, warningDays, criticalDays));
+  }, [execute, session.token, warningDays, criticalDays]);
 
-function getDaysLabel(days: number): string {
-  if (days <= 0) return 'Expired';
-  return `${days} day${days === 1 ? '' : 's'}`;
-}
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-export function ExpiryReport({ sessionToken }: ExpiryReportProps) {
-  const [rows, setRows] = useState<ExpiryReportRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filterIndex, setFilterIndex] = useState(0);
-  const [sortField, setSortField] = useState<SortField>('days_remaining');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  function getStatusBadge(status: string) {
+    switch (status) {
+      case 'expired':
+        return <Badge variant="outline" className="bg-red-700 text-white border-red-800">Expired</Badge>;
+      case 'critical':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Critical</Badge>;
+      case 'warning':
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Warning</Badge>;
+      default:
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">OK</Badge>;
+    }
+  }
 
-  const fetchReport = useCallback(
-    async (minDays?: number, maxDays?: number) => {
-      setLoading(true);
-      try {
-        const result = await tauri.expiry.getReport(sessionToken, minDays, maxDays);
-        setRows(result);
-      } catch {
-        setRows([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [sessionToken]
-  );
+  /** Group data by month for chart — count items per status per month */
+  function getChartData() {
+    const grouped: Record<string, { total: number; critical: number; warning: number; ok: number }> = {};
+    for (const row of data ?? []) {
+      const month = row.expiry_date.slice(0, 7);
+      if (!grouped[month]) grouped[month] = { total: 0, critical: 0, warning: 0, ok: 0 };
+      grouped[month].total += row.remaining_qty;
+      if (row.status === 'expired' || row.status === 'critical') grouped[month].critical += row.remaining_qty;
+      else if (row.status === 'warning') grouped[month].warning += row.remaining_qty;
+      else grouped[month].ok += row.remaining_qty;
+    }
+    return Object.entries(grouped).sort().map(([month, g]) => ({ month, ...g }));
+  }
 
-  useEffect(() => {
-    const filter = FILTER_OPTIONS[filterIndex];
-    fetchReport(filter.minDays, filter.maxDays);
-  }, [fetchReport, filterIndex]);
+  const totalPotentialLoss = (data ?? []).reduce((s, r) => s + r.potential_loss, 0);
 
-  const handleSort = useCallback(
-    (field: SortField) => {
-      if (sortField === field) {
-        setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortField(field);
-        setSortDir('asc');
-      }
-    },
-    [sortField]
-  );
+  if (loading) {
+    return <div className="space-y-3"><Skeleton className="h-48 w-full" /><Skeleton className="h-32 w-full" /></div>;
+  }
 
-  const sortedRows = useMemo(() => {
-    return [...rows].sort((a, b) => {
-      let cmp = 0;
-      switch (sortField) {
-        case 'medicine_name':
-          cmp = a.medicine_name.localeCompare(b.medicine_name);
-          break;
-        case 'remaining_qty':
-          cmp = a.remaining_qty - b.remaining_qty;
-          break;
-        case 'expiry_date':
-          cmp = a.expiry_date.localeCompare(b.expiry_date);
-          break;
-        case 'days_remaining':
-          cmp = a.days_remaining - b.days_remaining;
-          break;
-      }
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [rows, sortField, sortDir]);
+  if (error) {
+    return <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>;
+  }
 
-  const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
-    <TableHead>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="-ml-3 h-8 gap-1 font-medium"
-        onClick={() => handleSort(field)}
-      >
-        {children}
-        <ArrowUpDown className="h-3 w-3" />
-      </Button>
-    </TableHead>
-  );
+  const rows = data ?? [];
 
   return (
-    <div>
-      {/* Filter controls */}
-      <div className="mb-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Show items:</span>
-          <Select
-            value={filterIndex.toString()}
-            onValueChange={(value: string | null) => {
-              if (value !== null) setFilterIndex(parseInt(value));
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FILTER_OPTIONS.map((opt, i) => (
-                <SelectItem key={i} value={i.toString()}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Expiry by Month</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={getChartData()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="critical" name="Critical/Expired" fill="#dc2626" stackId="a" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="warning" name="Warning" fill="#d97706" stackId="a" />
+                <Bar dataKey="ok" name="OK" fill="#16a34a" stackId="a" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Table */}
-      <div className="rounded-lg border bg-card">
-        {loading ? (
-          <div className="space-y-3 p-4">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle className="text-sm">Expiry Report</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Potential Loss: {currencySymbol}{totalPotentialLoss.toFixed(2)}
+            </p>
           </div>
-        ) : sortedRows.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No expiring medicines found matching your criteria.
-          </div>
-        ) : (
+          <PDFDownloadLink
+            document={<ExpiryPDF data={rows} warningDays={warningDays} criticalDays={criticalDays} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
+            fileName={`expiry-report-${new Date().toISOString().split('T')[0]}.pdf`}
+          >
+            <Button variant="outline" size="sm">
+              <FileDown className="h-4 w-4 mr-1" />
+              Export PDF
+            </Button>
+          </PDFDownloadLink>
+        </CardHeader>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <SortHeader field="medicine_name">Medicine Name</SortHeader>
                 <TableHead>Batch</TableHead>
-                <SortHeader field="remaining_qty">Quantity</SortHeader>
-                <SortHeader field="expiry_date">Expiry Date</SortHeader>
-                <SortHeader field="days_remaining">Days Left</SortHeader>
+                <TableHead>Medicine</TableHead>
+                <TableHead className="text-right">Original</TableHead>
+                <TableHead className="text-right">Remaining</TableHead>
+                <TableHead className="text-right">Unit Cost</TableHead>
+                <TableHead>Expiry</TableHead>
+                <TableHead className="text-right">Days Left</TableHead>
+                <TableHead className="text-right">Potential Loss</TableHead>
+                <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedRows.map((row, index) => (
-                <TableRow key={`${row.batch_id}-${index}`}>
-                  <TableCell className="font-medium">
-                    {row.medicine_name}
-                    {row.generic_name && (
-                      <span className="ml-1 text-xs text-muted-foreground">
-                        ({row.generic_name})
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    #{row.batch_id}
-                  </TableCell>
-                  <TableCell>{row.remaining_qty}</TableCell>
-                  <TableCell>{row.expiry_date}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={getDaysColor(row.days_remaining)}
-                    >
-                      {getDaysLabel(row.days_remaining)}
-                    </Badge>
+              {rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    No expiring items found.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                rows.map((row) => (
+                  <TableRow key={row.batch_id}>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {row.batch_code ?? `#${row.batch_id}`}
+                    </TableCell>
+                    <TableCell className="font-medium">{row.medicine_name}</TableCell>
+                    <TableCell className="text-right">{row.original_qty}</TableCell>
+                    <TableCell className="text-right">{row.remaining_qty}</TableCell>
+                    <TableCell className="text-right">{currencySymbol}{row.unit_cost.toFixed(2)}</TableCell>
+                    <TableCell>{row.expiry_date}</TableCell>
+                    <TableCell className={`text-right font-bold ${
+                      row.days_remaining <= 0 ? 'text-red-600' :
+                      row.days_remaining <= criticalDays ? 'text-red-500' :
+                      row.days_remaining <= warningDays ? 'text-amber-600' : ''
+                    }`}>
+                      {row.days_remaining <= 0 ? 'Expired' : `${row.days_remaining}d`}
+                    </TableCell>
+                    <TableCell className="text-right text-red-600">
+                      {currencySymbol}{row.potential_loss.toFixed(2)}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(row.status)}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
