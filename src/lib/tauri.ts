@@ -17,6 +17,11 @@ import type {
   MedicinePosDto, ConfirmSaleDto, SaleReceiptDto,
   OwnerDashboardDto, PharmacistDashboardDto,
 } from '../types/sale';
+import type {
+  CustomerReturnDto, ReturnReceiptDto,
+  SaleForReturnDto, SupplierReturnDto,
+  PurchaseForReturnDto, WriteOffDto,
+} from '../types/return';
 
 // SessionInfo returned by check_session — matches Rust SessionInfo struct
 export interface SessionInfo {
@@ -141,5 +146,18 @@ export const tauri = {
       invoke<OwnerDashboardDto>('get_owner_dashboard', { sessionToken }),
     getPharmacistDashboard: (sessionToken: string) =>
       invoke<PharmacistDashboardDto>('get_pharmacist_dashboard', { sessionToken }),
+  },
+
+  returns: {
+    processCustomerReturn: (sessionToken: string, payload: CustomerReturnDto) =>
+      invoke<ReturnReceiptDto>('process_customer_return', { sessionToken, payload }),
+    processSupplierReturn: (sessionToken: string, payload: SupplierReturnDto) =>
+      invoke<ReturnReceiptDto>('process_supplier_return', { sessionToken, payload }),
+    processWriteOff: (sessionToken: string, payload: WriteOffDto) =>
+      invoke<ReturnReceiptDto>('process_write_off', { sessionToken, payload }),
+    searchSaleForReturn: (sessionToken: string, saleId: number) =>
+      invoke<SaleForReturnDto>('search_sale_for_return', { sessionToken, saleId }),
+    searchPurchaseForReturn: (sessionToken: string, purchaseId: number) =>
+      invoke<PurchaseForReturnDto>('search_purchase_for_return', { sessionToken, purchaseId }),
   },
 };
