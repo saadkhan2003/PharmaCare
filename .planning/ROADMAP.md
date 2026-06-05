@@ -85,8 +85,13 @@ Plans:
   3. Owner can process a supplier return with credit note; batches can be marked as returned to supplier or written off
   4. System enforces that returns cannot exceed the original quantity sold; all returns logged with reason, date, and processing user
   5. Financial reports accurately reflect refunds (not double-counted); written-off stock is deducted from inventory and logged as a loss record
-**Plans**: TBD
+**Plans**: 3 plans (3 autonomous)
 **UI hint**: yes
+
+Plans:
+- [ ] 04-01-PLAN.md — Backend returns infrastructure (migration, models, repos, return_service)
+- [ ] 04-02-PLAN.md — Return commands + TypeScript bindings + Tauri registration
+- [ ] 04-03-PLAN.md — Frontend UI (CustomerReturn, SupplierReturn, WriteOff forms)
 
 ### Phase 5: Reports, Backup & Administration
 **Goal**: Owner can access comprehensive analytics with PDF export, configure automated backup and restore, and manage all remaining settings and administration
@@ -110,7 +115,7 @@ Plans:
 | 1. Foundation & Access Control | 2/3 | Executing | - |
 | 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
 | 3. POS & Sales Engine | 2/3 | Executing (Wave 2 — POS UI done) | - |
-| 4. Returns & Operational Corrections | 0/TBD | Not started | - |
+| 4. Returns & Operational Corrections | 0/3 | Planning complete | - |
 | 5. Reports, Backup & Administration | 0/TBD | Not started | - |
 
 ---
