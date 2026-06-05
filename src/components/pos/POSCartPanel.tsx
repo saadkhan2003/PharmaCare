@@ -1,0 +1,151 @@
+import { useState, useCallback } from 'react';
+import { ShoppingCart, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { POSCartItem } from '@/components/pos/POSCartItem';
+import { POSPaymentForm } from '@/components/pos/POSPaymentForm';
+import { useTauriCommand } from '@/hooks/useTauriCommand';
+import { tauri } from '@/lib/tauri';
+import type { SessionDto } from '@/types/session';
+import type { CartItem } from '@/pages/POSPage';
+import type { SaleReceiptDto } from '@/types/sale';
+
+interface POSCartPanelProps {
+  cart: CartItem[];
+  onUpdateQuantity: (medicineId: number, qty: number) => void;
+  onUpdateDiscount: (medicineId: number, discount: number) => void;
+  onRemoveItem: (medicineId: number) => void;
+  onClearCart: () => void;
+  onConfirm: (receipt: SaleReceiptDto) => void;
+  session: SessionDto;
+  // All refs from usePOSKeyboard
+  quantityRef: React.RefObject<HTMLInputElement>;
+  billDiscountRef: React.RefObject<HTMLInputElement>;
+  taxToggleRef: React.RefObject<HTMLButtonElement>;
+  paymentRef: React.RefObject<HTMLButtonElement>;
+  customerNameRef: React.RefObject<HTMLInputElement>;
+  confirmRef: React.RefObject<HTMLButtonElement>;
+}
+
+export function POSCartPanel({
+  cart,
+  onUpdateQuantity,
+  onUpdateDiscount,
+  onRemoveItem,
+  onClearCart,
+  onConfirm,
+  session,
+  quantityRef,
+  billDiscountRef,
+  taxToggleRef,
+  paymentRef,
+  customerNameRef,
+  confirmRef,
+}: POSCartPanelProps) {
+  const [billDiscount, setBillDiscount] = useState(0);
+  const [taxEnabled, setTaxEnabled] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [customerName, setCustomerName] = useState('');
+
+  const { execute: confirmSale, loading: confirmLoading } = useTauriCommand<SaleReceiptDto>();
+
+  const handleConfirm = useCallback(async () => {
+    if (cart.length === 0) return;
+
+    try {
+      const receipt = await confirmSale(() =>
+        tauri.sales.confirmSale(session.token, {
+          items: cart.map((item) => ({
+            medicine_id: item.medicine.id,
+            quantity: item.quantity,
+            item_discount: item.item_discount,
+          })),
+          bill_discount: billDiscount,
+          tax_enabled: taxEnabled,
+          payment_method: paymentMethod,
+          customer_name: paymentMethod === 'Credit' ? customerName || null : null,
+        })
+      );
+
+      if (receipt) {
+        onConfirm(receipt);
+      }
+    } catch (err: unknown) {
+      // Error is handled by useTauriCommand (sets error state)
+      console.error('Sale confirmation failed:', err);
+    }
+  }, [cart, billDiscount, taxEnabled, paymentMethod, customerName, confirmSale, session.token, onConfirm]);
+
+  return (
+    <div className="flex flex-col h-full border rounded-lg bg-card">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          <h2 className="text-xl font-bold">Cart</h2>
+          {cart.length > 0 && (
+            <Badge variant="secondary" className="ml-1">
+              {cart.length}
+            </Badge>
+          )}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearCart}
+          disabled={cart.length === 0}
+          className="gap-1"
+        >
+          <RotateCcw className="h-4 w-4" />
+          New Sale
+        </Button>
+      </div>
+
+      {/* Cart items — scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 py-2 min-h-0">
+        {cart.length === 0 ? (
+          <div className="flex items-center justify-center h-full py-12">
+            <p className="text-muted-foreground text-lg text-center">
+              No items in cart. Search and add medicines from the left panel.
+            </p>
+          </div>
+        ) : (
+          cart.map((item) => (
+            <POSCartItem
+              key={item.medicine.id}
+              item={item}
+              onUpdateQuantity={onUpdateQuantity}
+              onUpdateDiscount={onUpdateDiscount}
+              onRemove={onRemoveItem}
+              quantityRef={quantityRef}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Payment form — at bottom */}
+      {cart.length > 0 && (
+        <div className="border-t border-border p-4 space-y-4">
+          <POSPaymentForm
+            cartItems={cart}
+            billDiscount={billDiscount}
+            onBillDiscountChange={setBillDiscount}
+            taxEnabled={taxEnabled}
+            onTaxToggle={() => setTaxEnabled((prev) => !prev)}
+            paymentMethod={paymentMethod}
+            onPaymentMethodChange={setPaymentMethod}
+            customerName={customerName}
+            onCustomerNameChange={setCustomerName}
+            onConfirm={handleConfirm}
+            billDiscountRef={billDiscountRef}
+            taxToggleRef={taxToggleRef}
+            paymentRef={paymentRef}
+            customerNameRef={customerNameRef}
+            confirmRef={confirmRef}
+            loading={confirmLoading}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
