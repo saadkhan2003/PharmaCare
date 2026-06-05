@@ -160,8 +160,8 @@ Explicitly excluded. Documented to prevent scope creep.
 | INVT-02 | Phase 2 | Pending |
 | INVT-03 | Phase 2 | Pending |
 | INVT-04 | Phase 2 | Pending |
-| INVT-05 | Phase 1 | Pending |
-| INVT-06 | Phase 1 | Pending |
+| INVT-05 | Phase 2 | Pending |
+| INVT-06 | Phase 2 | Pending |
 | INVT-07 | Phase 2 | Pending |
 | INVT-08 | Phase 2 | Pending |
 | POS-01 | Phase 3 | Pending |
@@ -183,59 +183,59 @@ Explicitly excluded. Documented to prevent scope creep.
 | SUPP-04 | Phase 2 | Pending |
 | SUPP-05 | Phase 2 | Pending |
 | BATC-01 | Phase 2 | Pending |
-| BATC-02 | Phase 4 | Pending |
+| BATC-02 | Phase 3 | Pending |
 | BATC-03 | Phase 3 | Pending |
-| BATC-04 | Phase 4 | Pending |
-| BATC-05 | Phase 5 | Pending |
-| BATC-06 | Phase 5 | Pending |
-| RETN-01 | Phase 5 | Pending |
-| RETN-02 | Phase 5 | Pending |
-| RETN-03 | Phase 5 | Pending |
-| RETN-04 | Phase 5 | Pending |
-| RETN-05 | Phase 5 | Pending |
-| RETN-06 | Phase 5 | Pending |
-| RETN-07 | Phase 5 | Pending |
-| RETN-08 | Phase 5 | Pending |
-| REPT-01 | Phase 6 | Pending |
-| REPT-02 | Phase 4 | Pending |
-| REPT-03 | Phase 6 | Pending |
-| REPT-04 | Phase 6 | Pending |
-| REPT-05 | Phase 6 | Pending |
-| REPT-06 | Phase 6 | Pending |
-| REPT-07 | Phase 4 | Pending |
-| REPT-08 | Phase 4 | Pending |
-| REPT-09 | Phase 6 | Pending |
-| REPT-10 | Phase 6 | Pending |
-| REPT-11 | Phase 6 | Pending |
-| REPT-12 | Phase 6 | Pending |
-| REPT-13 | Phase 6 | Pending |
-| USER-01 | Phase 8 | Pending |
-| USER-02 | Phase 8 | Pending |
-| USER-03 | Phase 8 | Pending |
+| BATC-04 | Phase 2 | Pending |
+| BATC-05 | Phase 4 | Pending |
+| BATC-06 | Phase 4 | Pending |
+| RETN-01 | Phase 4 | Pending |
+| RETN-02 | Phase 4 | Pending |
+| RETN-03 | Phase 4 | Pending |
+| RETN-04 | Phase 4 | Pending |
+| RETN-05 | Phase 4 | Pending |
+| RETN-06 | Phase 4 | Pending |
+| RETN-07 | Phase 4 | Pending |
+| RETN-08 | Phase 4 | Pending |
+| REPT-01 | Phase 3 | Pending |
+| REPT-02 | Phase 3 | Pending |
+| REPT-03 | Phase 5 | Pending |
+| REPT-04 | Phase 5 | Pending |
+| REPT-05 | Phase 5 | Pending |
+| REPT-06 | Phase 5 | Pending |
+| REPT-07 | Phase 5 | Pending |
+| REPT-08 | Phase 5 | Pending |
+| REPT-09 | Phase 5 | Pending |
+| REPT-10 | Phase 5 | Pending |
+| REPT-11 | Phase 5 | Pending |
+| REPT-12 | Phase 5 | Pending |
+| REPT-13 | Phase 5 | Pending |
+| USER-01 | Phase 1 | Pending |
+| USER-02 | Phase 1 | Pending |
+| USER-03 | Phase 1 | Pending |
 | USER-04 | Phase 1 | Pending |
-| BAKP-01 | Phase 7 | Pending |
-| BAKP-02 | Phase 7 | Pending |
-| BAKP-03 | Phase 7 | Pending |
-| BAKP-04 | Phase 7 | Pending |
-| BAKP-05 | Phase 7 | Pending |
-| BAKP-06 | Phase 7 | Pending |
-| BAKP-07 | Phase 7 | Pending |
-| BAKP-08 | Phase 7 | Pending |
-| BAKP-09 | Phase 7 | Pending |
-| SETT-01 | Phase 8 | Pending |
-| SETT-02 | Phase 8 | Pending |
-| SETT-03 | Phase 8 | Pending |
-| SETT-04 | Phase 8 | Pending |
-| SETT-05 | Phase 8 | Pending |
-| SETT-06 | Phase 8 | Pending |
-| SETT-07 | Phase 7 | Pending |
-| SETT-08 | Phase 7 | Pending |
+| BAKP-01 | Phase 5 | Pending |
+| BAKP-02 | Phase 5 | Pending |
+| BAKP-03 | Phase 5 | Pending |
+| BAKP-04 | Phase 5 | Pending |
+| BAKP-05 | Phase 5 | Pending |
+| BAKP-06 | Phase 5 | Pending |
+| BAKP-07 | Phase 5 | Pending |
+| BAKP-08 | Phase 5 | Pending |
+| BAKP-09 | Phase 5 | Pending |
+| SETT-01 | Phase 2 | Pending |
+| SETT-02 | Phase 2 | Pending |
+| SETT-03 | Phase 2 | Pending |
+| SETT-04 | Phase 2 | Pending |
+| SETT-05 | Phase 2 | Pending |
+| SETT-06 | Phase 2 | Pending |
+| SETT-07 | Phase 5 | Pending |
+| SETT-08 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 73 total
-- Mapped to phases: 73
+- v1 requirements: 79 total
+- Mapped to phases: 79
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-05*
-*Last updated: 2026-06-05 after initial definition*
+*Last updated: 2026-06-05 after roadmap creation (5-phase coarse granularity)*
