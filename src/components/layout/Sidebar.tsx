@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, Undo2, RotateCcw, Trash2, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, Undo2, RotateCcw, Trash2, BarChart3, Settings, PanelLeftClose, PanelLeft } from 'lucide-react';
 import type { SessionDto } from '@/types/session';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +31,8 @@ const navItems: NavItem[] = [
   { title: 'Suppliers', url: '/suppliers', icon: Truck, roles: ['owner'] },
   { title: 'Purchases', url: '/purchases', icon: Package, roles: ['owner'] },
   { title: 'Expiry Report', url: '/expiry-report', icon: AlertTriangle, roles: ['owner'] },
+  { title: 'Reports', url: '/reports', icon: BarChart3, roles: ['owner'] },
+  { title: 'Settings', url: '/settings', icon: Settings, roles: ['owner'] },
   { title: 'Return History', url: '/returns/history', icon: ScrollText, roles: ['owner'] },
   { title: 'Customer Return', url: '/returns/customer', icon: Undo2, roles: ['owner', 'pharmacist'] },
   { title: 'Supplier Return', url: '/returns/supplier', icon: RotateCcw, roles: ['owner'] },

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { UserList } from '@/components/users/UserList';
 import { AddUserDialog } from '@/components/users/AddUserDialog';
+import { ChangePasswordDialog } from '@/components/users/ChangePasswordDialog';
 import type { SessionDto } from '@/types/session';
 
 interface UsersPageProps {
@@ -18,7 +19,10 @@ export function UsersPage({ session }: UsersPageProps) {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">User Management</h1>
-        <AddUserDialog session={session} onUserAdded={handleUserChanged} />
+        <div className="flex gap-2">
+          <ChangePasswordDialog session={session} />
+          <AddUserDialog session={session} onUserAdded={handleUserChanged} />
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card">
