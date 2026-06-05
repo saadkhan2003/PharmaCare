@@ -67,8 +67,13 @@ Plans:
   4. On sale confirmation, stock is deducted FIFO from the oldest valid batch first and the sale is recorded with immutable line-item snapshots of price, cost, discount, and tax
   5. Owner dashboard shows today's sales, today's profit, monthly sales, low stock count, expiry count, and top 5 selling medicines
   6. Pharmacist dashboard shows today's sales total and low stock alerts; expiry warnings display yellow at 60 days, red at 30 days, dark red past expiry
-**Plans**: TBD
+**Plans**: 3 plans (2 autonomous, 1 with checkpoint)
 **UI hint**: yes
+
+Plans:
+- [ ] 03-01-PLAN.md — Sale backend (migration 003, models, repos, services, commands)
+- [ ] 03-02-PLAN.md — POS UI (two-panel keyboard-first interface)
+- [ ] 03-03-PLAN.md — Dashboards (owner + pharmacist with Recharts)
 
 ### Phase 4: Returns & Operational Corrections
 **Goal**: Users can process customer and supplier returns with condition-based stock handling, write off damaged/expired stock, and log all corrections for financial accuracy
