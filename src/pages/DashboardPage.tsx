@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTauriCommand } from '../hooks/useTauriCommand';
 import { useSettings } from '../hooks/useSettings';
 import { tauri } from '../lib/tauri';
+import type { BackupStatus } from '../types/report';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +21,9 @@ import {
   Calendar,
   AlertTriangle,
   Package,
+  Cloud,
+  CloudOff,
+  Clock,
 } from 'lucide-react';
 import type { SessionDto } from '../types/session';
 import type { OwnerDashboardDto, PharmacistDashboardDto } from '../types/sale';
@@ -58,13 +62,21 @@ export function DashboardPage({ session }: DashboardPageProps) {
     execute: fetchPharmacist,
   } = useTauriCommand<PharmacistDashboardDto>();
 
+  // Backup status (owner only)
+  const {
+    data: backupStatus,
+    loading: backupLoading,
+    execute: fetchBackupStatus,
+  } = useTauriCommand<BackupStatus>();
+
   const fetchDashboard = useCallback(async () => {
     if (isOwner) {
       await fetchOwner(() => tauri.sales.getOwnerDashboard(session.token));
+      await fetchBackupStatus(() => tauri.backup.getStatus(session.token));
     } else {
       await fetchPharmacist(() => tauri.sales.getPharmacistDashboard(session.token));
     }
-  }, [isOwner, fetchOwner, fetchPharmacist, session.token]);
+  }, [isOwner, fetchOwner, fetchPharmacist, fetchBackupStatus, session.token]);
 
   useEffect(() => {
     fetchDashboard();
@@ -224,6 +236,16 @@ export function DashboardPage({ session }: DashboardPageProps) {
     );
   }
 
+  // Helper: check if backup is missed (>3 days)
+  function isBackupMissed(lastBackupTime: string | null): boolean {
+    if (!lastBackupTime) return true;
+    const lastBackup = new Date(lastBackupTime);
+    const now = new Date();
+    const diffMs = now.getTime() - lastBackup.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours > 72; // 3 days
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Page header */}
@@ -240,6 +262,22 @@ export function DashboardPage({ session }: DashboardPageProps) {
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           Failed to load dashboard: {error}
+        </div>
+      )}
+
+      {/* Missed backup warning (owner only) */}
+      {isOwner && backupStatus && isBackupMissed(backupStatus.last_backup_time) && (
+        <div
+          className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-center gap-3 cursor-pointer hover:bg-amber-100 transition-colors"
+          onClick={() => navigate('/settings')}
+        >
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+          <span>
+            {backupStatus.last_backup_time
+              ? 'No backup in 3+ days. '
+              : 'No backup has been performed yet. '}
+            Go to Settings to back up your data.
+          </span>
         </div>
       )}
 
@@ -289,6 +327,62 @@ export function DashboardPage({ session }: DashboardPageProps) {
 
             {/* Top Sellers Chart (full width) */}
             <TopSellersChart data={ownerData.top_sellers} />
+
+            {/* Backup Status Widget */}
+            {!backupLoading && backupStatus && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Backup</CardTitle>
+                  {backupStatus.google_drive_connected ? (
+                    <Cloud className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <CloudOff className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {backupStatus.google_drive_connected ? (
+                    <>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-green-600 font-medium">Drive Connected</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>
+                          Last backup:{' '}
+                          {backupStatus.last_backup_time
+                            ? new Date(backupStatus.last_backup_time).toLocaleString()
+                            : 'Never'}
+                        </span>
+                      </div>
+                      {backupStatus.last_backup_status && (
+                        <div className="text-sm">
+                          Status:{' '}
+                          <span
+                            className={
+                              backupStatus.last_backup_status === 'Success'
+                                ? 'text-green-600 font-medium'
+                                : 'text-red-600 font-medium'
+                            }
+                          >
+                            {backupStatus.last_backup_status}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Drive Not Connected —{' '}
+                      <button
+                        className="text-primary underline-offset-2 hover:underline"
+                        onClick={() => navigate('/settings')}
+                      >
+                        Connect in Settings
+                      </button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 
