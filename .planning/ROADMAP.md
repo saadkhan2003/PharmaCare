@@ -48,8 +48,13 @@ Plans:
   4. Owner can add/edit/view suppliers with company name, contact, phone, address, payment terms, and notes
   5. Owner can record purchases with supplier, invoice number, date, items, total cost, and payment status; each purchase creates batch records with expiry dates and automatically increases stock
   6. Owner can view expiry report sorted by days remaining and configure pharmacy info, tax rate, discount permissions, expiry thresholds, reorder defaults, and currency symbol
-**Plans**: TBD
+**Plans**: 3 plans (2 autonomous, 1 with checkpoint)
 **UI hint**: yes
+
+Plans:
+- [x] 02-01-PLAN.md — Backend CRUD infrastructure (migration 002 + models + repos + services + commands for medicines, suppliers, settings, batches, StockLedgerService, expiry report query)
+- [ ] 02-02-PLAN.md — Purchase intake backend (atomic transaction for purchase + items + batches + stock movements)
+- [ ] 02-03-PLAN.md — Frontend UI (medicine catalog, supplier management, purchase form with inline item table, expiry report, sidebar nav)
 
 ### Phase 3: POS & Sales Engine
 **Goal**: Pharmacist can process medicine sales in under 30 seconds with keyboard-first flow, live search, FIFO stock deduction, and role-appropriate dashboards showing operational data
@@ -98,7 +103,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Access Control | 2/3 | Executing | - |
-| 2. Medicine Catalog & Stock Intake | 0/TBD | Not started | - |
+| 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
 | 3. POS & Sales Engine | 0/TBD | Not started | - |
 | 4. Returns & Operational Corrections | 0/TBD | Not started | - |
 | 5. Reports, Backup & Administration | 0/TBD | Not started | - |

@@ -10,30 +10,31 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 2 of 5 (Medicine Catalog & Stock Intake)
-Plan: 3/3 in current phase
-Status: Ready to execute
-Last activity: 2026-06-05 — Phase 2 planned (3 plans, 3 waves)
+Plan: 2/3 in current phase (Plan 02-01 complete)
+Status: Partially executed
+Last activity: 2026-06-05 — Plan 02-01 (Wave 1) executed
 
-Progress: [▒▒▒▒▒▒▒▒▒▒] 0% (Phase 2)
+Progress: [██▒▒▒▒▒▒▒▒] 33% (Phase 2 — 1/3 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: ~27m
-- Total execution time: ~80m
+- Total plans completed: 4
+- Average duration: ~20m
+- Total execution time: ~84m
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation & Access Control | 3 | 3 | ~27m |
+| 2. Medicine Catalog & Stock Intake | 1 | 4 | ~4m |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 ✓ 01-02 ✓ 01-01 ✓
+- Last 5 plans: 01-03 ✓ 01-02 ✓ 01-01 ✓ 02-01 ✓
 - Trend: Consistent completion
 
-*Updated after Phase 1 completion*
+*Updated after Phase 2, Plan 01 completion*
 
 ## Accumulated Context
 
@@ -50,6 +51,11 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 02]: Module-level functions (not service structs) for repos and services
 - [Plan 02]: AuthError enum with From<CommandError> conversion for ? propagation
 - [Plan 02]: Generic 'Invalid credentials' error for both wrong username and wrong password (T-01-06)
+- [Plan 02-01]: Prices stored as REAL (f64) per PRD schema — float precision accepted for v1
+- [Plan 02-01]: Dynamic UPDATE SQL used for medicine/supplier partial field updates
+- [Plan 02-01]: StockLedgerService accepts &Connection — Transaction works via Deref
+- [Plan 02-01]: Settings command has no auth guard (T-02-07 accepted — no sensitive data)
+- [Plan 02-01]: Payment status defaults to 'Pending' per pharmacy purchase credit convention
 
 ### Pending Todos
 
@@ -67,6 +73,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-06-05 15:10
-Stopped at: Phase 1 complete — all 3 plans executed
-Resume file: .planning/phases/01-foundation-access-control/01-03-SUMMARY.md
+Last session: 2026-06-05 19:21
+Stopped at: Phase 2 Plan 01 (Wave 1) complete — backend CRUD infrastructure done
+Resume file: .planning/phases/02-medicine-catalog-stock-intake/02-01-SUMMARY.md
