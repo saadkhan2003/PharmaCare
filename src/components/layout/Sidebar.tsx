@@ -1,12 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
-  Sidebar as SidebarPrimitive,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -15,6 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, PanelLeftClose, PanelLeft } from 'lucide-react';
 import type { SessionDto } from '@/types/session';
+import { cn } from '@/lib/utils';
 
 interface NavItem {
   title: string;
@@ -51,7 +50,12 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
   );
 
   return (
-    <SidebarPrimitive collapsible="icon">
+    <div
+      className={cn(
+        "flex flex-col bg-sidebar text-sidebar-foreground border-r overflow-hidden transition-[width] duration-200 ease-linear h-full",
+        isCollapsed ? 'w-16' : 'w-64'
+      )}
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -72,7 +76,6 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
 
       <SidebarContent>
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel>Navigation</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleItems.map((item) => (
@@ -93,14 +96,17 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="mt-auto">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="sm"
               onClick={toggleSidebar}
               tooltip={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className={`text-sidebar-foreground/60 hover:text-sidebar-foreground ${isCollapsed ? 'justify-center px-0' : ''}`}
+              className={cn(
+                'text-sidebar-foreground/60 hover:text-sidebar-foreground',
+                isCollapsed ? 'justify-center px-0' : ''
+              )}
             >
               {isCollapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
               {!isCollapsed && <span>Collapse</span>}
@@ -108,7 +114,7 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-    </SidebarPrimitive>
+    </div>
   );
 }
 
@@ -145,7 +151,6 @@ function MobileSidebar({ session, onClose }: { session: SessionDto; onClose: () 
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {visibleItems.map((item) => (
@@ -184,7 +189,7 @@ export function Sidebar({ session, mobileOpen, onMobileClose }: SidebarProps) {
       {mobileOpen && (
         <MobileSidebar session={session} onClose={() => onMobileClose?.()} />
       )}
-      <div className="hidden md:block">
+      <div className="hidden md:block h-full">
         <DesktopSidebar session={session} />
       </div>
     </>
