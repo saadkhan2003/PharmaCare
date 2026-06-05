@@ -4,16 +4,15 @@ use tauri::State;
 use crate::errors::CommandError;
 use crate::models::SessionDto;
 use crate::services::auth_service;
+use crate::services::email_service;
 use crate::services::user_service;
 use crate::state::AppState;
 
-/// Status of the first-run setup, returned to frontend on app start.
 #[derive(Debug, Serialize)]
 pub struct SetupStatus {
     pub needs_setup: bool,
 }
 
-/// Payload for creating the initial owner account.
 #[derive(Debug, Deserialize)]
 pub struct CreateOwnerPayload {
     pub full_name: String,
@@ -22,14 +21,15 @@ pub struct CreateOwnerPayload {
     pub owner_email: Option<String>,
 }
 
-/// Checks whether the app needs first-run setup.
-///
-/// Returns `needs_setup: true` if there are 0 users in the database.
-/// This command does NOT require authentication (called before login screen).
+#[derive(Serialize)]
+pub struct RecoveryCodeResponse {
+    pub masked_email: String,
+    pub expires_minutes: i64,
+}
+
 #[tauri::command]
 pub fn check_setup_status(state: State<'_, AppState>) -> Result<SetupStatus, CommandError> {
     let db = state.db.lock()?;
-
     let count: i64 = db.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))?;
 
     Ok(SetupStatus {
@@ -37,14 +37,6 @@ pub fn check_setup_status(state: State<'_, AppState>) -> Result<SetupStatus, Com
     })
 }
 
-/// Creates the initial owner account and auto-logs in.
-///
-/// Security (T-01-12):
-/// - Rejects if any user already exists (prevents overwriting existing accounts)
-/// - Creates the account with role = "owner"
-/// - Auto-logs in by creating a session
-///
-/// This command does NOT require authentication (called during setup wizard flow).
 #[tauri::command]
 pub fn create_initial_owner(
     state: State<'_, AppState>,
@@ -53,23 +45,19 @@ pub fn create_initial_owner(
     let db = state.db.lock()?;
     let mut sessions = state.sessions.lock()?;
 
-    // Validate password length (D-06)
     if payload.password.len() < 6 {
         return Err(CommandError::validation(
             "Password must be at least 6 characters",
         ));
     }
 
-    // Safety check: reject if any user already exists (T-01-12)
-    let user_count: i64 =
-        db.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))?;
+    let user_count: i64 = db.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))?;
     if user_count > 0 {
         return Err(CommandError::validation(
             "Setup has already been completed",
         ));
     }
 
-    // Create the initial owner account via user_service
     let create_dto = crate::models::CreateUserDto {
         full_name: payload.full_name,
         username: payload.username,
@@ -79,39 +67,34 @@ pub fn create_initial_owner(
 
     let user = user_service::create_user(&db, &create_dto)?;
 
-    // Store owner email if provided (for password recovery)
     if let Some(email) = &payload.owner_email {
-        let _ = db.execute(
-            "INSERT OR REPLACE INTO settings (key, value) VALUES ('owner_email', ?1)",
-            rusqlite::params![email],
-        );
+        if !email.trim().is_empty() {
+            db.execute(
+                "INSERT OR REPLACE INTO settings (key, value) VALUES ('owner_email', ?1)",
+                rusqlite::params![email.trim()],
+            )?;
+        }
     }
 
-    // Auto-login: create a session for the new owner
-    let session = auth_service::login(&db, &mut sessions, &user.username, &create_dto.password)?;
-
-    Ok(session)
+    auth_service::login(&db, &mut sessions, &user.username, &create_dto.password)
+        .map_err(CommandError::from)
 }
 
-/// Generates a recovery code for password reset. Stores it with 15-min expiry.
-/// Returns the code + owner email hint for display.
 #[tauri::command]
 pub fn request_recovery_code(
     state: State<'_, AppState>,
 ) -> Result<RecoveryCodeResponse, CommandError> {
     let db = state.db.lock()?;
 
-    // Check there's at least one owner
-    let owner_count: i64 = db.query_row(
-        "SELECT COUNT(*) FROM users WHERE role = 'owner' AND is_active = 1",
-        [],
-        |row| row.get(0),
-    )?;
-    if owner_count == 0 {
-        return Err(CommandError::validation("No owner account found"));
-    }
+    let owner_name: Option<String> = db
+        .query_row(
+            "SELECT full_name FROM users WHERE role = 'owner' AND is_active = 1 ORDER BY id LIMIT 1",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    let owner_name = owner_name.ok_or_else(|| CommandError::validation("No owner account found"))?;
 
-    // Get owner email from settings
     let owner_email: Option<String> = db
         .query_row(
             "SELECT value FROM settings WHERE key = 'owner_email'",
@@ -119,89 +102,62 @@ pub fn request_recovery_code(
             |row| row.get(0),
         )
         .ok();
+    let owner_email = owner_email
+        .map(|email| email.trim().to_string())
+        .filter(|email| !email.is_empty())
+        .ok_or_else(|| CommandError::validation("Owner email is not configured"))?;
 
-    // Generate 6-digit code
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .subsec_nanos();
-    let code = format!("{:06}", (seed % 900000 + 100000));
+    let smtp_config = email_service::SmtpConfig::from_env()
+        .ok_or_else(|| CommandError::validation("SMTP email settings are not configured"))?;
 
-    // Store code with expiry (15 minutes)
-    let expires = chrono::Utc::now() + chrono::Duration::minutes(15);
-    let _ = db.execute(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES ('recovery_code', ?1)",
-        rusqlite::params![&code],
-    );
-    let _ = db.execute(
+    let code = email_service::generate_otp();
+    let code_hash = bcrypt::hash(&code, bcrypt::DEFAULT_COST)
+        .map_err(|e| CommandError::internal(&e.to_string()))?;
+    let expires_minutes = otp_expires_minutes();
+    let expires = chrono::Utc::now() + chrono::Duration::minutes(expires_minutes);
+
+    db.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('recovery_otp_hash', ?1)",
+        rusqlite::params![&code_hash],
+    )?;
+    db.execute(
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('recovery_expires', ?1)",
         rusqlite::params![expires.format("%Y-%m-%d %H:%M:%S").to_string()],
-    );
+    )?;
+    db.execute("DELETE FROM settings WHERE key = 'recovery_code'", [])?;
+
+    if let Err(err) = email_service::send_otp_email(&smtp_config, &owner_email, &code, &owner_name) {
+        db.execute("DELETE FROM settings WHERE key = 'recovery_otp_hash'", [])?;
+        db.execute("DELETE FROM settings WHERE key = 'recovery_expires'", [])?;
+        return Err(CommandError::internal(&format!(
+            "Failed to send recovery email: {}",
+            err
+        )));
+    }
 
     Ok(RecoveryCodeResponse {
-        code: code.clone(),
-        owner_email: owner_email.clone(),
-        masked_email: owner_email.as_ref().map(|e| {
-            let at = e.find('@').unwrap_or(e.len());
-            let prefix = &e[..at.min(2)];
-            format!("{}***@***", prefix)
-        }),
+        masked_email: mask_email(&owner_email),
+        expires_minutes,
     })
 }
 
-/// Verifies a recovery code and returns owner user IDs for reset.
 #[tauri::command]
 pub fn verify_recovery_code(
     state: State<'_, AppState>,
     code: String,
 ) -> Result<Vec<i64>, CommandError> {
     let db = state.db.lock()?;
+    verify_recovery_otp(&db, &code)?;
 
-    let stored: Option<String> = db
-        .query_row(
-            "SELECT value FROM settings WHERE key = 'recovery_code'",
-            [],
-            |row| row.get(0),
-        )
-        .ok();
+    let mut stmt = db.prepare("SELECT id FROM users WHERE role = 'owner' AND is_active = 1")?;
+    let ids = stmt
+        .query_map([], |row| row.get(0))?
+        .filter_map(Result::ok)
+        .collect();
 
-    match stored {
-        Some(saved) if saved == code => {
-            // Check expiry
-            let expires: Option<String> = db
-                .query_row(
-                    "SELECT value FROM settings WHERE key = 'recovery_expires'",
-                    [],
-                    |row| row.get(0),
-                )
-                .ok();
-            if let Some(exp) = expires {
-                if let Ok(exp_time) =
-                    chrono::NaiveDateTime::parse_from_str(&exp, "%Y-%m-%d %H:%M:%S")
-                {
-                    if chrono::Utc::now().naive_utc() > exp_time {
-                        return Err(CommandError::validation("Recovery code has expired"));
-                    }
-                }
-            }
-
-            // Get all owner user IDs
-            let mut stmt = db.prepare(
-                "SELECT id FROM users WHERE role = 'owner' AND is_active = 1",
-            )?;
-            let ids: Vec<i64> = stmt
-                .query_map([], |row| row.get(0))?
-                .filter_map(|r| r.ok())
-                .collect();
-
-            Ok(ids)
-        }
-        _ => Err(CommandError::validation("Invalid recovery code")),
-    }
+    Ok(ids)
 }
 
-/// Resets password for an owner user using a verified recovery code.
 #[tauri::command]
 pub fn reset_with_recovery_code(
     state: State<'_, AppState>,
@@ -210,42 +166,91 @@ pub fn reset_with_recovery_code(
     new_password: String,
 ) -> Result<(), CommandError> {
     let db = state.db.lock()?;
-
-    // Verify code first
-    let stored: Option<String> = db
-        .query_row(
-            "SELECT value FROM settings WHERE key = 'recovery_code'",
-            [],
-            |row| row.get(0),
-        )
-        .ok();
-    match stored {
-        Some(saved) if saved == code => {}
-        _ => return Err(CommandError::validation("Invalid recovery code")),
-    }
+    verify_recovery_otp(&db, &code)?;
 
     if new_password.len() < 6 {
         return Err(CommandError::validation("Password must be at least 6 characters"));
     }
 
-    use bcrypt::{hash, DEFAULT_COST};
-    let new_hash =
-        hash(&new_password, DEFAULT_COST).map_err(|e| CommandError::internal(&e.to_string()))?;
+    let owner_count: i64 = db.query_row(
+        "SELECT COUNT(*) FROM users WHERE id = ?1 AND role = 'owner' AND is_active = 1",
+        rusqlite::params![user_id],
+        |row| row.get(0),
+    )?;
+    if owner_count == 0 {
+        return Err(CommandError::validation("Owner account not found"));
+    }
 
-    // Update password and clear recovery code
+    let new_hash = bcrypt::hash(&new_password, bcrypt::DEFAULT_COST)
+        .map_err(|e| CommandError::internal(&e.to_string()))?;
     db.execute(
         "UPDATE users SET password_hash = ?1 WHERE id = ?2",
         rusqlite::params![&new_hash, user_id],
     )?;
-    db.execute("DELETE FROM settings WHERE key = 'recovery_code'", [])?;
-    db.execute("DELETE FROM settings WHERE key = 'recovery_expires'", [])?;
+    clear_recovery_otp(&db)?;
 
     Ok(())
 }
 
-#[derive(Serialize)]
-pub struct RecoveryCodeResponse {
-    pub code: String,
-    pub owner_email: Option<String>,
-    pub masked_email: Option<String>,
+fn verify_recovery_otp(db: &rusqlite::Connection, code: &str) -> Result<(), CommandError> {
+    let code = code.trim();
+    if code.len() != 6 || !code.chars().all(|c| c.is_ascii_digit()) {
+        return Err(CommandError::validation("Invalid recovery code"));
+    }
+
+    let expires: Option<String> = db
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'recovery_expires'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    let expires = expires.ok_or_else(|| CommandError::validation("No active recovery code found"))?;
+    let expires = chrono::NaiveDateTime::parse_from_str(&expires, "%Y-%m-%d %H:%M:%S")
+        .map_err(|_| CommandError::validation("Recovery code has expired"))?;
+
+    if chrono::Utc::now().naive_utc() > expires {
+        clear_recovery_otp(db)?;
+        return Err(CommandError::validation("Recovery code has expired"));
+    }
+
+    let stored_hash: Option<String> = db
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'recovery_otp_hash'",
+            [],
+            |row| row.get(0),
+        )
+        .ok();
+    let stored_hash = stored_hash.ok_or_else(|| CommandError::validation("No active recovery code found"))?;
+
+    let valid = bcrypt::verify(code, &stored_hash)
+        .map_err(|e| CommandError::internal(&e.to_string()))?;
+    if !valid {
+        return Err(CommandError::validation("Invalid recovery code"));
+    }
+
+    Ok(())
+}
+
+fn clear_recovery_otp(db: &rusqlite::Connection) -> Result<(), CommandError> {
+    db.execute("DELETE FROM settings WHERE key = 'recovery_otp_hash'", [])?;
+    db.execute("DELETE FROM settings WHERE key = 'recovery_code'", [])?;
+    db.execute("DELETE FROM settings WHERE key = 'recovery_expires'", [])?;
+    Ok(())
+}
+
+fn otp_expires_minutes() -> i64 {
+    std::env::var("OTP_EXPIRES_MINUTES")
+        .ok()
+        .and_then(|value| value.parse::<i64>().ok())
+        .filter(|minutes| *minutes > 0)
+        .unwrap_or(15)
+}
+
+fn mask_email(email: &str) -> String {
+    let Some((local, domain)) = email.split_once('@') else {
+        return "***".to_string();
+    };
+    let visible = local.chars().take(2).collect::<String>();
+    format!("{}***@{}", visible, domain)
 }

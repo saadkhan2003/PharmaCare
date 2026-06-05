@@ -74,15 +74,21 @@ export function DashboardPage({ session }: DashboardPageProps) {
     execute: fetchOverdueDebtCount,
   } = useTauriCommand<number>();
 
+  const {
+    data: dueSoonDebtCount,
+    execute: fetchDueSoonDebtCount,
+  } = useTauriCommand<number>();
+
   const fetchDashboard = useCallback(async () => {
     if (isOwner) {
       await fetchOwner(() => tauri.sales.getOwnerDashboard(session.token));
       await fetchBackupStatus(() => tauri.backup.getStatus(session.token));
       await fetchOverdueDebtCount(() => tauri.debt.getOverdueCount(session.token));
+      await fetchDueSoonDebtCount(() => tauri.debt.getDueSoonCount(session.token));
     } else {
       await fetchPharmacist(() => tauri.sales.getPharmacistDashboard(session.token));
     }
-  }, [isOwner, fetchOwner, fetchPharmacist, fetchBackupStatus, fetchOverdueDebtCount, session.token]);
+  }, [isOwner, fetchOwner, fetchPharmacist, fetchBackupStatus, fetchOverdueDebtCount, fetchDueSoonDebtCount, session.token]);
 
   useEffect(() => {
     fetchDashboard();
@@ -331,6 +337,13 @@ export function DashboardPage({ session }: DashboardPageProps) {
               count={ownerData.expiry_critical_count}
               icon={AlertTriangle}
               badgeClassName="bg-red-100 text-red-800 border-red-200"
+            />
+            <AlertCard
+              title="Debts Due Soon (≤3d)"
+              count={dueSoonDebtCount ?? 0}
+              icon={Calendar}
+              onClick={() => navigate('/debts')}
+              badgeClassName="bg-yellow-100 text-yellow-800 border-yellow-200"
             />
             <AlertCard
               title="Overdue Debts"

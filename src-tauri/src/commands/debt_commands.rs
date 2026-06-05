@@ -58,3 +58,13 @@ pub fn get_overdue_count(
     let db = state.db.lock()?;
     debt_service::get_overdue_count(&db)
 }
+
+#[tauri::command]
+pub fn get_due_soon_count(
+    state: State<'_, AppState>,
+    session_token: String,
+) -> Result<i64, CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    debt_service::get_due_soon_count(&db)
+}

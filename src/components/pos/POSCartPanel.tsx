@@ -47,7 +47,7 @@ export function POSCartPanel({
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [customerName, setCustomerName] = useState('');
 
-  const { execute: confirmSale, loading: confirmLoading } = useTauriCommand<SaleReceiptDto>();
+  const { execute: confirmSale, loading: confirmLoading, error: confirmError } = useTauriCommand<SaleReceiptDto>();
 
   const handleConfirm = useCallback(async () => {
     if (cart.length === 0) return;
@@ -144,6 +144,11 @@ export function POSCartPanel({
             confirmRef={confirmRef}
             loading={confirmLoading}
           />
+          {confirmError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {confirmError}
+            </div>
+          )}
         </div>
       )}
     </div>

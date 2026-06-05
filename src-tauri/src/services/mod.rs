@@ -11,3 +11,4 @@ pub mod return_service;
 pub mod report_service;
 pub mod backup_service;
 pub mod debt_service;
+pub mod email_service;

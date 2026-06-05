@@ -78,7 +78,7 @@ export const tauri = {
     createOwner: (payload: CreateOwnerDto) =>
       invoke<SessionDto>('create_initial_owner', { payload }),
     requestRecoveryCode: () =>
-      invoke<{ code: string; owner_email: string | null; masked_email: string | null }>('request_recovery_code'),
+      invoke<{ masked_email: string; expires_minutes: number }>('request_recovery_code'),
     verifyRecoveryCode: (code: string) =>
       invoke<number[]>('verify_recovery_code', { code }),
     resetWithRecoveryCode: (userId: number, code: string, newPassword: string) =>
@@ -237,6 +237,7 @@ export const tauri = {
       invoke<DebtorDto>('record_payment', { sessionToken, debtId, amount }),
     getOverdueCount: (sessionToken: string) =>
       invoke<number>('get_overdue_count', { sessionToken }),
+    getDueSoonCount: (sessionToken: string) =>
+      invoke<number>('get_due_soon_count', { sessionToken }),
   },
 };
-

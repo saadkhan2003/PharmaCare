@@ -94,3 +94,17 @@ pub fn get_overdue_count(db: &Connection) -> Result<i64, rusqlite::Error> {
     )?;
     Ok(count)
 }
+
+pub fn get_due_soon_count(db: &Connection) -> Result<i64, rusqlite::Error> {
+    let count: i64 = db.query_row(
+        "SELECT COUNT(*)
+         FROM debtors
+         WHERE status = 'pending'
+           AND due_date >= date('now')
+           AND due_date <= date('now', '+3 days')
+           AND paid_amount < total_amount",
+        [],
+        |row| row.get(0),
+    )?;
+    Ok(count)
+}

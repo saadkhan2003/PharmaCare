@@ -44,7 +44,7 @@ export function POSPaymentForm({
   onPaymentMethodChange,
   customerName,
   onCustomerNameChange,
-  onConfirm: _onConfirm,
+  onConfirm,
   billDiscountRef,
   taxToggleRef,
   paymentRef,
@@ -187,7 +187,9 @@ export function POSPaymentForm({
       {/* Confirm button */}
       <Button
         ref={confirmRef}
+        type="button"
         className="w-full h-14 text-xl font-bold"
+        onClick={onConfirm}
         disabled={loading || cartItems.length === 0}
       >
         {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

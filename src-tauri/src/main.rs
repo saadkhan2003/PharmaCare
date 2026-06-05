@@ -24,6 +24,8 @@ use state::AppState;
 use models::StoredSession;
 
 fn main() {
+    dotenvy::dotenv().ok();
+
     let migration_defs = migrations::get_migrations();
 
     tauri::Builder::default()
@@ -141,6 +143,7 @@ fn main() {
             commands::debt_commands::get_debt,
             commands::debt_commands::record_payment,
             commands::debt_commands::get_overdue_count,
+            commands::debt_commands::get_due_soon_count,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

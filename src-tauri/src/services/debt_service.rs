@@ -53,3 +53,8 @@ pub fn get_overdue_count(db: &Connection) -> Result<i64, CommandError> {
     debt_repo::update_overdue_status(db)?;
     debt_repo::get_overdue_count(db).map_err(|e| CommandError::internal(&e.to_string()))
 }
+
+pub fn get_due_soon_count(db: &Connection) -> Result<i64, CommandError> {
+    debt_repo::update_overdue_status(db)?;
+    debt_repo::get_due_soon_count(db).map_err(|e| CommandError::internal(&e.to_string()))
+}

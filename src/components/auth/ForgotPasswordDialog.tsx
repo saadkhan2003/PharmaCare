@@ -25,8 +25,8 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
   const { toast } = useToast();
   const [step, setStep] = useState<Step>('request');
   const [code, setCode] = useState('');
-  const [displayCode, setDisplayCode] = useState('');
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
+  const [expiresMinutes, setExpiresMinutes] = useState(15);
   const [ownerIds, setOwnerIds] = useState<number[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [newPassword, setNewPassword] = useState('');
@@ -39,9 +39,10 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
     setError(null);
     try {
       const result = await tauri.setup.requestRecoveryCode();
-      setDisplayCode(result.code);
       setMaskedEmail(result.masked_email);
+      setExpiresMinutes(result.expires_minutes);
       setStep('verify');
+      toast('success', 'Recovery code sent', `Check ${result.masked_email} for the code`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to request code');
     } finally {
@@ -86,8 +87,11 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
   const handleClose = () => {
     setStep('request');
     setCode('');
-    setDisplayCode('');
     setError(null);
+    setMaskedEmail(null);
+    setExpiresMinutes(15);
+    setOwnerIds([]);
+    setSelectedUserId(null);
     setNewPassword('');
     setConfirmPassword('');
     onClose();
@@ -101,9 +105,7 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
             <DialogHeader>
               <DialogTitle>Recover Account Access</DialogTitle>
               <DialogDescription>
-                Generate a recovery code to reset the Owner password.
-                The code will be displayed on screen.
-                {maskedEmail && ` A masked copy was sent to ${maskedEmail}.`}
+                Send a one-time recovery code to the configured Owner email address.
               </DialogDescription>
             </DialogHeader>
             {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
@@ -111,7 +113,7 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
               <Button variant="outline" onClick={handleClose}>Cancel</Button>
               <Button onClick={handleRequestCode} disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Generate Recovery Code
+                Send Recovery Code
               </Button>
             </DialogFooter>
           </>
@@ -122,8 +124,7 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
             <DialogHeader>
               <DialogTitle>Enter Recovery Code</DialogTitle>
               <DialogDescription>
-                Your recovery code: <strong className="text-lg tracking-widest">{displayCode}</strong>
-                <br />Enter the code below to proceed.
+                Enter the 6-digit code sent to {maskedEmail}. It expires in {expiresMinutes} minutes.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2 py-2">
