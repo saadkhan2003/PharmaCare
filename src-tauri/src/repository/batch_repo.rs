@@ -4,10 +4,11 @@ use crate::models::{Batch, ExpiryReportRow};
 
 /// Inserts a new batch. Returns the new row id.
 /// Accepts &Connection (works for both standalone Connection and Transaction via Deref).
+/// `purchase_id` can be None for opening stock batches.
 pub fn insert(
     conn: &Connection,
     medicine_id: i64,
-    purchase_id: i64,
+    purchase_id: Option<i64>,
     purchase_item_id: Option<i64>,
     purchase_price: f64,
     quantity: i64,

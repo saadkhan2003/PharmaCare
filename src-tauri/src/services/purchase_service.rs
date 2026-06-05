@@ -102,7 +102,7 @@ pub fn record_purchase(
         let batch_id = batch_repo::insert(
             &tx,
             item.medicine_id,
-            purchase_id,
+            Some(purchase_id),
             Some(item_id), // purchase_item_id
             item.purchase_price,
             item.quantity,  // quantity
