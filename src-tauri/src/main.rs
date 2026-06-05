@@ -58,6 +58,7 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            // Phase 1 commands
             commands::auth_commands::auth_login,
             commands::auth_commands::auth_logout,
             commands::auth_commands::check_session,
@@ -67,6 +68,22 @@ fn main() {
             commands::setup_commands::check_setup_status,
             commands::setup_commands::create_initial_owner,
             commands::audit_commands::get_login_attempts,
+            // Phase 2 commands
+            commands::medicine_commands::create_medicine,
+            commands::medicine_commands::update_medicine,
+            commands::medicine_commands::deactivate_medicine,
+            commands::medicine_commands::list_medicines,
+            commands::medicine_commands::search_medicines,
+            commands::medicine_commands::search_medicines_pharmacist,
+            commands::medicine_commands::get_medicine,
+            commands::supplier_commands::create_supplier,
+            commands::supplier_commands::update_supplier,
+            commands::supplier_commands::deactivate_supplier,
+            commands::supplier_commands::list_suppliers,
+            commands::supplier_commands::search_suppliers,
+            commands::settings_commands::get_settings,
+            commands::batch_commands::get_expiry_report,
+            commands::batch_commands::get_current_stock,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

@@ -2,3 +2,7 @@ pub mod auth_commands;
 pub mod user_commands;
 pub mod setup_commands;
 pub mod audit_commands;
+pub mod medicine_commands;
+pub mod supplier_commands;
+pub mod settings_commands;
+pub mod batch_commands;
