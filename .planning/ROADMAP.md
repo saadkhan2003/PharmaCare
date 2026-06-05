@@ -14,7 +14,7 @@ PharmaCare is built as a dependency-driven Windows desktop application where the
 - [ ] **Phase 1: Foundation & Access Control** - Tauri/React shell, SQLite, bcrypt auth, RBAC, user management
 - [ ] **Phase 2: Medicine Catalog & Stock Intake** - Medicine CRUD, suppliers, purchases, batch tracking, core settings
 - [/] **Phase 3: POS & Sales Engine** - Keyboard-first POS, FIFO stock deduction, expiry blocking, operational dashboards
-- [ ] **Phase 4: Returns & Operational Corrections** - Customer/supplier returns, write-offs, stock restoration, loss logging
+- [x] **Phase 4: Returns & Operational Corrections** - Customer/supplier returns, write-offs, stock restoration, loss logging
 - [ ] **Phase 5: Reports, Backup & Administration** - Analytics reports with PDF export, Google Drive backup, restore, settings UI
 
 ## Phase Details
@@ -91,7 +91,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md — Backend returns infrastructure (migration, models, repos, return_service)
 - [x] 04-02-PLAN.md — Return commands + TypeScript bindings + Tauri registration
-- [ ] 04-03-PLAN.md — Frontend UI (CustomerReturn, SupplierReturn, WriteOff forms)
+- [x] 04-03-PLAN.md — Frontend UI (CustomerReturn, SupplierReturn, WriteOff forms)
 
 ### Phase 5: Reports, Backup & Administration
 **Goal**: Owner can access comprehensive analytics with PDF export, configure automated backup and restore, and manage all remaining settings and administration
@@ -115,7 +115,7 @@ Plans:
 | 1. Foundation & Access Control | 2/3 | Executing | - |
 | 2. Medicine Catalog & Stock Intake | 1/3 | Executing (Wave 1 done) | - |
 | 3. POS & Sales Engine | 2/3 | Executing (Wave 2 — POS UI done) | - |
-| 4. Returns & Operational Corrections | 2/3 | Executing (Wave 2 — commands + types done) | 2026-06-05 |
+| 4. Returns & Operational Corrections | 3/3 | Complete | 2026-06-05 |
 | 5. Reports, Backup & Administration | 0/TBD | Not started | - |
 
 ---
