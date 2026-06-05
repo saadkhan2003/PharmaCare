@@ -84,6 +84,10 @@ fn main() {
             commands::settings_commands::get_settings,
             commands::batch_commands::get_expiry_report,
             commands::batch_commands::get_current_stock,
+            // Phase 2 commands (from Plan 02)
+            commands::purchase_commands::record_purchase,
+            commands::purchase_commands::list_purchases,
+            commands::purchase_commands::get_purchase_detail,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");
