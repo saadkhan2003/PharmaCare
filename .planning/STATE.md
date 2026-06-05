@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-06-05)
 
 **Core value:** The pharmacist can reliably process medicine sales while stock, profit, expiry, and backup data stay accurate without requiring internet access.
-**Current focus:** Phase 5 — Reports, Backup & Administration
+**Current focus:** ✅ v1 Complete
 
 ## Current Position
 
 Phase: 5 of 5 (Reports, Backup & Administration) — **COMPLETE**
 Plan: 3/3 in current phase
-Status: Plan 03 complete — Settings UI + backup widget + password change + sidebar + routing
-Last activity: 2026-06-05 — Phase 5 Plan 03 executed (final plan)
+Status: **v1 feature-complete** — all 5 phases executed
+Last activity: 2026-06-05 — **PharmaCare v1 delivered**
 
 Progress: [████████████████████████████] 
 
