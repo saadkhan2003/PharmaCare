@@ -135,6 +135,12 @@ fn main() {
             // Phase 5 user commands
             commands::user_commands::change_password,
             commands::user_commands::reset_password,
+            
+            commands::debt_commands::create_debt,
+            commands::debt_commands::list_debts,
+            commands::debt_commands::get_debt,
+            commands::debt_commands::record_payment,
+            commands::debt_commands::get_overdue_count,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

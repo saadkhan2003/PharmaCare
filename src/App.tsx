@@ -16,6 +16,7 @@ import { WriteOffPage } from './pages/WriteOffPage';
 import { ReturnHistoryPage } from './pages/ReturnHistoryPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { DebtsPage } from './pages/DebtsPage';
 import { AppShell } from './components/layout/AppShell';
 import { ToastProvider } from './components/ui/toast-provider';
 import { tauri } from './lib/tauri';
@@ -46,6 +47,7 @@ function AuthenticatedApp({ session, onLogout }: { session: import('./types/sess
               <Route path="/returns/history" element={<div className="animate-in"><ReturnHistoryPage session={session} /></div>} />
               <Route path="/reports" element={<div className="animate-in"><ReportsPage session={session} /></div>} />
               <Route path="/settings" element={<div className="animate-in"><SettingsPage session={session} /></div>} />
+              <Route path="/debts" element={<div className="animate-in"><DebtsPage session={session} /></div>} />
             </>
           )}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

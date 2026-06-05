@@ -69,14 +69,20 @@ export function DashboardPage({ session }: DashboardPageProps) {
     execute: fetchBackupStatus,
   } = useTauriCommand<BackupStatus>();
 
+  const {
+    data: overdueDebtCount,
+    execute: fetchOverdueDebtCount,
+  } = useTauriCommand<number>();
+
   const fetchDashboard = useCallback(async () => {
     if (isOwner) {
       await fetchOwner(() => tauri.sales.getOwnerDashboard(session.token));
       await fetchBackupStatus(() => tauri.backup.getStatus(session.token));
+      await fetchOverdueDebtCount(() => tauri.debt.getOverdueCount(session.token));
     } else {
       await fetchPharmacist(() => tauri.sales.getPharmacistDashboard(session.token));
     }
-  }, [isOwner, fetchOwner, fetchPharmacist, fetchBackupStatus, session.token]);
+  }, [isOwner, fetchOwner, fetchPharmacist, fetchBackupStatus, fetchOverdueDebtCount, session.token]);
 
   useEffect(() => {
     fetchDashboard();
@@ -325,6 +331,13 @@ export function DashboardPage({ session }: DashboardPageProps) {
               count={ownerData.expiry_critical_count}
               icon={AlertTriangle}
               badgeClassName="bg-red-100 text-red-800 border-red-200"
+            />
+            <AlertCard
+              title="Overdue Debts"
+              count={overdueDebtCount ?? 0}
+              icon={Clock}
+              onClick={() => navigate('/debts')}
+              badgeClassName="bg-amber-100 text-amber-800 border-amber-200"
             />
 
             {/* Top Sellers Chart (full width) */}

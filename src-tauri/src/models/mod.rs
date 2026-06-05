@@ -9,6 +9,7 @@ pub mod purchase;
 pub mod sale;
 pub mod r#return;
 pub mod report;
+pub mod debt;
 
 // Re-exports — used by services and commands in downstream plans
 #[allow(unused_imports)]

@@ -28,8 +28,8 @@ import type {
   PurchaseForReturnDto, WriteOffDto,
   ReturnListItemDto,
 } from '../types/return';
+import type { DebtorDto, DebtorListItem, DebtDetailDto, CreateDebtDto } from '../types/debt';
 
-// SessionInfo returned by check_session — matches Rust SessionInfo struct
 export interface SessionInfo {
   user_id: number;
   username: string;
@@ -225,4 +225,18 @@ export const tauri = {
     listReturns: (sessionToken: string) =>
       invoke<ReturnListItemDto[]>('list_returns', { sessionToken }),
   },
+
+  debt: {
+    create: (sessionToken: string, payload: CreateDebtDto) =>
+      invoke<DebtorDto>('create_debt', { sessionToken, payload }),
+    list: (sessionToken: string) =>
+      invoke<DebtorListItem[]>('list_debts', { sessionToken }),
+    get: (sessionToken: string, debtId: number) =>
+      invoke<DebtDetailDto>('get_debt', { sessionToken, debtId }),
+    recordPayment: (sessionToken: string, debtId: number, amount: number) =>
+      invoke<DebtorDto>('record_payment', { sessionToken, debtId, amount }),
+    getOverdueCount: (sessionToken: string) =>
+      invoke<number>('get_overdue_count', { sessionToken }),
+  },
 };
+

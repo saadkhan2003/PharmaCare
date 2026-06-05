@@ -10,3 +10,4 @@ pub mod sale_service;
 pub mod return_service;
 pub mod report_service;
 pub mod backup_service;
+pub mod debt_service;
