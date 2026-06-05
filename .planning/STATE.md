@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-06-05)
 ## Current Position
 
 Phase: 3 of 5 (POS & Sales Engine)
-Plan: 3/3 in current phase
-Status: Ready to execute
-Last activity: 2026-06-05 — Phase 3 planned (3 plans, 3 waves)
+Plan: 2/3 in current phase
+Status: Wave 1 complete — backend sale engine done
+Last activity: 2026-06-05 — Plan 03-01 executed (migration + sale service + dashboard commands)
 
-Progress: [▒▒▒▒▒▒▒▒▒▒] 0% (Phase 3)
+Progress: [██▒▒▒▒▒▒▒▒] 33% (Phase 3 — 1/3 plans)
 
 ## Performance Metrics
 
@@ -29,6 +29,7 @@ Progress: [▒▒▒▒▒▒▒▒▒▒] 0% (Phase 3)
 |-------|-------|-------|----------|
 | 1. Foundation & Access Control | 3 | 3 | ~27m |
 | 2. Medicine Catalog & Stock Intake | 3 | 6 | ~10m |
+| 3. POS & Sales Engine | 1 | ~5m | ~5m |
 
 **Recent Trend:**
 - Last 5 plans: 01-03 ✓ 01-02 ✓ 01-01 ✓ 02-01 ✓ 02-02 ✓ 02-03 ✓
@@ -59,6 +60,14 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Plan 02-02]: record_purchase takes &mut Connection — rusqlite::Connection::transaction() requires &mut self
 - [Plan 02-02]: Server-side total_cost recalculation: sum(qty × purchase_price), never trust frontend value (T-02-08)
 - [Plan 02-02]: Transaction auto-rollback via Transaction::Drop — no explicit rollback needed
+- [Plan 03-01]: FIFO allocation uses expiry_date ASC, received_date ASC, id ASC (D-32)
+- [Plan 03-01]: Sale wrapped in single atomic rusqlite::Transaction (D-33)
+- [Plan 03-01]: COGS (purchase_cost) captured immutably per allocation at confirm time (D-34)
+- [Plan 03-01]: Server-side total recalculation: unit_price from DB, subtotal/discount/tax/total computed server-side (D-35)
+- [Plan 03-01]: Tax on post-discount subtotal with per-sale tax_enabled toggle (D-36)
+- [Plan 03-01]: Discount gated by role: owner always allowed, pharmacist requires cashier_discount_enabled setting (D-38)
+- [Plan 03-01]: Payment methods validated via CHECK constraint; Credit requires customer_name (D-39/D-40)
+- [Plan 03-01]: Owner dashboard includes profit (require_owner); Pharmacist dashboard excludes profit fields (D-41/D-42)
 
 ### Pending Todos
 
@@ -77,5 +86,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-06-05
-Stopped at: Phase 2 Plan 02 (Wave 2) complete — purchase intake atomic transaction
-Resume file: .planning/phases/02-medicine-catalog-stock-intake/02-02-SUMMARY.md
+Stopped at: Phase 3 Plan 01 complete — POS backend engine (migration + sale service + dashboard commands)
+Resume file: .planning/phases/03-pos-sales-engine/03-01-SUMMARY.md
