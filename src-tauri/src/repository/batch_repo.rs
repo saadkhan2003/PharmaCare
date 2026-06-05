@@ -96,6 +96,54 @@ pub fn get_expiry_report(
     Ok(results)
 }
 
+/// Finds FIFO-eligible batches for a medicine: non-expired, has stock, ordered by expiry ASC.
+///
+/// D-32: ORDER BY expiry_date ASC, received_date ASC, id ASC ensures oldest-expiry batches
+/// are consumed first. expiry_date > date('now') filters out already-expired batches (BATC-03).
+pub fn find_fifo_eligible(db: &Connection, medicine_id: i64) -> Result<Vec<Batch>, rusqlite::Error> {
+    let mut stmt = db.prepare(
+        "SELECT id, medicine_id, purchase_id, purchase_item_id, purchase_price, \
+                quantity, remaining_qty, expiry_date, received_date \
+         FROM batches \
+         WHERE medicine_id = ?1 \
+           AND remaining_qty > 0 \
+           AND expiry_date > date('now') \
+         ORDER BY expiry_date ASC, received_date ASC, id ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![medicine_id], |row| {
+        Ok(Batch {
+            id: row.get(0)?,
+            medicine_id: row.get(1)?,
+            purchase_id: row.get(2)?,
+            purchase_item_id: row.get(3)?,
+            purchase_price: row.get(4)?,
+            quantity: row.get(5)?,
+            remaining_qty: row.get(6)?,
+            expiry_date: row.get(7)?,
+            received_date: row.get(8)?,
+        })
+    })?;
+
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row?);
+    }
+    Ok(results)
+}
+
+/// Decrements remaining_qty on a batch by the given amount.
+///
+/// The CHECK remaining_qty >= ?2 prevents accidental over-deduction.
+/// This should be called inside a transaction alongside sale header + item inserts.
+pub fn decrement_remaining_qty(conn: &Connection, batch_id: i64, decrement_by: i64) -> Result<(), rusqlite::Error> {
+    conn.execute(
+        "UPDATE batches SET remaining_qty = remaining_qty - ?2 WHERE id = ?1 AND remaining_qty >= ?2",
+        rusqlite::params![batch_id, decrement_by],
+    )?;
+    Ok(())
+}
+
 /// Finds all batches for a given medicine.
 pub fn find_by_medicine(db: &Connection, medicine_id: i64) -> Result<Vec<Batch>, rusqlite::Error> {
     let mut stmt = db.prepare(

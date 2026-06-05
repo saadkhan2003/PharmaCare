@@ -6,6 +6,7 @@ pub mod supplier;
 pub mod batch;
 pub mod settings;
 pub mod purchase;
+pub mod sale;
 
 // Re-exports — used by services and commands in downstream plans
 #[allow(unused_imports)]
@@ -24,3 +25,5 @@ pub use batch::*;
 pub use settings::*;
 #[allow(unused_imports)]
 pub use purchase::*;
+#[allow(unused_imports)]
+pub use sale::*;
