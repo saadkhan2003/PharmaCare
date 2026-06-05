@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EyeOff, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -160,21 +161,22 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
                 {user.is_active && (
                   <>
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       disabled={user.id === session.user_id}
                       onClick={() => setDeactivateTarget(user)}
+                      title="Deactivate"
                     >
-                      Deactivate
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                     </Button>
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       disabled={user.id === session.user_id}
                       onClick={() => { setDeleteError(null); setDeleteTarget(user); }}
-                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                      title="Delete permanently"
                     >
-                      Delete
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </>
                 )}

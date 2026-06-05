@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, EyeOff } from 'lucide-react';
 import type { SupplierDto } from '@/types/supplier';
 
 interface SupplierListProps {
@@ -108,8 +108,9 @@ export function SupplierList({
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeactivateTarget(supplier)}
+                      title="Deactivate"
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
                   {supplier.is_active && (
@@ -117,8 +118,9 @@ export function SupplierList({
                       variant="ghost"
                       size="icon"
                       onClick={() => { setDeleteError(null); setDeleteTarget(supplier); }}
+                      title="Delete permanently"
                     >
-                      <span className="text-xs text-destructive font-medium">Del</span>
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
                 </div>

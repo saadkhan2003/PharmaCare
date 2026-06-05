@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, EyeOff } from 'lucide-react';
 import type { MedicineListItem, MedicinePharmacistDto } from '@/types/medicine';
 
 interface MedicineListProps {
@@ -154,8 +154,9 @@ export function MedicineList({
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeactivateTarget(medicine.id)}
+                          title="Deactivate"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
                         </Button>
                       )}
                       {medicine.is_active && (
@@ -163,8 +164,9 @@ export function MedicineList({
                           variant="ghost"
                           size="icon"
                           onClick={() => { setDeleteError(null); setDeleteTarget(medicine.id); }}
+                          title="Delete permanently"
                         >
-                          <span className="text-xs text-destructive font-medium">Del</span>
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       )}
                     </div>
