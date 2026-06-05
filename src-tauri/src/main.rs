@@ -88,6 +88,11 @@ fn main() {
             commands::purchase_commands::record_purchase,
             commands::purchase_commands::list_purchases,
             commands::purchase_commands::get_purchase_detail,
+            // Phase 3 commands
+            commands::sale_commands::confirm_sale,
+            commands::sale_commands::search_medicines_pos,
+            commands::sale_commands::get_owner_dashboard,
+            commands::sale_commands::get_pharmacist_dashboard,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");
