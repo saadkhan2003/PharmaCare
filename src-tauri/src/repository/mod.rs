@@ -6,3 +6,4 @@ pub mod supplier_repo;
 pub mod batch_repo;
 pub mod settings_repo;
 pub mod stock_ledger_repo;
+pub mod purchase_repo;
