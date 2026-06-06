@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Search as SearchIcon, Undo2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { formatDate } from '@/lib/formatDate';
 import type {
   SaleForReturnDto, SaleItemForReturnDto,
   CustomerReturnItemDto, ReturnReceiptDto,
@@ -261,7 +262,7 @@ export function CustomerReturnForm({
               <div className="text-sm">
                 <span className="font-medium">Sale #{sale.id}</span>
                 <span className="text-muted-foreground ml-2">
-                  — {new Date(sale.created_at).toLocaleDateString()}
+                  — {formatDate(sale.created_at)}
                 </span>
               </div>
               <div className="text-sm sm:text-right">

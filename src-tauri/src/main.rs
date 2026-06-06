@@ -64,7 +64,7 @@ fn main() {
 
             Ok(())
         })
-        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             // Phase 1 commands
             commands::auth_commands::auth_login,
@@ -105,6 +105,8 @@ fn main() {
             // Phase 3 commands
             commands::sale_commands::confirm_sale,
             commands::sale_commands::search_medicines_pos,
+            commands::sale_commands::list_sales,
+            commands::sale_commands::get_sale_detail,
             commands::sale_commands::get_owner_dashboard,
             commands::sale_commands::get_pharmacist_dashboard,
             // Phase 4 commands
@@ -127,9 +129,8 @@ fn main() {
             // Phase 5 backup commands
             commands::backup_commands::trigger_backup,
             commands::backup_commands::restore_backup,
-            commands::backup_commands::connect_drive,
+            commands::backup_commands::start_drive_oauth,
             commands::backup_commands::disconnect_drive,
-            commands::backup_commands::complete_drive_connect,
             commands::backup_commands::list_drive_backups,
             commands::backup_commands::get_backup_status,
             // Phase 5 settings commands
@@ -144,6 +145,9 @@ fn main() {
             commands::debt_commands::record_payment,
             commands::debt_commands::get_overdue_count,
             commands::debt_commands::get_due_soon_count,
+            commands::batch_commands::list_batches,
+            commands::batch_commands::update_batch,
+            commands::pdf_commands::save_pdf,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

@@ -7,7 +7,8 @@ import { tauri } from '@/lib/tauri';
 import type { SessionDto } from '@/types/session';
 import type { SettingsMap } from '@/types/settings';
 import type { BackupStatus } from '@/types/report';
-import { Loader2, Save, Play, Download, FolderOpen, ChevronDown, ChevronRight, Cloud, CloudOff } from 'lucide-react';
+import { Loader2, Save, Play, Download, FolderOpen, Cloud, CloudOff, CheckCircle2, ExternalLink } from 'lucide-react';
+import { formatDateTime } from '@/lib/formatDate';
 
 interface BackupTabProps {
   settings: SettingsMap;
@@ -26,9 +27,9 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
   // Local backup
   const [localPath, setLocalPath] = useState('');
 
-  // Drive (advanced)
+  // Drive
   const [driveConnected, setDriveConnected] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     setLocalPath(settings.local_backup_path || '');
@@ -93,7 +94,7 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
       }
       const latest = backups.sort((a, b) => new Date(b.created_time).getTime() - new Date(a.created_time).getTime())[0];
       const confirmed = window.confirm(
-        `Restore backup from ${new Date(latest.created_time).toLocaleString()}?\n\n` +
+        `Restore backup from ${formatDateTime(latest.created_time)}?\n\n` +
         `File: ${latest.name}\n\n` +
         '⚠ This will REPLACE all current data. A pre-restore backup will be created automatically.'
       );
@@ -107,8 +108,37 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
     }
   };
 
+  const handleConnectDrive = async () => {
+    setConnecting(true);
+    setMessage(null);
+    try {
+      await tauri.backup.connectDrive(session.token);
+      setMessage({ type: 'success', text: 'Connected to Google Drive. Future backups will upload automatically.' });
+      await fetchStatus();
+    } catch (err: unknown) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Drive connect failed' });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnectDrive = async () => {
+    if (!window.confirm('Disconnect Google Drive? Future backups will not be uploaded to Drive.')) return;
+    setConnecting(true);
+    setMessage(null);
+    try {
+      await tauri.backup.disconnectDrive(session.token);
+      setMessage({ type: 'success', text: 'Google Drive disconnected.' });
+      await fetchStatus();
+    } catch (err: unknown) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Disconnect failed' });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
   const lastBackup = backupStatus?.last_backup_time
-    ? new Date(backupStatus.last_backup_time).toLocaleString()
+    ? formatDateTime(backupStatus.last_backup_time)
     : null;
   const daysSinceBackup = lastBackup
     ? Math.floor((Date.now() - new Date(backupStatus!.last_backup_time!).getTime()) / (1000 * 60 * 60 * 24))
@@ -195,36 +225,40 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
         </CardContent>
       </Card>
 
-      {/* Google Drive — Advanced */}
-      <div>
-        <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {showAdvanced ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          Google Drive Backup {driveConnected ? '(Connected)' : '(Advanced — requires API setup)'}
-        </button>
-        {showAdvanced && (
-          <Card className="mt-3">
-            <CardContent className="pt-6 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                To use Google Drive backup, you need to create OAuth credentials in the{' '}
-                <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Console</a>.
-                This is recommended for technical users only.
-              </p>
-              {driveConnected ? (
-                <div className="flex items-center gap-2 text-sm text-green-700">
-                  <Cloud className="h-4 w-4" /> Connected to Google Drive
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <CloudOff className="h-4 w-4" /> Not connected
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {/* Google Drive — Auto Connect */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            {driveConnected ? <Cloud className="h-4 w-4 text-green-600" /> : <CloudOff className="h-4 w-4" />}
+            Google Drive Backup {driveConnected && <span className="text-xs font-normal text-green-700">(Connected)</span>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Backups uploaded to your Google Drive are accessible from any device where you sign in with the same Google account.
+          </p>
+          {driveConnected ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-green-700">
+                <CheckCircle2 className="h-4 w-4" />
+                Connected. Backups will be uploaded automatically.
+              </div>
+              <Button variant="outline" size="sm" onClick={handleDisconnectDrive} disabled={connecting}>
+                {connecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CloudOff className="h-4 w-4 mr-2" />}
+                Disconnect
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={handleConnectDrive} disabled={connecting} size="sm">
+              {connecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ExternalLink className="h-4 w-4 mr-2" />}
+              Connect Google Drive
+            </Button>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Clicking Connect will open your browser to sign in with your Google account. PharmaCare does not see your Google password.
+          </p>
+        </CardContent>
+      </Card>
 
       {message && (
         <div className={`p-3 rounded-md text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>

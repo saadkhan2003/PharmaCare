@@ -45,7 +45,10 @@ interface MedicineSearchResult {
   id: number;
   name: string;
   retail_price: number;
+  purchase_price: number;
 }
+
+const MIN_MEDICINE_SEARCH_LENGTH = 2;
 
 function createEmptyItem(): ItemRow {
   return {
@@ -86,10 +89,10 @@ export function PurchaseForm({
       .catch(() => {});
   }, [sessionToken]);
 
-  // Debounced medicine search per item row
+  // Medicine search per item row
   const handleMedicineSearch = useCallback(
     async (itemId: string, query: string) => {
-      if (!query.trim()) {
+      if (query.trim().length < MIN_MEDICINE_SEARCH_LENGTH) {
         setMedicineResults((prev) => ({ ...prev, [itemId]: [] }));
         return;
       }
@@ -104,6 +107,7 @@ export function PurchaseForm({
               id: m.id,
               name: m.name,
               retail_price: (m as MedicineListItem).retail_price,
+              purchase_price: (m as MedicineListItem).purchase_price,
             })),
         }));
       } catch {
@@ -114,6 +118,23 @@ export function PurchaseForm({
     },
     [sessionToken]
   );
+
+  useEffect(() => {
+    const timers = Object.entries(medicineSearchTerms).map(([itemId, query]) => {
+      const item = items.find((row) => row.id === itemId);
+      if (!item || item.medicineId) return null;
+
+      return window.setTimeout(() => {
+        void handleMedicineSearch(itemId, query);
+      }, 200);
+    });
+
+    return () => {
+      timers.forEach((timer) => {
+        if (timer !== null) window.clearTimeout(timer);
+      });
+    };
+  }, [handleMedicineSearch, items, medicineSearchTerms]);
 
   const updateItem = useCallback((itemId: string, updates: Partial<ItemRow>) => {
     setItems((prev) =>
@@ -141,19 +162,45 @@ export function PurchaseForm({
   const totalCost = items.reduce((sum, item) => sum + getLineCost(item), 0);
 
   // Validate form
-  const isFormValid = (): boolean => {
-    if (!selectedSupplierId) return false;
-    if (items.length === 0) return false;
-    return items.every((item) => {
-      if (!item.medicineId) return false;
+  const getValidationMessage = (): string | null => {
+    if (!selectedSupplierId) return 'Select a supplier before confirming the purchase.';
+    if (items.length === 0) return 'Add at least one purchase item.';
+
+    const invalidIndex = items.findIndex((item) => {
+      if (!item.medicineId) return true;
       const qty = parseInt(item.quantity);
-      if (isNaN(qty) || qty <= 0) return false;
+      if (isNaN(qty) || qty <= 0) return true;
       const price = parseFloat(item.purchasePrice);
-      if (isNaN(price) || price < 0) return false;
-      if (!item.expiryDate) return false;
-      return true;
+      if (isNaN(price) || price < 0) return true;
+      if (!item.expiryDate) return true;
+      return false;
     });
+
+    if (invalidIndex === -1) return null;
+
+    const item = items[invalidIndex];
+    const rowLabel = `Row ${invalidIndex + 1}`;
+    if (!item.medicineId) return `${rowLabel}: select a medicine from the search dropdown, do not only type the name.`;
+
+    const qty = parseInt(item.quantity);
+    if (isNaN(qty) || qty <= 0) return `${rowLabel}: enter a quantity greater than 0.`;
+
+    const price = parseFloat(item.purchasePrice);
+    if (isNaN(price) || price < 0) return `${rowLabel}: enter a valid purchase price.`;
+
+    if (!item.expiryDate) return `${rowLabel}: select an expiry date.`;
+
+    return 'Complete all required purchase fields.';
   };
+
+  const isFormValid = (): boolean => {
+    return getValidationMessage() === null;
+  };
+
+  const validationMessage = getValidationMessage();
+  const selectedSupplier = suppliers.find(
+    (supplier) => supplier.id.toString() === selectedSupplierId
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!isFormValid()) return;
@@ -196,9 +243,25 @@ export function PurchaseForm({
       });
       onPurchaseComplete();
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to record purchase'
-      );
+      let message = 'Failed to record purchase';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err;
+      } else if (err && typeof err === 'object') {
+        const candidate = (err as { message?: unknown }).message;
+        if (typeof candidate === 'string' && candidate.length > 0) {
+          message = candidate;
+        } else {
+          try {
+            message = JSON.stringify(err);
+          } catch {
+            /* keep fallback */
+          }
+        }
+      }
+      console.error('[PurchaseForm] record_purchase failed:', err);
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -242,7 +305,11 @@ export function PurchaseForm({
               }}
             >
               <SelectTrigger id="supplier">
-                <SelectValue placeholder="Select supplier" />
+                <SelectValue placeholder="Select supplier">
+                  {selectedSupplier
+                    ? `${selectedSupplier.company_name}${selectedSupplier.contact_person ? ` — ${selectedSupplier.contact_person}` : ''}`
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {suppliers.map((s) => (
@@ -317,7 +384,7 @@ export function PurchaseForm({
             </Button>
           </div>
 
-          <div className="rounded-lg border">
+          <div className="rounded-lg border [&_[data-slot=table-container]]:overflow-visible">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -333,7 +400,8 @@ export function PurchaseForm({
                 {items.map((item) => {
                   const searchTerm = medicineSearchTerms[item.id] || '';
                   const results = medicineResults[item.id] || [];
-                  const showResults = searchTerm.trim().length > 0 && !item.medicineId;
+                  const showResults =
+                    searchTerm.trim().length >= MIN_MEDICINE_SEARCH_LENGTH && !item.medicineId;
 
                   return (
                     <TableRow key={item.id}>
@@ -368,7 +436,7 @@ export function PurchaseForm({
                             className="pl-7 text-sm"
                           />
                           {showResults && (
-                            <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-md border bg-popover shadow-md">
+                            <div className="absolute left-0 right-0 top-full z-[9999] mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-lg">
                               {searchingMedicines[item.id] ? (
                                 <div className="p-2 text-xs text-muted-foreground">
                                   Searching...
@@ -390,18 +458,18 @@ export function PurchaseForm({
                                       });
                                       if (!item.purchasePrice) {
                                         updateItem(item.id, {
-                                          purchasePrice: med.retail_price.toString(),
+                                          purchasePrice: med.purchase_price.toString(),
                                         });
                                       }
-                                      setMedicineSearchTerms((prev) => ({
+                                       setMedicineSearchTerms((prev) => ({
                                         ...prev,
                                         [item.id]: '',
                                       }));
                                     }}
                                   >
-                                    <span>{med.name}</span>
+                                     <span>{med.name}</span>
                                     <span className="text-xs text-muted-foreground">
-                                      {currencySymbol}{med.retail_price.toFixed(2)}
+                                      Cost {currencySymbol}{med.purchase_price.toFixed(2)}
                                     </span>
                                   </button>
                                 ))
@@ -492,15 +560,20 @@ export function PurchaseForm({
         </div>
 
         {/* Section 3: Confirm */}
-        <div className="flex justify-end">
-          <Button
-            size="lg"
-            onClick={handleSubmit}
-            disabled={!isFormValid() || submitting}
-          >
-            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {submitting ? 'Recording...' : 'Confirm Purchase'}
-          </Button>
+        <div className="space-y-2">
+          {validationMessage && (
+            <p className="text-right text-sm text-muted-foreground">{validationMessage}</p>
+          )}
+          <div className="flex justify-end">
+            <Button
+              size="lg"
+              onClick={handleSubmit}
+              disabled={!!validationMessage || submitting}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {submitting ? 'Recording...' : 'Confirm Purchase'}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

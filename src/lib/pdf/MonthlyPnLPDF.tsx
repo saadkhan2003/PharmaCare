@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles, formatCurrency } from './CommonStyles';
 import type { MonthlyPnLRow } from '../../types/report';
+import { formatDate } from '@/lib/formatDate';
 
 interface MonthlyPnLPDFProps {
   data: MonthlyPnLRow[];
@@ -23,9 +24,7 @@ export function MonthlyPnLPDF({
   const totalRefunds = data.reduce((s, r) => s + r.total_refunds, 0);
   const totalWriteOffs = data.reduce((s, r) => s + r.write_off_losses, 0);
   const totalNetProfit = data.reduce((s, r) => s + r.net_profit, 0);
-  const today = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const today = formatDate(new Date().toISOString());
 
   return (
     <Document>

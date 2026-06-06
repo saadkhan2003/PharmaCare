@@ -8,6 +8,12 @@ use crate::services::email_service;
 use crate::services::user_service;
 use crate::state::AppState;
 
+#[derive(Serialize)]
+pub struct OwnerInfo {
+    pub id: i64,
+    pub username: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SetupStatus {
     pub needs_setup: bool,
@@ -145,17 +151,22 @@ pub fn request_recovery_code(
 pub fn verify_recovery_code(
     state: State<'_, AppState>,
     code: String,
-) -> Result<Vec<i64>, CommandError> {
+) -> Result<Vec<OwnerInfo>, CommandError> {
     let db = state.db.lock()?;
     verify_recovery_otp(&db, &code)?;
 
-    let mut stmt = db.prepare("SELECT id FROM users WHERE role = 'owner' AND is_active = 1")?;
-    let ids = stmt
-        .query_map([], |row| row.get(0))?
+    let mut stmt = db.prepare("SELECT id, username FROM users WHERE role = 'owner' AND is_active = 1")?;
+    let owners = stmt
+        .query_map([], |row| {
+            Ok(OwnerInfo {
+                id: row.get(0)?,
+                username: row.get(1)?,
+            })
+        })?
         .filter_map(Result::ok)
         .collect();
 
-    Ok(ids)
+    Ok(owners)
 }
 
 #[tauri::command]

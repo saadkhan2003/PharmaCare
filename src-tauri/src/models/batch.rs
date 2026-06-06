@@ -26,6 +26,26 @@ pub struct BatchDto {
     pub received_date: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchListDto {
+    pub id: i64,
+    pub medicine_id: i64,
+    pub medicine_name: String,
+    pub batch_code: Option<String>,
+    pub purchase_id: Option<i64>,
+    pub purchase_price: f64,
+    pub quantity: i64,
+    pub remaining_qty: i64,
+    pub expiry_date: String,
+    pub received_date: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateBatchDto {
+    pub batch_code: Option<String>,
+    pub expiry_date: String,
+}
+
 impl From<Batch> for BatchDto {
     fn from(b: Batch) -> Self {
         BatchDto {

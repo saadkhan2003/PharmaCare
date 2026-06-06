@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search as SearchIcon, Trash2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { formatDate } from '@/lib/formatDate';
 import type { MedicineListItem } from '@/types/medicine';
 import type { ReturnReceiptDto, WriteOffItemDto } from '@/types/return';
 import type { ExpiryReportRow } from '@/lib/tauri';
@@ -95,9 +96,9 @@ export function WriteOffForm({
 
     setLoadingBatches(true);
     tauri.expiry
-      .getReport(sessionToken, 0, 99999)
+      .getReport(sessionToken)
       .then((report) => {
-        // Filter batches for selected medicine with remaining_qty > 0
+        // Write-off must include expired batches too; the POS stock count excludes them.
         const medicineBatches = report.filter(
           (row) =>
             row.medicine_id === selectedMedicine.id && row.remaining_qty > 0
@@ -359,7 +360,7 @@ export function WriteOffForm({
                           #{batch.batch_id}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {new Date(batch.expiry_date).toLocaleDateString()}
+                          {formatDate(batch.expiry_date)}
                         </TableCell>
                         <TableCell
                           className={`text-sm ${
@@ -435,7 +436,7 @@ export function WriteOffForm({
         {/* No batches available */}
         {selectedMedicine && !loadingBatches && batches.length === 0 && (
           <div className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
-            No batches with remaining stock found for this medicine.
+            No batches with remaining stock found for this medicine. Expired batches should appear here if they still have remaining quantity.
           </div>
         )}
 

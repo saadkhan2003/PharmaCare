@@ -10,6 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tauri } from '@/lib/tauri';
+import { formatDateTime } from '@/lib/formatDate';
 import type { LoginAttemptDto } from '@/types/user';
 
 interface LoginAuditViewProps {
@@ -39,15 +40,6 @@ export function LoginAuditView({ sessionToken }: LoginAuditViewProps) {
   useEffect(() => {
     fetchAttempts();
   }, [fetchAttempts]);
-
-  const formatDateTime = (isoString: string) => {
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleString();
-    } catch {
-      return isoString;
-    }
-  };
 
   if (loading) {
     return (

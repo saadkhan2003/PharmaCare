@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles, formatCurrency } from './CommonStyles';
 import type { TopSellerRow } from '../../types/report';
+import { formatDate } from '@/lib/formatDate';
 
 interface TopSellersPDFProps {
   data: TopSellerRow[];
@@ -18,9 +19,7 @@ export function TopSellersPDF({
   currencySymbol = 'Rs.',
 }: TopSellersPDFProps) {
   const displayData = data.slice(0, 50);
-  const today = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const today = formatDate(new Date().toISOString());
 
   return (
     <Document>

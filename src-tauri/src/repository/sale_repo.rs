@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-use crate::models::{Sale, SaleItem, TopSellerDto};
+use crate::models::{Sale, SaleDetailItemDto, SaleItem, SaleListDto, TopSellerDto};
 
 /// Inserts a sale header. Returns the new row id.
 pub fn insert_sale(
@@ -119,6 +119,109 @@ pub fn find_items_by_sale(conn: &Connection, sale_id: i64) -> Result<Vec<SaleIte
         results.push(row?);
     }
     Ok(results)
+}
+
+pub fn find_recent(
+    conn: &Connection,
+    query: &str,
+    start_date: &str,
+    end_date: &str,
+) -> Result<Vec<SaleListDto>, rusqlite::Error> {
+    let mut conditions: Vec<String> = Vec::new();
+    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if !query.is_empty() {
+        let pattern = format!("%{}%", query);
+        conditions.push(
+            "(CAST(s.id AS TEXT) LIKE ? OR s.customer_name LIKE ? OR s.payment_method LIKE ? OR si.medicine_name LIKE ?)".to_string(),
+        );
+        params.push(Box::new(pattern.clone()));
+        params.push(Box::new(pattern.clone()));
+        params.push(Box::new(pattern.clone()));
+        params.push(Box::new(pattern));
+    }
+    if !start_date.is_empty() {
+        conditions.push("s.created_at >= ?".to_string());
+        params.push(Box::new(start_date.to_string()));
+    }
+    if !end_date.is_empty() {
+        conditions.push("s.created_at <= ?".to_string());
+        params.push(Box::new(end_date.to_string()));
+    }
+
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {} ", conditions.join(" AND "))
+    };
+
+    let sql = format!(
+        "SELECT s.id, s.total, s.payment_method, s.customer_name, COUNT(si.id) AS item_count, s.created_at \
+         FROM sales s \
+         LEFT JOIN sale_items si ON si.sale_id = s.id \
+         {} \
+         GROUP BY s.id \
+         ORDER BY s.created_at DESC \
+         LIMIT 200",
+        where_clause
+    );
+
+    let mut stmt = conn.prepare(&sql)?;
+
+    let rows: Vec<SaleListDto> = if params.is_empty() {
+        stmt.query_map([], |row| {
+        Ok(SaleListDto {
+            id: row.get(0)?,
+            total: row.get(1)?,
+            payment_method: row.get(2)?,
+            customer_name: row.get(3)?,
+            item_count: row.get(4)?,
+            created_at: row.get(5)?,
+        })
+    })?
+        .collect::<Result<Vec<_>, _>>()?
+    } else {
+        let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        stmt.query_map(param_refs.as_slice(), |row| {
+        Ok(SaleListDto {
+            id: row.get(0)?,
+            total: row.get(1)?,
+            payment_method: row.get(2)?,
+            customer_name: row.get(3)?,
+            item_count: row.get(4)?,
+            created_at: row.get(5)?,
+        })
+    })?
+        .collect::<Result<Vec<_>, _>>()?
+    };
+
+    Ok(rows)
+}
+
+pub fn find_detail_items(conn: &Connection, sale_id: i64) -> Result<Vec<SaleDetailItemDto>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT si.id, m.name, si.batch_id, si.quantity, si.unit_price, si.purchase_cost, \
+                si.item_discount, si.line_total \
+         FROM sale_items si \
+         JOIN medicines m ON m.id = si.medicine_id \
+         WHERE si.sale_id = ?1 \
+         ORDER BY si.id ASC",
+    )?;
+
+    let rows = stmt.query_map(rusqlite::params![sale_id], |row| {
+        Ok(SaleDetailItemDto {
+            id: row.get(0)?,
+            medicine_name: row.get(1)?,
+            batch_id: row.get(2)?,
+            quantity: row.get(3)?,
+            unit_price: row.get(4)?,
+            purchase_cost: row.get(5)?,
+            item_discount: row.get(6)?,
+            line_total: row.get(7)?,
+        })
+    })?;
+
+    rows.collect()
 }
 
 /// Returns today's total sales revenue. D-41/REPT-01.

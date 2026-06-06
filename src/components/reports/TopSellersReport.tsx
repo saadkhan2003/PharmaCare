@@ -6,14 +6,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { FileDown } from 'lucide-react';
 import { TopSellersPDF } from '../../lib/pdf/TopSellersPDF';
+import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { TopSellerRow } from '../../types/report';
 
@@ -76,15 +74,11 @@ export function TopSellersReport({ session, startDate, endDate }: TopSellersRepo
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm">Top Selling Medicines</CardTitle>
-          <PDFDownloadLink
+          <ExportPdfButton
             document={<TopSellersPDF data={rows} startDate={startDate} endDate={endDate} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
             fileName={`top-sellers-${startDate}-to-${endDate}.pdf`}
-          >
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-1" />
-              Export PDF
-            </Button>
-          </PDFDownloadLink>
+            sessionToken={session.token}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <Table>

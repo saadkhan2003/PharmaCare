@@ -17,6 +17,8 @@ import { ReturnHistoryPage } from './pages/ReturnHistoryPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { DebtsPage } from './pages/DebtsPage';
+import { SalesHistoryPage } from './pages/SalesHistoryPage';
+import { BatchesPage } from './pages/BatchesPage';
 import { AppShell } from './components/layout/AppShell';
 import { ToastProvider } from './components/ui/toast-provider';
 import { tauri } from './lib/tauri';
@@ -32,6 +34,7 @@ function AuthenticatedApp({ session, onLogout }: { session: import('./types/sess
       <AppShell session={session} onLogout={onLogout}>
         <Routes>
           <Route path="/pos" element={<div className="animate-in"><POSPage session={session} /></div>} />
+          <Route path="/pos/history" element={<div className="animate-in"><SalesHistoryPage session={session} /></div>} />
           <Route path="/dashboard" element={<div className="animate-in"><DashboardPage session={session} /></div>} />
           <Route path="/medicines" element={<div className="animate-in"><MedicinesPage session={session} /></div>} />
           <Route path="/returns/customer" element={<div className="animate-in"><CustomerReturnsPage session={session} /></div>} />
@@ -41,6 +44,7 @@ function AuthenticatedApp({ session, onLogout }: { session: import('./types/sess
               <Route path="/audit" element={<div className="animate-in"><AuditLogPage session={session} /></div>} />
               <Route path="/suppliers" element={<div className="animate-in"><SuppliersPage session={session} /></div>} />
               <Route path="/purchases" element={<div className="animate-in"><PurchasesPage session={session} /></div>} />
+              <Route path="/batches" element={<div className="animate-in"><BatchesPage session={session} /></div>} />
               <Route path="/expiry-report" element={<div className="animate-in"><ExpiryReportPage session={session} /></div>} />
               <Route path="/returns/supplier" element={<div className="animate-in"><SupplierReturnsPage session={session} /></div>} />
               <Route path="/returns/write-off" element={<div className="animate-in"><WriteOffPage session={session} /></div>} />

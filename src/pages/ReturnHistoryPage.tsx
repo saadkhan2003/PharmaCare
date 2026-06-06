@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { tauri } from '@/lib/tauri';
 import type { ReturnListItemDto } from '@/types/return';
 import type { SessionDto } from '@/types/session';
+import { formatDate } from '@/lib/formatDate';
 
 interface Props {
   session: SessionDto;
@@ -126,7 +127,7 @@ export function ReturnHistoryPage({ session }: Props) {
                         )}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {new Date(ret.return_date).toLocaleDateString()}
+                        {formatDate(ret.return_date)}
                       </TableCell>
                       <TableCell className="font-medium text-sm">
                         {ret.medicine_name}

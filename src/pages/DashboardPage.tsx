@@ -7,6 +7,7 @@ import type { BackupStatus } from '../types/report';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatDateTime } from '@/lib/formatDate';
 import {
   BarChart,
   Bar,
@@ -378,7 +379,7 @@ export function DashboardPage({ session }: DashboardPageProps) {
                         <span>
                           Last backup:{' '}
                           {backupStatus.last_backup_time
-                            ? new Date(backupStatus.last_backup_time).toLocaleString()
+                            ? formatDateTime(backupStatus.last_backup_time)
                             : 'Never'}
                         </span>
                       </div>

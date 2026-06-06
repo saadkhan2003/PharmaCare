@@ -341,6 +341,22 @@ pub fn search_medicines_pos(
     Ok(results)
 }
 
+pub fn list_sales(db: &Connection, query: &str, start_date: &str, end_date: &str) -> Result<Vec<SaleListDto>, CommandError> {
+    let end = if end_date.is_empty() {
+        String::new()
+    } else {
+        format!("{}T23:59:59", end_date)
+    };
+    sale_repo::find_recent(db, query, start_date, &end).map_err(CommandError::from)
+}
+
+pub fn get_sale_detail(db: &Connection, sale_id: i64) -> Result<SaleDetailDto, CommandError> {
+    let sale = sale_repo::find_by_id(db, sale_id)?
+        .ok_or_else(|| CommandError::not_found("Sale"))?;
+    let items = sale_repo::find_detail_items(db, sale_id)?;
+    Ok(SaleDetailDto { sale, items })
+}
+
 /// Owner dashboard — full financial data. D-41/REPT-01.
 pub fn get_owner_dashboard(db: &Connection) -> Result<OwnerDashboardDto, CommandError> {
     let today_sales = sale_repo::get_today_sales(db)?;

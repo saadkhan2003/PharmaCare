@@ -60,6 +60,34 @@ pub struct SaleItem {
     pub line_total: f64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaleListDto {
+    pub id: i64,
+    pub total: f64,
+    pub payment_method: String,
+    pub customer_name: Option<String>,
+    pub item_count: i64,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaleDetailDto {
+    pub sale: Sale,
+    pub items: Vec<SaleDetailItemDto>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaleDetailItemDto {
+    pub id: i64,
+    pub medicine_name: String,
+    pub batch_id: i64,
+    pub quantity: i64,
+    pub unit_price: f64,
+    pub purchase_cost: f64,
+    pub item_discount: f64,
+    pub line_total: f64,
+}
+
 /// DTO returned to frontend after successful sale
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SaleReceiptDto {

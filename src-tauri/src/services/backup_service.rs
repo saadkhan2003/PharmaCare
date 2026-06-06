@@ -518,29 +518,6 @@ fn generate_state() -> String {
     uuid::Uuid::new_v4().to_string()
 }
 
-/// Constructs the Google OAuth URL and returns it for the frontend to open.
-pub fn start_oauth_flow(client_id: &str, _redirect_port: u16) -> Result<String, CommandError> {
-    let state = generate_state();
-
-    let redirect_uri = format!("http://localhost:{}/callback", _redirect_port);
-
-    let auth_url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?\
-         client_id={}&\
-         redirect_uri={}&\
-         response_type=code&\
-         scope=https://www.googleapis.com/auth/drive.file&\
-         state={}&\
-         access_type=offline&\
-         prompt=consent",
-        urlencode(client_id),
-        urlencode(&redirect_uri),
-        urlencode(&state),
-    );
-
-    Ok(auth_url)
-}
-
 /// Exchanges authorization code for tokens via POST to Google OAuth endpoint.
 pub fn exchange_code_for_token(
     client_id: &str,
@@ -669,4 +646,209 @@ fn urlencode(s: &str) -> String {
             other => format!("%{:02X}", other as u8),
         })
         .collect()
+}
+
+/// Decodes a URL-encoded query value.
+fn urldecode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'+' {
+            out.push(b' ');
+            i += 1;
+        } else if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let Ok(b) = u8::from_str_radix(
+                std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("00"),
+                16,
+            ) {
+                out.push(b);
+            }
+            i += 3;
+        } else {
+            out.push(bytes[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8_lossy(&out).to_string()
+}
+
+// ── Auto-Redirect OAuth Flow ──
+
+/// Localhost port used for the OAuth redirect. Must match the redirect URI
+/// registered in the Google Cloud Console for the OAuth client.
+const OAUTH_REDIRECT_PORT: u16 = 57432;
+
+/// Redirect URI registered with Google. Must equal
+/// `http://localhost:{OAUTH_REDIRECT_PORT}/callback` exactly.
+const OAUTH_REDIRECT_URI: &str = "http://localhost:57432/callback";
+
+/// Time we wait for the user to complete the browser consent step.
+const OAUTH_TIMEOUT_SECS: u64 = 180;
+
+/// Runs the full Google Drive auto-redirect OAuth flow.
+///
+/// 1. Starts a one-shot HTTP server on `127.0.0.1:57432/callback`.
+/// 2. Calls `open_browser` with the Google consent URL.
+/// 3. Waits up to `OAUTH_TIMEOUT_SECS` seconds for the redirect.
+/// 4. Validates the `state` parameter and extracts the `code`.
+/// 5. Returns the authorization code; caller exchanges it for tokens.
+pub fn run_drive_oauth_flow<F>(client_id: &str, open_browser: F) -> Result<String, CommandError>
+where
+    F: FnOnce(&str),
+{
+    use std::io::Write as _;
+    use std::net::TcpListener;
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    let state = generate_state();
+    let auth_url = build_oauth_url(client_id, &state);
+
+    let listener = TcpListener::bind(("127.0.0.1", OAUTH_REDIRECT_PORT)).map_err(|e| {
+        CommandError::internal(&format!(
+            "Cannot bind OAuth redirect port {}: {}. Is another PharmaCare instance running?",
+            OAUTH_REDIRECT_PORT, e
+        ))
+    })?;
+
+    let (tx, rx) = mpsc::channel::<Result<(String, String), CommandError>>();
+    let expected_state = state.clone();
+
+    std::thread::spawn(move || {
+        let result = (|| -> Result<(String, String), CommandError> {
+            let (mut stream, _) = listener
+                .accept()
+                .map_err(|e| CommandError::internal(&format!("OAuth accept failed: {}", e)))?;
+            let mut buf = [0u8; 4096];
+            let n = stream
+                .read(&mut buf)
+                .map_err(|e| CommandError::internal(&format!("OAuth read failed: {}", e)))?;
+            let request = String::from_utf8_lossy(&buf[..n]).to_string();
+
+            let first_line = request.lines().next().unwrap_or("");
+            let path = first_line.split_whitespace().nth(1).unwrap_or("");
+            let query = path.strip_prefix("/callback?").unwrap_or("");
+
+            let mut code: Option<String> = None;
+            let mut got_state: Option<String> = None;
+            for pair in query.split('&') {
+                let mut parts = pair.splitn(2, '=');
+                let k = parts.next().unwrap_or("");
+                let v = urldecode(parts.next().unwrap_or(""));
+                match k {
+                    "code" => code = Some(v),
+                    "state" => got_state = Some(v),
+                    _ => {}
+                }
+            }
+
+            let state_ok = got_state.as_deref() == Some(expected_state.as_str());
+            let html = if state_ok && code.is_some() {
+                "<!doctype html><html><head><meta charset='utf-8'><title>Connected</title>\
+                 <style>body{font-family:system-ui;padding:48px;text-align:center;background:#f0f9ff;}\
+                 h1{color:#15803d;}p{color:#475569;}</style></head>\
+                 <body><h1>Connected to Google Drive</h1>\
+                 <p>You can close this window and return to PharmaCare.</p>\
+                 <script>setTimeout(()=>window.close(),1500);</script></body></html>"
+            } else {
+                "<!doctype html><html><head><meta charset='utf-8'><title>Error</title>\
+                 <style>body{font-family:system-ui;padding:48px;text-align:center;}h1{color:#b91c1c;}</style></head>\
+                 <body><h1>Connection failed</h1><p>Invalid state or missing code. Close this window and try again.</p></body></html>"
+            };
+            let body = html.as_bytes();
+            let status = if state_ok && code.is_some() { "200 OK" } else { "400 Bad Request" };
+            let response = format!(
+                "HTTP/1.1 {}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                status,
+                body.len()
+            );
+            let _ = stream.write_all(response.as_bytes());
+            let _ = stream.write_all(body);
+            let _ = stream.flush();
+
+            if !state_ok {
+                return Err(CommandError::internal("OAuth state mismatch"));
+            }
+            Ok((code.unwrap_or_default(), expected_state))
+        })();
+
+        let _ = tx.send(result);
+    });
+
+    open_browser(&auth_url);
+
+    match rx.recv_timeout(Duration::from_secs(OAUTH_TIMEOUT_SECS)) {
+        Ok(Ok((code, _state))) if !code.is_empty() => Ok(code),
+        Ok(Ok(_)) => Err(CommandError::internal("OAuth callback returned no code")),
+        Ok(Err(e)) => Err(e),
+        Err(_) => Err(CommandError::internal(&format!(
+            "OAuth consent timed out after {} seconds",
+            OAUTH_TIMEOUT_SECS
+        ))),
+    }
+}
+
+/// Builds the Google OAuth consent URL.
+fn build_oauth_url(client_id: &str, state: &str) -> String {
+    format!(
+        "https://accounts.google.com/o/oauth2/v2/auth?\
+         client_id={}&\
+         redirect_uri={}&\
+         response_type=code&\
+         scope=https://www.googleapis.com/auth/drive.file&\
+         state={}&\
+         access_type=offline&\
+         prompt=consent",
+        urlencode(client_id),
+        urlencode(OAUTH_REDIRECT_URI),
+        urlencode(state),
+    )
+}
+
+/// Reads the OAuth client credentials from environment variables.
+/// Returns a clear error if they are missing.
+pub fn read_oauth_client() -> Result<(String, String), CommandError> {
+    let client_id = std::env::var("GOOGLE_OAUTH_CLIENT_ID")
+        .map_err(|_| CommandError::internal(
+            "GOOGLE_OAUTH_CLIENT_ID is not set. Build the app with this env var (see README)."
+        ))?;
+    let client_secret = std::env::var("GOOGLE_OAUTH_CLIENT_SECRET")
+        .map_err(|_| CommandError::internal(
+            "GOOGLE_OAUTH_CLIENT_SECRET is not set. Build the app with this env var (see README)."
+        ))?;
+    if client_id.trim().is_empty() || client_secret.trim().is_empty() {
+        return Err(CommandError::internal("GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET are empty"));
+    }
+    Ok((client_id, client_secret))
+}
+
+/// Exchanges the auth code for tokens and stores them in settings.
+/// Returns the merged token JSON (including client credentials for refresh).
+pub fn complete_and_store_drive_token(
+    db: &Connection,
+    client_id: &str,
+    client_secret: &str,
+    auth_code: &str,
+) -> Result<(), CommandError> {
+    let token_json = exchange_code_for_token(
+        client_id,
+        client_secret,
+        auth_code,
+        OAUTH_REDIRECT_URI,
+    )?;
+
+    let mut token_value: serde_json::Value = serde_json::from_str(&token_json)
+        .map_err(|e| CommandError::internal(&format!("Failed to parse token: {}", e)))?;
+
+    if let Some(obj) = token_value.as_object_mut() {
+        obj.insert("client_id".to_string(), serde_json::json!(client_id));
+        obj.insert("client_secret".to_string(), serde_json::json!(client_secret));
+    }
+
+    let merged_json = serde_json::to_string(&token_value)
+        .map_err(|e| CommandError::internal(&format!("Failed to serialize token: {}", e)))?;
+
+    settings_repo::set_value(db, "google_drive_token", &merged_json)?;
+    Ok(())
 }

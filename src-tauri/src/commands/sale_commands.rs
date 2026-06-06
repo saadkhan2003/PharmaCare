@@ -32,6 +32,30 @@ pub fn search_medicines_pos(
     sale_service::search_medicines_pos(&db, &query)
 }
 
+#[tauri::command]
+pub fn list_sales(
+    state: State<'_, AppState>,
+    session_token: String,
+    query: String,
+    start_date: String,
+    end_date: String,
+) -> Result<Vec<SaleListDto>, CommandError> {
+    let _session = require_session(&state, &session_token)?;
+    let db = state.db.lock()?;
+    sale_service::list_sales(&db, &query, &start_date, &end_date)
+}
+
+#[tauri::command]
+pub fn get_sale_detail(
+    state: State<'_, AppState>,
+    session_token: String,
+    sale_id: i64,
+) -> Result<SaleDetailDto, CommandError> {
+    let _session = require_session(&state, &session_token)?;
+    let db = state.db.lock()?;
+    sale_service::get_sale_detail(&db, sale_id)
+}
+
 /// Owner dashboard — full financial data including profit. Owner-only command (D-41/REPT-01).
 #[tauri::command]
 pub fn get_owner_dashboard(

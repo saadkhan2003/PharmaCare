@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles, formatCurrency } from './CommonStyles';
 import type { ExpiryReportDetailRow } from '../../types/report';
+import { formatDate } from '@/lib/formatDate';
 
 interface ExpiryPDFProps {
   data: ExpiryReportDetailRow[];
@@ -22,9 +23,7 @@ export function ExpiryPDF({
   currencySymbol = 'Rs.',
 }: ExpiryPDFProps) {
   const totalLoss = data.reduce((s, r) => s + r.potential_loss, 0);
-  const today = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const today = formatDate(new Date().toISOString());
 
   return (
     <Document>

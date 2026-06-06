@@ -2,18 +2,17 @@ import { useEffect, useCallback } from 'react';
 import { useTauriCommand } from '../../hooks/useTauriCommand';
 import { useSettings } from '../../hooks/useSettings';
 import { tauri } from '../../lib/tauri';
+import { formatDate } from '@/lib/formatDate';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { FileDown } from 'lucide-react';
 import { SupplierPurchasePDF } from '../../lib/pdf/SupplierPurchasePDF';
+import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { SupplierPurchaseRow } from '../../types/report';
 
@@ -81,15 +80,11 @@ export function SupplierPurchaseReport({ session, startDate, endDate }: Supplier
               Total Spent: {currencySymbol}{totalSpent.toFixed(2)}
             </p>
           </div>
-          <PDFDownloadLink
+          <ExportPdfButton
             document={<SupplierPurchasePDF data={rows} startDate={startDate} endDate={endDate} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
             fileName={`supplier-purchases-${startDate}-to-${endDate}.pdf`}
-          >
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-1" />
-              Export PDF
-            </Button>
-          </PDFDownloadLink>
+            sessionToken={session.token}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -118,7 +113,7 @@ export function SupplierPurchaseReport({ session, startDate, endDate }: Supplier
                     <TableCell className="text-right">{row.item_count}</TableCell>
                     <TableCell className="text-right font-medium">{currencySymbol}{row.total_spent.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.avg_order_value.toFixed(2)}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{row.last_purchase_date ?? '—'}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{formatDate(row.last_purchase_date)}</TableCell>
                   </TableRow>
                 ))
               )}

@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles, formatCurrency } from './CommonStyles';
 import type { SupplierPurchaseRow } from '../../types/report';
+import { formatDate } from '@/lib/formatDate';
 
 interface SupplierPurchasePDFProps {
   data: SupplierPurchaseRow[];
@@ -18,9 +19,7 @@ export function SupplierPurchasePDF({
   currencySymbol = 'Rs.',
 }: SupplierPurchasePDFProps) {
   const totalSpent = data.reduce((s, r) => s + r.total_spent, 0);
-  const today = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const today = formatDate(new Date().toISOString());
 
   return (
     <Document>

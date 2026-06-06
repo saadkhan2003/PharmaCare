@@ -17,6 +17,7 @@ interface POSPaymentFormProps {
   onBillDiscountChange: (val: number) => void;
   taxEnabled: boolean;
   onTaxToggle: () => void;
+  taxRatePercent: number;
   paymentMethod: string;
   onPaymentMethodChange: (val: string) => void;
   customerName: string;
@@ -31,15 +32,13 @@ interface POSPaymentFormProps {
   loading: boolean;
 }
 
-// Estimated tax rate — server uses settings value, this is a display-only estimate
-const ESTIMATED_TAX_RATE = 0.0;
-
 export function POSPaymentForm({
   cartItems,
   billDiscount,
   onBillDiscountChange,
   taxEnabled,
   onTaxToggle,
+  taxRatePercent,
   paymentMethod,
   onPaymentMethodChange,
   customerName,
@@ -60,7 +59,9 @@ export function POSPaymentForm({
   const totalItemDiscount = cartItems.reduce((sum, item) => sum + item.item_discount, 0);
   const afterItemDiscount = subtotal - totalItemDiscount;
   const afterBillDiscount = Math.max(0, afterItemDiscount - billDiscount);
-  const taxAmount = taxEnabled ? afterBillDiscount * ESTIMATED_TAX_RATE : 0;
+  // Display-only estimate; server recomputes using the same settings value (sale_service.rs).
+  // taxRatePercent is in percent (e.g. 18 means 18%).
+  const taxAmount = taxEnabled ? (afterBillDiscount * taxRatePercent) / 100 : 0;
   const estimatedTotal = afterBillDiscount + taxAmount;
 
   return (
@@ -173,7 +174,7 @@ export function POSPaymentForm({
         {taxEnabled && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
-              Tax ({(ESTIMATED_TAX_RATE * 100).toFixed(0)}%)
+              Tax ({taxRatePercent.toFixed(0)}%)
             </span>
             <span>Rs. {taxAmount.toFixed(2)}</span>
           </div>

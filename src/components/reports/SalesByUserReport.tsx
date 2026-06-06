@@ -7,14 +7,12 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { FileDown } from 'lucide-react';
 import { SalesByUserPDF } from '../../lib/pdf/SalesByUserPDF';
+import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { SalesByUserRow } from '../../types/report';
 
@@ -86,15 +84,11 @@ export function SalesByUserReport({ session, startDate, endDate }: SalesByUserRe
               Revenue: {currencySymbol}{totalSales.toFixed(2)} | Profit: {currencySymbol}{totalProfit.toFixed(2)}
             </p>
           </div>
-          <PDFDownloadLink
+          <ExportPdfButton
             document={<SalesByUserPDF data={rows} startDate={startDate} endDate={endDate} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
             fileName={`sales-by-user-${startDate}-to-${endDate}.pdf`}
-          >
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-1" />
-              Export PDF
-            </Button>
-          </PDFDownloadLink>
+            sessionToken={session.token}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <Table>

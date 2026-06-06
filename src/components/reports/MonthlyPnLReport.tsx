@@ -6,14 +6,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { FileDown } from 'lucide-react';
 import { MonthlyPnLPDF } from '../../lib/pdf/MonthlyPnLPDF';
+import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { MonthlyPnLRow } from '../../types/report';
 
@@ -85,15 +83,11 @@ export function MonthlyPnLReport({ session, startDate, endDate }: MonthlyPnLRepo
               Revenue: {currencySymbol}{totalRevenue.toFixed(2)} | Net Profit: {currencySymbol}{totalNetProfit.toFixed(2)}
             </p>
           </div>
-          <PDFDownloadLink
+          <ExportPdfButton
             document={<MonthlyPnLPDF data={rows} startDate={startDate} endDate={endDate} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
             fileName={`monthly-pnl-${startDate}-to-${endDate}.pdf`}
-          >
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-1" />
-              Export PDF
-            </Button>
-          </PDFDownloadLink>
+            sessionToken={session.token}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <Table>

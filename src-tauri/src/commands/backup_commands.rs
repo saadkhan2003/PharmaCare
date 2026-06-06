@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use tauri::{State, Manager};
+use tauri::{Manager, State};
 
 use crate::errors::CommandError;
 use crate::guards::require_owner;
@@ -90,24 +90,38 @@ pub fn restore_backup(
 }
 
 /// Initiates Google Drive OAuth connection. Owner only.
-/// Returns the OAuth URL for the frontend to open in a browser.
+/// Runs the full auto-redirect flow: opens the browser to Google's consent
+/// screen, listens on `http://localhost:57432/callback` for the redirect,
+/// exchanges the auth code for tokens, and stores them.
+/// Returns when the user has finished (or timed out / errored).
 #[tauri::command]
-pub fn connect_drive(
+pub fn start_drive_oauth(
     state: State<'_, AppState>,
+    _app: tauri::AppHandle,
     session_token: String,
-    client_id: String,
-    client_secret: String,
-) -> Result<String, CommandError> {
+) -> Result<(), CommandError> {
     let _session = require_owner(&state, &session_token)?;
 
-    // Store client_id and client_secret temporarily for the OAuth flow
+    let (client_id, client_secret) = backup_service::read_oauth_client()?;
+
+    let auth_code = backup_service::run_drive_oauth_flow(&client_id, |url| {
+        // Open the OAuth URL in the user's default browser. Best-effort:
+        // a failure here will surface as a flow timeout.
+        if let Err(e) = tauri_plugin_opener::open_url(url, None::<&str>) {
+            eprintln!("[oauth] failed to open browser: {}", e);
+        }
+    })?;
+
     let db = state.db.lock()?;
-    settings_repo::set_value(&db, "drive_oauth_client_id", &client_id)?;
-    settings_repo::set_value(&db, "drive_oauth_client_secret", &client_secret)?;
+    backup_service::complete_and_store_drive_token(
+        &db,
+        &client_id,
+        &client_secret,
+        &auth_code,
+    )?;
     drop(db);
 
-    let redirect_port = 57432u16;
-    backup_service::start_oauth_flow(&client_id, redirect_port)
+    Ok(())
 }
 
 /// Disconnects Google Drive by clearing the stored token. Owner only.
@@ -124,43 +138,7 @@ pub fn disconnect_drive(
     Ok(())
 }
 
-/// Completes the Google Drive OAuth flow by exchanging the authorization code for tokens.
-#[tauri::command]
-pub fn complete_drive_connect(
-    state: State<'_, AppState>,
-    session_token: String,
-    auth_code: String,
-    client_id: String,
-    client_secret: String,
-) -> Result<(), CommandError> {
-    let _session = require_owner(&state, &session_token)?;
-
-    let redirect_uri = "http://localhost:57432/callback";
-    let token_json = backup_service::exchange_code_for_token(
-        &client_id,
-        &client_secret,
-        &auth_code,
-        redirect_uri,
-    )?;
-
-    // Merge client credentials into the stored token for future refresh
-    let mut token_value: serde_json::Value = serde_json::from_str(&token_json)
-        .map_err(|e| CommandError::internal(&format!("Failed to parse token: {}", e)))?;
-
-    if let Some(obj) = token_value.as_object_mut() {
-        obj.insert("client_id".to_string(), serde_json::json!(client_id));
-        obj.insert("client_secret".to_string(), serde_json::json!(client_secret));
-    }
-
-    let merged_json = serde_json::to_string(&token_value)
-        .map_err(|e| CommandError::internal(&format!("Failed to serialize token: {}", e)))?;
-
-    let db = state.db.lock()?;
-    settings_repo::set_value(&db, "google_drive_token", &merged_json)?;
-
-    Ok(())
-}
-
+/// (The legacy `complete_drive_connect` command was replaced by `start_drive_oauth`.)
 /// Lists backup files in Google Drive. Owner only.
 #[tauri::command]
 pub fn list_drive_backups(

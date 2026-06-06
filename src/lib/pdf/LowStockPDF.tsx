@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles } from './CommonStyles';
 import type { LowStockRow } from '../../types/report';
+import { formatDate } from '@/lib/formatDate';
 
 interface LowStockPDFProps {
   data: LowStockRow[];
@@ -12,9 +13,7 @@ export function LowStockPDF({
   data,
   pharmacyName = 'PharmaCare',
 }: LowStockPDFProps) {
-  const today = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const today = formatDate(new Date().toISOString());
 
   return (
     <Document>

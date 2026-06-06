@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-use crate::models::{Batch, ExpiryReportRow};
+use crate::models::{Batch, BatchListDto, ExpiryReportRow};
 
 /// Inserts a new batch. Returns the new row id.
 /// Accepts &Connection (works for both standalone Connection and Transaction via Deref).
@@ -222,4 +222,44 @@ pub fn find_by_medicine(db: &Connection, medicine_id: i64) -> Result<Vec<Batch>,
         results.push(row?);
     }
     Ok(results)
+}
+
+pub fn find_all_with_medicine(db: &Connection) -> Result<Vec<BatchListDto>, rusqlite::Error> {
+    let mut stmt = db.prepare(
+        "SELECT b.id, b.medicine_id, m.name, b.batch_code, b.purchase_id, b.purchase_price, \
+                b.quantity, b.remaining_qty, b.expiry_date, b.received_date \
+         FROM batches b \
+         JOIN medicines m ON m.id = b.medicine_id \
+         ORDER BY b.expiry_date ASC, b.id ASC",
+    )?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(BatchListDto {
+            id: row.get(0)?,
+            medicine_id: row.get(1)?,
+            medicine_name: row.get(2)?,
+            batch_code: row.get(3)?,
+            purchase_id: row.get(4)?,
+            purchase_price: row.get(5)?,
+            quantity: row.get(6)?,
+            remaining_qty: row.get(7)?,
+            expiry_date: row.get(8)?,
+            received_date: row.get(9)?,
+        })
+    })?;
+
+    rows.collect()
+}
+
+pub fn update_metadata(
+    db: &Connection,
+    batch_id: i64,
+    batch_code: Option<&str>,
+    expiry_date: &str,
+) -> Result<(), rusqlite::Error> {
+    db.execute(
+        "UPDATE batches SET batch_code = ?2, expiry_date = ?3 WHERE id = ?1",
+        rusqlite::params![batch_id, batch_code, expiry_date],
+    )?;
+    Ok(())
 }

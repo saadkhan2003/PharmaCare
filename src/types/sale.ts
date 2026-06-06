@@ -44,6 +44,42 @@ export interface SaleReceiptItemDto {
   line_total: number;
 }
 
+export interface SaleListDto {
+  id: number;
+  total: number;
+  payment_method: string;
+  customer_name: string | null;
+  item_count: number;
+  created_at: string;
+}
+
+export interface SaleDetailDto {
+  sale: {
+    id: number;
+    user_id: number;
+    subtotal: number;
+    bill_discount: number;
+    tax_rate: number;
+    tax_amount: number;
+    total: number;
+    payment_method: string;
+    customer_name: string | null;
+    created_at: string;
+  };
+  items: SaleDetailItemDto[];
+}
+
+export interface SaleDetailItemDto {
+  id: number;
+  medicine_name: string;
+  batch_id: number;
+  quantity: number;
+  unit_price: number;
+  purchase_cost: number;
+  item_discount: number;
+  line_total: number;
+}
+
 export interface OwnerDashboardDto {
   today_sales: number;
   today_profit: number;

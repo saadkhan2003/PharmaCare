@@ -106,14 +106,14 @@ export function POSSearchPanel({
     <div className="flex flex-col h-full">
       {/* Search input */}
       <div className="relative mb-4">
-        <Search className="absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           ref={searchRef}
           placeholder="Search medicines by name, generic name, or brand..."
           value={query}
           onChange={handleInputChange}
           onKeyDown={onKeyDown}
-          className="pl-12 text-2xl p-6 h-14"
+          className="h-14 py-6 pl-14 pr-4 text-xl"
         />
       </div>
 

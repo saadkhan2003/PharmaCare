@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, Undo2, RotateCcw, Trash2, BarChart3, Settings, PanelLeftClose, PanelLeft, HandCoins } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, Undo2, RotateCcw, Trash2, BarChart3, Settings, PanelLeftClose, PanelLeft, HandCoins, History, Boxes } from 'lucide-react';
 import type { SessionDto } from '@/types/session';
 import { cn } from '@/lib/utils';
 
@@ -24,12 +24,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: 'POS', url: '/pos', icon: ShoppingCart, roles: ['owner', 'pharmacist'] },
+  { title: 'POS History', url: '/pos/history', icon: History, roles: ['owner', 'pharmacist'] },
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, roles: ['owner', 'pharmacist'] },
   { title: 'Users', url: '/users', icon: Users, roles: ['owner'] },
   { title: 'Audit Log', url: '/audit', icon: ScrollText, roles: ['owner'] },
   { title: 'Medicines', url: '/medicines', icon: Pill, roles: ['owner', 'pharmacist'] },
   { title: 'Suppliers', url: '/suppliers', icon: Truck, roles: ['owner'] },
   { title: 'Purchases', url: '/purchases', icon: Package, roles: ['owner'] },
+  { title: 'Batches', url: '/batches', icon: Boxes, roles: ['owner'] },
   { title: 'Expiry Report', url: '/expiry-report', icon: AlertTriangle, roles: ['owner'] },
   { title: 'Reports', url: '/reports', icon: BarChart3, roles: ['owner'] },
   { title: 'Debts', url: '/debts', icon: HandCoins, roles: ['owner'] },

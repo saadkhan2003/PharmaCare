@@ -20,8 +20,9 @@ import type {
 } from '../types/report';
 import type {
   MedicinePosDto, ConfirmSaleDto, SaleReceiptDto,
-  OwnerDashboardDto, PharmacistDashboardDto,
+  OwnerDashboardDto, PharmacistDashboardDto, SaleListDto, SaleDetailDto,
 } from '../types/sale';
+import type { BatchListDto, UpdateBatchDto } from '../types/batch';
 import type {
   CustomerReturnDto, ReturnReceiptDto,
   SaleForReturnDto, SupplierReturnDto,
@@ -80,7 +81,7 @@ export const tauri = {
     requestRecoveryCode: () =>
       invoke<{ masked_email: string; expires_minutes: number }>('request_recovery_code'),
     verifyRecoveryCode: (code: string) =>
-      invoke<number[]>('verify_recovery_code', { code }),
+      invoke<{ id: number; username: string }[]>('verify_recovery_code', { code }),
     resetWithRecoveryCode: (userId: number, code: string, newPassword: string) =>
       invoke<void>('reset_with_recovery_code', { userId, code, newPassword }),
   },
@@ -188,12 +189,10 @@ export const tauri = {
       invoke<BackupResult>('trigger_backup', { sessionToken }),
     restore: (sessionToken: string, fileName: string, source: string) =>
       invoke<BackupResult>('restore_backup', { sessionToken, fileName, source }),
-    connectDrive: (sessionToken: string, clientId: string, clientSecret: string) =>
-      invoke<string>('connect_drive', { sessionToken, clientId, clientSecret }),
+    connectDrive: (sessionToken: string) =>
+      invoke<void>('start_drive_oauth', { sessionToken }),
     disconnectDrive: (sessionToken: string) =>
       invoke<void>('disconnect_drive', { sessionToken }),
-    completeDriveConnect: (sessionToken: string, authCode: string, clientId: string, clientSecret: string) =>
-      invoke<void>('complete_drive_connect', { sessionToken, authCode, clientId, clientSecret }),
     listDriveBackups: (sessionToken: string) =>
       invoke<BackupFileInfo[]>('list_drive_backups', { sessionToken }),
     getStatus: (sessionToken: string) =>
@@ -205,6 +204,10 @@ export const tauri = {
       invoke<MedicinePosDto[]>('search_medicines_pos', { sessionToken, query }),
     confirmSale: (sessionToken: string, payload: ConfirmSaleDto) =>
       invoke<SaleReceiptDto>('confirm_sale', { sessionToken, payload }),
+    list: (sessionToken: string, query?: string, startDate?: string, endDate?: string) =>
+      invoke<SaleListDto[]>('list_sales', { sessionToken, query: query ?? '', startDate: startDate ?? '', endDate: endDate ?? '' }),
+    getDetail: (sessionToken: string, saleId: number) =>
+      invoke<SaleDetailDto>('get_sale_detail', { sessionToken, saleId }),
     getOwnerDashboard: (sessionToken: string) =>
       invoke<OwnerDashboardDto>('get_owner_dashboard', { sessionToken }),
     getPharmacistDashboard: (sessionToken: string) =>
@@ -239,5 +242,17 @@ export const tauri = {
       invoke<number>('get_overdue_count', { sessionToken }),
     getDueSoonCount: (sessionToken: string) =>
       invoke<number>('get_due_soon_count', { sessionToken }),
+  },
+
+  batches: {
+    list: (sessionToken: string) =>
+      invoke<BatchListDto[]>('list_batches', { sessionToken }),
+    update: (sessionToken: string, batchId: number, payload: UpdateBatchDto) =>
+      invoke<void>('update_batch', { sessionToken, batchId, payload }),
+  },
+
+  pdf: {
+    save: (sessionToken: string, fileName: string, bytes: number[]) =>
+      invoke<string | null>('save_pdf', { sessionToken, fileName, bytes }),
   },
 };

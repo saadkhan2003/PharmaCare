@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles, formatCurrency } from './CommonStyles';
 import type { ProfitMarginRow } from '../../types/report';
+import { formatDate } from '@/lib/formatDate';
 
 interface ProfitMarginPDFProps {
   data: ProfitMarginRow[];
@@ -21,9 +22,7 @@ export function ProfitMarginPDF({
   const avgMarginPct = data.length > 0
     ? data.reduce((s, r) => s + r.margin_pct, 0) / data.length
     : 0;
-  const today = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const today = formatDate(new Date().toISOString());
 
   return (
     <Document>

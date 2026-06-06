@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import { pdfStyles, formatCurrency } from './CommonStyles';
 import type { DailySalesRow } from '../../types/report';
+import { formatDate } from '@/lib/formatDate';
 
 interface DailySalesPDFProps {
   data: DailySalesRow[];
@@ -22,9 +23,7 @@ export function DailySalesPDF({
   const totalTax = data.reduce((s, r) => s + r.tax_amount, 0);
   const totalNet = data.reduce((s, r) => s + r.net_sales, 0);
   const totalProfit = data.reduce((s, r) => s + r.profit, 0);
-  const today = new Date().toLocaleDateString('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const today = formatDate(new Date().toISOString());
 
   return (
     <Document>

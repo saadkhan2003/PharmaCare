@@ -1,0 +1,454 @@
+% PharmaCare User Manual - Urdu
+% Compile with: xelatex USER_MANUAL_UR.tex
+% In Overleaf, set Menu -> Compiler -> XeLaTeX.
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2cm]{geometry}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{polyglossia}
+\setmainlanguage{urdu}
+\setotherlanguage{english}
+\newfontfamily\urdufont[Script=Arabic,Scale=1.08]{Amiri}
+\newfontfamily\englishfont{Latin Modern Roman}
+
+\definecolor{pcDark}{HTML}{343434}
+\definecolor{pcSoft}{HTML}{F7F7F7}
+\definecolor{pcLine}{HTML}{D4D4D4}
+\definecolor{pcGreen}{HTML}{16A34A}
+\definecolor{pcAmber}{HTML}{D97706}
+\definecolor{pcRed}{HTML}{DC2626}
+\definecolor{pcBlue}{HTML}{2563EB}
+
+\hypersetup{colorlinks=true,linkcolor=pcDark,urlcolor=pcBlue}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{فارما کیئر صارف رہنما}
+\lhead{نسخہ 1.0}
+\cfoot{\thepage}
+\setlength{\headheight}{15pt}
+\titleformat{\section}{\Large\bfseries\color{pcDark}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{pcDark}}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=*}
+\setlist[enumerate]{leftmargin=*}
+\newcommand{\noteBox}[1]{\vspace{0.5em}\noindent\fcolorbox{pcLine}{pcSoft}{\parbox{0.95\linewidth}{#1}}\vspace{0.5em}}
+
+\title{\Huge\textbf{فارما کیئر صارف رہنما}\\\large آف لائن فارمیسی مینجمنٹ سسٹم}
+\author{PharmaCare Desktop Application}
+\date{نسخہ 1.0}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\begin{center}
+\vspace{1cm}
+\begin{tikzpicture}
+\node[draw=pcDark, rounded corners=8pt, fill=pcSoft, minimum width=12cm, minimum height=3cm, align=center] {
+\Huge فارما کیئر\\[0.3em]
+\large سیلز، اسٹاک، ایکسپائری، رپورٹس، ریٹرنز، قرض، بیک اپ، اور صارف رسائی کا مکمل آف لائن نظام
+};
+\end{tikzpicture}
+\end{center}
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{تعارف}
+فارما کیئر ایک ڈیسک ٹاپ فارمیسی مینجمنٹ سسٹم ہے جو ایک نجی، سنگل برانچ فارمیسی کے روزمرہ کاموں کے لئے بنایا گیا ہے۔ یہ دستی رجسٹرز اور اسپریڈ شیٹس کی جگہ ایک تیز، آف لائن فرسٹ نظام فراہم کرتا ہے جس میں ادویات، سیلز، خریداری، بیچ ٹریکنگ، ریٹرنز، قرض، رپورٹس، صارفین، آڈٹ لاگ، اور بیک اپ شامل ہیں۔
+
+یہ ایپلیکیشن تمام روزمرہ ڈیٹا مقامی SQLite ڈیٹا بیس میں محفوظ کرتی ہے۔ سیلز، اسٹاک، ریٹرنز، رپورٹس، اور لاگ ان کے لئے انٹرنیٹ ضروری نہیں۔ انٹرنیٹ صرف اختیاری گوگل ڈرائیو بیک اپ اور ای میل OTP پاس ورڈ ریکوری کے لئے استعمال ہوتا ہے۔
+
+\subsection{اہم خصوصیات}
+\begin{itemize}
+  \item ادویات کا کیٹلاگ، کیٹیگریز، یونٹس، قیمتیں، ری آرڈر لیول، شیلف لوکیشن، اور نوٹس محفوظ کریں۔
+  \item ہر بیچ کی ایکسپائری، خرید قیمت، اور باقی مقدار الگ ٹریک کریں۔
+  \item کی بورڈ فرینڈلی POS اسکرین سے تیزی سے سیل مکمل کریں۔
+  \item FIFO اصول کے مطابق پہلے قریب ترین ایکسپائری والے بیچ سے اسٹاک کم کریں۔
+  \item ایکسپائر، زیرو اسٹاک، اور زیادہ مقدار والی سیل کو روکیں۔
+  \item سپلائر خریداری ریکارڈ کریں اور خودکار بیچ بنائیں۔
+  \item کسٹمر ریٹرن، سپلائر ریٹرن، اور اسٹاک رائٹ آف کریں۔
+  \item کسٹمر قرض اور ادائیگیوں کو ٹریک کریں۔
+  \item مالک کے لئے رپورٹس بنائیں اور PDF ایکسپورٹ کریں۔
+  \item ڈیٹا بیس کا محفوظ بیک اپ اور ریسٹور کریں۔
+\end{itemize}
+
+\section{فوری ورک فلو}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.25cm, every node/.style={font=\small}, box/.style={draw=pcDark, rounded corners, fill=pcSoft, minimum width=3.2cm, minimum height=0.8cm, align=center}, arr/.style={-Latex, thick, color=pcDark}]
+\node[box] (setup) {پہلا سیٹ اپ\\مالک اکاؤنٹ};
+\node[box, left=of setup] (catalog) {ادویات\\سپلائرز};
+\node[box, left=of catalog] (purchase) {خریداری\\بیچ اسٹاک};
+\node[box, below=of purchase] (pos) {POS سیل\\FIFO کٹوتی};
+\node[box, right=of pos] (returns) {ریٹرنز\\رائٹ آف};
+\node[box, right=of returns] (reports) {رپورٹس\\بیک اپ};
+\draw[arr] (setup) -- (catalog);
+\draw[arr] (catalog) -- (purchase);
+\draw[arr] (purchase) -- (pos);
+\draw[arr] (pos) -- (returns);
+\draw[arr] (returns) -- (reports);
+\draw[arr] (reports) -- (setup);
+\end{tikzpicture}
+\caption{فارما کیئر کا بنیادی آپریٹنگ سائیکل}
+\end{figure}
+
+\section{شروع کرنے کا طریقہ}
+\subsection{پہلا سیٹ اپ}
+ایپ پہلی بار کھولنے پر سیٹ اپ وزرڈ پہلے مالک اکاؤنٹ کو بناتا ہے۔
+\begin{enumerate}
+  \item مکمل نام درج کریں۔
+  \item منفرد یوزر نیم منتخب کریں۔
+  \item کم از کم 6 حروف کا پاس ورڈ رکھیں۔
+  \item پاس ورڈ ریکوری کے لئے اختیاری ای میل درج کریں۔
+  \item سیٹ اپ محفوظ کریں۔ پہلا صارف مالک بن جائے گا۔
+\end{enumerate}
+\noteBox{کم از کم ایک فعال مالک اکاؤنٹ ضروری ہے۔ نظام آخری فعال مالک کو غیر فعال کرنے سے روکتا ہے۔}
+
+\subsection{لاگ ان}
+\begin{enumerate}
+  \item یوزر نیم اور پاس ورڈ درج کریں۔
+  \item Enter دبائیں یا Login پر کلک کریں۔
+  \item سسٹم آپ کے کردار کے مطابق ڈیش بورڈ کھولے گا۔
+\end{enumerate}
+ہر لاگ ان کوشش آڈٹ لاگ میں محفوظ ہوتی ہے۔ ناکام لاگ ان کا پیغام سکیورٹی کے لئے عمومی رکھا جاتا ہے۔
+
+\subsection{پاس ورڈ ریکوری}
+اگر SMTP سیٹنگز اور مالک ای میل سیٹ ہوں تو لاگ ان اسکرین سے Forgot Password استعمال کریں۔
+\begin{enumerate}
+  \item OTP کوڈ طلب کریں۔
+  \item مالک ای میل چیک کریں۔
+  \item OTP درج کریں۔
+  \item نیا پاس ورڈ سیٹ کریں۔
+\end{enumerate}
+
+\section{کردار اور اجازتیں}
+فارما کیئر میں دو کردار ہیں: مالک اور فارماسسٹ۔ مالک کے پاس مکمل آپریشنل اور مالی رسائی ہوتی ہے۔ فارماسسٹ روزانہ کاؤنٹر ورک تک محدود رہتا ہے اور خرید قیمت یا منافع نہیں دیکھ سکتا۔
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{6cm}cc}
+\toprule
+\textbf{فیچر} & \textbf{مالک} & \textbf{فارماسسٹ} \\
+\midrule
+POS سیلز & ہاں & ہاں \\
+ڈیش بورڈ & منافع سمیت & منافع کے بغیر \\
+ادویات کی فہرست & مکمل رسائی & صرف پڑھنے کی اجازت \\
+خرید قیمت اور مارجن & ہاں & نہیں \\
+ادویات بنانا یا ترمیم کرنا & ہاں & نہیں \\
+سپلائرز اور خریداری & ہاں & نہیں \\
+کسٹمر ریٹرن & ہاں & ہاں \\
+سپلائر ریٹرن & ہاں & نہیں \\
+رائٹ آف & ہاں & نہیں \\
+رپورٹس اور PDF ایکسپورٹ & ہاں & نہیں \\
+قرض ٹریکنگ & ہاں & نہیں \\
+سیٹنگز & ہاں & نہیں \\
+صارف مینجمنٹ & ہاں & نہیں \\
+آڈٹ لاگ & ہاں & نہیں \\
+بیک اپ اور ریسٹور & ہاں & نہیں \\
+\bottomrule
+\end{longtable}
+
+\section{ڈیش بورڈ}
+ڈیش بورڈ فارمیسی کی موجودہ حالت اور الرٹس دکھاتا ہے۔
+
+\subsection{مالک ڈیش بورڈ}
+مالک ڈیش بورڈ آج کی سیلز، آج کا منافع، ماہانہ سیلز، کم اسٹاک، ایکسپائری وارننگز، ٹاپ سیلنگ ادویات، قریب واجب الادا قرض، اور آخری بیک اپ اسٹیٹس دکھاتا ہے۔
+
+\subsection{فارماسسٹ ڈیش بورڈ}
+فارماسسٹ ڈیش بورڈ روزمرہ آپریشنل معلومات دکھاتا ہے جیسے آج کی سیلز اور کم اسٹاک الرٹس۔ یہ خرید لاگت، مارجن، یا منافع نہیں دکھاتا۔
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  width=12cm,
+  height=6cm,
+  ymin=0,
+  ylabel={مثالی قدر},
+  symbolic x coords={سیلز,منافع,کم اسٹاک,ایکسپائری,قرض},
+  xtick=data,
+  nodes near coords,
+  bar width=18pt,
+  enlarge x limits=0.15,
+  ymajorgrids=true,
+  grid style={pcLine}
+]
+\addplot[fill=pcDark] coordinates {(سیلز,120) (منافع,36) (کم اسٹاک,8) (ایکسپائری,5) (قرض,4)};
+\end{axis}
+\end{tikzpicture}
+\caption{مالک ڈیش بورڈ کے مثالی اشارے}
+\end{figure}
+
+\section{پوائنٹ آف سیل}
+POS اسکرین تیز چیک آؤٹ اور کی بورڈ استعمال کے لئے بنائی گئی ہے۔
+
+\subsection{سیل کے مراحل}
+\begin{enumerate}
+  \item دوا کا نام تلاش کریں۔
+  \item لائیو نتائج سے دوا منتخب کریں۔
+  \item مقدار درج کریں۔
+  \item اختیاری آئٹم ڈسکاؤنٹ درج کریں۔
+  \item اختیاری بل ڈسکاؤنٹ درج کریں۔
+  \item سیل کے مطابق ٹیکس آن یا آف کریں۔
+  \item Cash، Card، یا Credit منتخب کریں۔
+  \item Credit کی صورت میں کسٹمر کا نام درج کریں۔
+  \item سیل کنفرم کریں۔
+\end{enumerate}
+
+\subsection{کاروباری اصول}
+\begin{itemize}
+  \item سیل کنفرم کرنے سے پہلے اسٹاک چیک ہوتا ہے۔
+  \item ایکسپائر اسٹاک دستیاب اسٹاک میں شامل نہیں ہوتا۔
+  \item اسٹاک FIFO اصول سے بیچ کے حساب سے کم ہوتا ہے۔
+  \item قیمتیں ہمیشہ ڈیٹا بیس سے دوبارہ حساب ہوتی ہیں۔
+  \item فارماسسٹ ڈسکاؤنٹ صرف تب دے سکتا ہے جب سیٹنگ میں اجازت فعال ہو۔
+  \item سیل ریکارڈ میں قیمت، لاگت، ڈسکاؤنٹ، اور ٹیکس کے مستقل اسنیپ شاٹس محفوظ ہوتے ہیں۔
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.05cm, every node/.style={font=\small}, box/.style={draw=pcDark, rounded corners, fill=pcSoft, minimum width=3.2cm, minimum height=0.75cm, align=center}, decision/.style={diamond, draw=pcDark, fill=pcSoft, aspect=2, align=center}, arr/.style={-Latex, thick}]
+\node[box] (search) {دوا تلاش کریں};
+\node[box, below=of search] (cart) {کارٹ میں شامل کریں};
+\node[decision, below=of cart] (stock) {اسٹاک درست؟};
+\node[box, left=of stock] (error) {خرابی دکھائیں};
+\node[box, below=of stock] (pay) {ادائیگی منتخب کریں};
+\node[box, below=of pay] (fifo) {FIFO بیچ کم کریں};
+\node[box, below=of fifo] (receipt) {سیل اور رسید محفوظ کریں};
+\draw[arr] (search) -- (cart);
+\draw[arr] (cart) -- (stock);
+\draw[arr] (stock) -- node[above]{نہیں} (error);
+\draw[arr] (stock) -- node[right]{ہاں} (pay);
+\draw[arr] (pay) -- (fifo);
+\draw[arr] (fifo) -- (receipt);
+\end{tikzpicture}
+\caption{POS سیل ویلیڈیشن اور کنفرمیشن فلو}
+\end{figure}
+
+\section{ادویات کا کیٹلاگ}
+مالک ادویات کا مکمل ریکارڈ بناتا اور برقرار رکھتا ہے۔
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{فیلڈ} & \textbf{مقصد} \\
+\midrule
+نام & دوا کا دکھائی دینے والا نام اور سرچ کی۔ \\
+جنرک نام & فعال جز یا جنرک شناخت۔ \\
+برانڈ نام & کمپنی یا برانڈ۔ \\
+کیٹیگری & Tablet، Syrup، Injection، OTC، یا Prescription۔ \\
+یونٹ & Strip، Bottle، Vial، Box، یا Sachet۔ \\
+ریٹیل قیمت & فروخت قیمت، جو خرید قیمت کے برابر یا زیادہ ہونی چاہئے۔ \\
+خرید قیمت & لاگت قیمت، فارماسسٹ سے مخفی۔ \\
+ری آرڈر لیول & کم اسٹاک حد۔ \\
+شیلف لوکیشن & فزیکل اسٹوریج جگہ۔ \\
+نوٹس & اضافی معلومات۔ \\
+\bottomrule
+\end{longtable}
+
+دوا بناتے وقت اوپننگ اسٹاک بھی دیا جا سکتا ہے۔ سسٹم اوپننگ بیچ بناتا اور اسٹاک موومنٹ ریکارڈ کرتا ہے۔
+
+\section{سپلائرز اور خریداری}
+سپلائر ریکارڈ میں کمپنی، رابطہ، فون، پتہ، ادائیگی شرائط، اور نوٹس شامل ہوتے ہیں۔ خریداری سے سپلائر سے آنے والا اسٹاک ریکارڈ ہوتا ہے۔
+
+\subsection{خریداری ریکارڈ کرنا}
+\begin{enumerate}
+  \item Purchases کھولیں اور Record Purchase پر کلک کریں۔
+  \item سپلائر منتخب کریں۔
+  \item انوائس نمبر، خریداری تاریخ، اور ادائیگی اسٹیٹس درج کریں۔
+  \item دوا کی لائن آئٹمز شامل کریں: مقدار، ایکسپائری تاریخ، اور یونٹ خرید قیمت۔
+  \item خریداری محفوظ کریں۔
+\end{enumerate}
+خریداری محفوظ کرنے سے خریداری ریکارڈ، بیچ ریکارڈ، اور مثبت اسٹاک موومنٹ ایک ہی ایٹمک ٹرانزیکشن میں بنتے ہیں۔
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1cm, every node/.style={font=\small}, box/.style={draw=pcDark, rounded corners, fill=pcSoft, minimum width=3.4cm, minimum height=0.7cm, align=center}, arr/.style={-Latex, thick}]
+\node[box] (purchase) {خریداری ہیڈر};
+\node[box, below left=of purchase] (item) {خریداری آئٹم};
+\node[box, below=of purchase] (batch) {بیچ بنا};
+\node[box, below right=of purchase] (ledger) {اسٹاک موومنٹ};
+\node[box, below=of batch] (stock) {دستیاب اسٹاک اپ ڈیٹ};
+\draw[arr] (purchase) -- (item);
+\draw[arr] (item) -- (batch);
+\draw[arr] (batch) -- (ledger);
+\draw[arr] (ledger) -- (stock);
+\end{tikzpicture}
+\caption{خریداری اور اسٹاک اپ ڈیٹ کا عمل}
+\end{figure}
+
+\section{ریٹرنز اور اصلاحات}
+فارما کیئر کسٹمر ریٹرن، سپلائر ریٹرن، اور اسٹاک رائٹ آف سپورٹ کرتا ہے۔
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{5cm}>{\raggedright\arraybackslash}p{5cm}}
+\toprule
+\textbf{عمل} & \textbf{کب استعمال کریں} & \textbf{اسٹاک اثر} \\
+\midrule
+کسٹمر ریٹرن & کسٹمر فروخت شدہ آئٹم واپس کرے۔ & قابل فروخت اسٹاک واپس آتا ہے۔ خراب یا ایکسپائر آئٹم نقصان میں لاگ ہوتا ہے۔ \\
+سپلائر ریٹرن & مالک خریدی ہوئی اسٹاک سپلائر کو واپس بھیجے۔ & منتخب بیچ سے اسٹاک کم ہوتا ہے۔ \\
+رائٹ آف & اسٹاک خراب، ایکسپائر، یا ناقابل استعمال ہو۔ & اسٹاک کم ہوتا اور نقصان لاگ ہوتا ہے۔ \\
+\bottomrule
+\end{longtable}
+
+ریٹرنز اصل فروخت شدہ مقدار سے زیادہ نہیں ہو سکتے۔ ہر ریٹرن میں وجہ، تاریخ، حالت، مقدار، اور پروسیسنگ صارف محفوظ ہوتا ہے۔
+
+\section{قرض ٹریکنگ}
+قرض ٹریکنگ رسمی کسٹمر کریڈٹ ریکارڈ کے لئے استعمال ہوتی ہے۔
+\begin{enumerate}
+  \item کسٹمر نام، آئٹمز، due date، اور نوٹس کے ساتھ قرض بنائیں۔
+  \item جزوی یا مکمل ادائیگی ریکارڈ کریں۔
+  \item سسٹم paid، remaining، overdue، اور due-soon اسٹیٹس اپ ڈیٹ کرتا ہے۔
+\end{enumerate}
+اوور ڈیو اور قریب واجب الادا قرض کے الرٹس ڈیش بورڈ پر دکھتے ہیں۔
+
+\section{رپورٹس}
+رپورٹس صرف مالک کے لئے ہیں۔ خرید قیمت، منافع، اور مارجن ڈیٹا backend role checks سے محفوظ ہے، صرف UI میں چھپایا نہیں گیا۔
+
+\begin{longtable}{clp{7cm}c}
+\toprule
+\textbf{نمبر} & \textbf{رپورٹ} & \textbf{استعمال} & \textbf{تاریخ فلٹر} \\
+\midrule
+1 & Daily Sales Summary & روزانہ سیل، آئٹمز، گراس، ڈسکاؤنٹ، ٹیکس، نیٹ، اور منافع۔ & ہاں \\
+2 & Monthly P\&L & ریونیو، COGS، ریفنڈز، رائٹ آف، گراس پرافٹ، اور نیٹ پرافٹ۔ & ہاں \\
+3 & Top Selling Medicines & quantity اور revenue کے لحاظ سے بہترین ادویات۔ & ہاں \\
+4 & Slow-Moving Stock & منتخب مدت میں نہ بکنے والی ادویات۔ & ہاں \\
+5 & Low Stock & ری آرڈر لیول یا اس سے کم ادویات۔ & نہیں \\
+6 & Expiry Report & بیچ ایکسپائری، دن باقی، اور ممکنہ نقصان۔ & نہیں \\
+7 & Supplier Purchases & سپلائر کے حساب سے خرچ، آرڈر count، اور آخری خریداری۔ & ہاں \\
+8 & Sales by User & کیشئر کے حساب سے سیلز کارکردگی۔ & ہاں \\
+9 & Profit Margin & دوا کے حساب سے مارجن فیصد اور منافع۔ & ہاں \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar,
+  width=12cm,
+  height=6cm,
+  xmin=0,
+  xlabel={مثالی فروخت مقدار},
+  symbolic y coords={Paracetamol,Amoxicillin,Cough Syrup,ORS,Ibuprofen},
+  ytick=data,
+  nodes near coords,
+  ymajorgrids=false,
+  xmajorgrids=true,
+  grid style={pcLine}
+]
+\addplot[fill=pcDark] coordinates {(95,Paracetamol) (68,Amoxicillin) (54,Cough Syrup) (41,ORS) (39,Ibuprofen)};
+\end{axis}
+\end{tikzpicture}
+\caption{ٹاپ سیلنگ ادویات کا مثالی چارٹ}
+\end{figure}
+
+\section{ایکسپائری ٹریکنگ}
+ایکسپائری بیچ لیول پر ٹریک ہوتی ہے۔ ڈیفالٹ وارننگ حد 60 دن اور critical حد 30 دن ہے۔
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{7cm}}
+\toprule
+\textbf{اسٹیٹس} & \textbf{رنگ} & \textbf{مطلب} \\
+\midrule
+OK & سبز & ایکسپائری وارننگ ونڈو سے باہر ہے۔ \\
+Warning & امبر & ایکسپائری configured warning days کے اندر ہے۔ \\
+Critical & سرخ & ایکسپائری configured critical days کے اندر ہے۔ \\
+Expired & گہرا سرخ & دوا ایکسپائر ہو چکی ہے اور سیل سے بلاک ہے۔ \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar stacked,
+  width=12cm,
+  height=6cm,
+  ylabel={بیچز},
+  symbolic x coords={اس ماہ,اگلا ماہ,60 دن,90 دن},
+  xtick=data,
+  legend style={at={(0.5,-0.2)},anchor=north,legend columns=3},
+  ymajorgrids=true,
+  grid style={pcLine}
+]
+\addplot[fill=pcRed] coordinates {(اس ماہ,4) (اگلا ماہ,2) (60 دن,1) (90 دن,0)};
+\addplot[fill=pcAmber] coordinates {(اس ماہ,2) (اگلا ماہ,5) (60 دن,8) (90 دن,3)};
+\addplot[fill=pcGreen] coordinates {(اس ماہ,0) (اگلا ماہ,1) (60 دن,3) (90 دن,9)};
+\legend{Critical,Warning,OK}
+\end{axis}
+\end{tikzpicture}
+\caption{ایکسپائری رسک کی مثالی تقسیم}
+\end{figure}
+
+\section{سیٹنگز}
+سیٹنگز چار حصوں میں ہیں: Pharmacy Info، Financial، Inventory، اور Backup۔
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{ٹیب} & \textbf{سیٹنگز} \\
+\midrule
+Pharmacy Info & فارمیسی نام، مالک نام، فون، پتہ، کرنسی سمبل، اور لوگو path۔ \\
+Financial & ٹیکس ریٹ، tax default، cashier discount permission، اور owner recovery email۔ \\
+Inventory & default reorder level، expiry warning days، اور expiry critical days۔ \\
+Backup & auto-backup time، local backup path، Google Drive connection، اور backup status۔ \\
+\bottomrule
+\end{longtable}
+
+\section{بیک اپ اور ریسٹور}
+بیک اپ مقامی SQLite ڈیٹا بیس کو محفوظ رکھتا ہے۔
+\begin{itemize}
+  \item Manual backup سیٹنگز سے شروع کیا جاتا ہے۔
+  \item Automatic backup configured time پر چلتا ہے جب ایپ کھلی ہو۔
+  \item Local backup USB یا offline fallback کے لئے استعمال ہو سکتا ہے۔
+  \item Google Drive backup انٹرنیٹ موجود ہونے پر Drive account میں upload ہوتا ہے۔
+  \item Restore کے لئے مالک confirmation ضروری ہے۔
+  \item ہر restore سے پہلے pre-restore backup بنتا ہے۔
+\end{itemize}
+
+\section{آڈٹ لاگ}
+آڈٹ لاگ آخری لاگ ان کوششیں دکھاتا ہے، جن میں username، timestamp، success یا failure، اور failure reason شامل ہوتے ہیں۔ یہ صرف مالک کے لئے ہے۔
+
+\section{کی بورڈ شارٹ کٹس}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{Key} & \textbf{Action} \\
+\midrule
+Enter on login & Login form submit کرتا ہے۔ \\
+Tab in POS & Search، quantity، discount، bill discount، tax، payment، customer name، اور confirm میں حرکت کرتا ہے۔ \\
+Typing in POS search & Medicine results live filter کرتا ہے۔ \\
+Dialog close button & موجودہ dialog بند یا cancel کرتا ہے۔ \\
+\bottomrule
+\end{longtable}
+
+\section{مسائل کا حل}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{مسئلہ} & \textbf{کیا چیک کریں} \\
+\midrule
+ایپ شروع نہیں ہوتی & چیک کریں کہ دوسری instance نہیں چل رہی۔ backend logs دیکھیں۔ database خراب ہو تو backup restore کریں۔ \\
+سیل بلاک ہوتی ہے & available stock، expiry date، quantity، اور discount permission چیک کریں۔ \\
+Google Drive backup fail ہوتا ہے & client ID، client secret، internet connection، اور Drive authorization چیک کریں۔ \\
+Email OTP نہیں آتا & SMTP environment settings اور owner email address چیک کریں۔ \\
+Stock غلط لگتا ہے & purchase، sale، return، اور write-off history دیکھیں۔ صرف corruption کی صورت میں backup restore کریں۔ \\
+\bottomrule
+\end{longtable}
+
+\section{عام سوالات}
+\textbf{کیا انٹرنیٹ ضروری ہے؟} نہیں۔ انٹرنیٹ صرف Google Drive backup اور email OTP recovery کے لئے اختیاری ہے۔\\[0.5em]
+\textbf{ڈیٹا کہاں محفوظ ہوتا ہے؟} local SQLite database میں، application data directory کے اندر۔\\[0.5em]
+\textbf{کیا فارماسسٹ خرید قیمت دیکھ سکتا ہے؟} نہیں۔ purchase price اور profit backend role checks سے محفوظ ہیں۔\\[0.5em]
+\textbf{FIFO کیسے کام کرتا ہے؟} سب سے پہلے قریب ترین expiry والے valid batch سے stock کم ہوتا ہے۔\\[0.5em]
+\textbf{کتنے backups رکھے جاتے ہیں؟} default design کے مطابق حالیہ 30 daily backups محفوظ رکھے جاتے ہیں۔
+
+\end{document}

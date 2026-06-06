@@ -1,17 +1,15 @@
 import { useEffect, useCallback } from 'react';
 import { useTauriCommand } from '../../hooks/useTauriCommand';
-import { useSettings } from '../../hooks/useSettings';
 import { tauri } from '../../lib/tauri';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { FileDown } from 'lucide-react';
 import { LowStockPDF } from '../../lib/pdf/LowStockPDF';
+import { useSettings } from '../../hooks/useSettings';
+import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { LowStockRow } from '../../types/report';
 
@@ -22,6 +20,7 @@ interface LowStockReportProps {
 export function LowStockReport({ session }: LowStockReportProps) {
   const { settings } = useSettings();
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+  const currencySymbol = settings?.currency_symbol ?? 'Rs.';
 
   const { data, error, loading, execute } = useTauriCommand<LowStockRow[]>();
 
@@ -46,15 +45,11 @@ export function LowStockReport({ session }: LowStockReportProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm">Low Stock Items</CardTitle>
-          <PDFDownloadLink
-            document={<LowStockPDF data={rows} pharmacyName={pharmacyName} />}
+          <ExportPdfButton
+            document={<LowStockPDF data={rows} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
             fileName={`low-stock-${new Date().toISOString().split('T')[0]}.pdf`}
-          >
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-1" />
-              Export PDF
-            </Button>
-          </PDFDownloadLink>
+            sessionToken={session.token}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <Table>

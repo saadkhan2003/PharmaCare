@@ -1,0 +1,453 @@
+% PharmaCare User Manual - English
+% Compile with: pdflatex USER_MANUAL_EN.tex
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+
+\definecolor{pcDark}{HTML}{343434}
+\definecolor{pcSoft}{HTML}{F7F7F7}
+\definecolor{pcLine}{HTML}{D4D4D4}
+\definecolor{pcGreen}{HTML}{16A34A}
+\definecolor{pcAmber}{HTML}{D97706}
+\definecolor{pcRed}{HTML}{DC2626}
+\definecolor{pcBlue}{HTML}{2563EB}
+
+\hypersetup{colorlinks=true,linkcolor=pcDark,urlcolor=pcBlue}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{PharmaCare User Manual}
+\rhead{Version 1.0}
+\cfoot{\thepage}
+\setlength{\headheight}{15pt}
+\titleformat{\section}{\Large\bfseries\color{pcDark}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{pcDark}}{\thesubsection}{0.7em}{}
+\setlist[itemize]{leftmargin=*}
+\setlist[enumerate]{leftmargin=*}
+
+\newcommand{\roleowner}{\textbf{Owner}}
+\newcommand{\rolepharmacist}{\textbf{Pharmacist}}
+\newcommand{\noteBox}[1]{\vspace{0.5em}\noindent\fcolorbox{pcLine}{pcSoft}{\parbox{0.95\linewidth}{#1}}\vspace{0.5em}}
+
+\title{\Huge\textbf{PharmaCare User Manual}\\\large Offline Pharmacy Management System}
+\author{PharmaCare Desktop Application}
+\date{Version 1.0}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\begin{center}
+\vspace{1cm}
+\begin{tikzpicture}
+\node[draw=pcDark, rounded corners=8pt, fill=pcSoft, minimum width=12cm, minimum height=3cm, align=center] {
+\Huge PharmaCare\\[0.3em]
+\large Sales, stock, expiry, reports, returns, debts, backup, and access control in one offline desktop system
+};
+\end{tikzpicture}
+\end{center}
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+PharmaCare is a desktop pharmacy management system for a single-branch private pharmacy. It replaces manual registers and spreadsheets with a fast, offline-first system for medicine inventory, point of sale, purchases, batch tracking, returns, debts, reports, users, audit logs, and backups.
+
+The application stores day-to-day data locally in SQLite. Internet is not required for sales, stock intake, reports, returns, or authentication. Internet is only needed for optional Google Drive backup and email OTP password recovery.
+
+\subsection{Core Capabilities}
+\begin{itemize}
+  \item Manage medicine catalog, categories, units, prices, reorder levels, shelf locations, and notes.
+  \item Track stock at batch level with expiry dates, purchase prices, and remaining quantities.
+  \item Process fast sales through a keyboard-friendly POS screen.
+  \item Deduct stock by FIFO, using earliest-expiry stock first.
+  \item Block expired, zero-stock, and over-quantity sales.
+  \item Record supplier purchases and automatically create batches.
+  \item Process customer returns, supplier returns, and stock write-offs.
+  \item Track customer debts and record repayments.
+  \item Generate owner-only reports and export them to PDF.
+  \item Back up and restore the local database safely.
+\end{itemize}
+
+\section{Quick Workflow Overview}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.25cm, every node/.style={font=\small}, box/.style={draw=pcDark, rounded corners, fill=pcSoft, minimum width=3.2cm, minimum height=0.8cm, align=center}, arr/.style={-Latex, thick, color=pcDark}]
+\node[box] (setup) {First Setup\\Owner Account};
+\node[box, right=of setup] (catalog) {Medicine Catalog\\Suppliers};
+\node[box, right=of catalog] (purchase) {Purchases\\Batch Stock};
+\node[box, below=of purchase] (pos) {POS Sale\\FIFO Deduction};
+\node[box, left=of pos] (returns) {Returns\\Write-Offs};
+\node[box, left=of returns] (reports) {Reports\\Backup};
+\draw[arr] (setup) -- (catalog);
+\draw[arr] (catalog) -- (purchase);
+\draw[arr] (purchase) -- (pos);
+\draw[arr] (pos) -- (returns);
+\draw[arr] (returns) -- (reports);
+\draw[arr] (reports) -- (setup);
+\end{tikzpicture}
+\caption{Main PharmaCare operating cycle}
+\end{figure}
+
+\section{Getting Started}
+\subsection{First-Time Setup}
+When the application is opened for the first time, the setup wizard creates the first Owner account.
+\begin{enumerate}
+  \item Enter full name.
+  \item Choose a unique username.
+  \item Set a password with at least 6 characters.
+  \item Optionally enter an email address for password recovery.
+  \item Save the setup. The first user becomes the Owner.
+\end{enumerate}
+\noteBox{Keep at least one active Owner account. PharmaCare blocks actions that would remove the last active Owner.}
+
+\subsection{Login}
+\begin{enumerate}
+  \item Enter username and password.
+  \item Press Enter or click Login.
+  \item The system opens the dashboard according to your role.
+\end{enumerate}
+Every login attempt is recorded in the audit log. Failed login messages are intentionally generic for security.
+
+\subsection{Password Recovery}
+If SMTP settings and owner email are configured, use \textbf{Forgot Password?} on the login screen.
+\begin{enumerate}
+  \item Request the OTP code.
+  \item Check the configured owner email.
+  \item Enter the OTP.
+  \item Set a new password.
+\end{enumerate}
+
+\section{Roles and Permissions}
+PharmaCare has two roles: Owner and Pharmacist. Owner users have full operational and financial access. Pharmacist users are limited to daily counter work and cannot see purchase prices or profit data.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{6cm}cc}
+\toprule
+\textbf{Feature} & \textbf{Owner} & \textbf{Pharmacist} \\
+\midrule
+POS sales & Yes & Yes \\
+Dashboard & Profit included & Profit hidden \\
+Medicine list & Full access & Read-only \\
+Purchase price and margin & Yes & No \\
+Create/edit medicines & Yes & No \\
+Suppliers and purchases & Yes & No \\
+Customer returns & Yes & Yes \\
+Supplier returns & Yes & No \\
+Write-offs & Yes & No \\
+Reports and PDF export & Yes & No \\
+Debt tracking & Yes & No \\
+Settings & Yes & No \\
+User management & Yes & No \\
+Audit log & Yes & No \\
+Backup and restore & Yes & No \\
+\bottomrule
+\end{longtable}
+
+\section{Dashboard}
+The dashboard summarizes pharmacy activity and alerts.
+
+\subsection{Owner Dashboard}
+The Owner dashboard shows today's sales, today's profit, monthly sales, low stock count, expiry warnings, top selling medicines, debts due soon, and last backup status.
+
+\subsection{Pharmacist Dashboard}
+The Pharmacist dashboard shows operational information such as today's sales and low stock alerts. It does not show purchase costs, margins, or profit.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  width=12cm,
+  height=6cm,
+  ymin=0,
+  ylabel={Example value},
+  symbolic x coords={Sales,Profit,Low Stock,Expiry,Debts},
+  xtick=data,
+  nodes near coords,
+  bar width=18pt,
+  enlarge x limits=0.15,
+  ymajorgrids=true,
+  grid style={pcLine}
+]
+\addplot[fill=pcDark] coordinates {(Sales,120) (Profit,36) (Low Stock,8) (Expiry,5) (Debts,4)};
+\end{axis}
+\end{tikzpicture}
+\caption{Example owner dashboard indicators}
+\end{figure}
+
+\section{Point of Sale}
+The POS screen is designed for fast checkout and keyboard use.
+
+\subsection{Sale Steps}
+\begin{enumerate}
+  \item Search for medicine by name.
+  \item Select the required medicine from live results.
+  \item Enter quantity.
+  \item Optionally enter item discount.
+  \item Optionally enter bill discount.
+  \item Toggle tax according to the sale.
+  \item Select Cash, Card, or Credit.
+  \item If Credit is selected, enter customer name.
+  \item Confirm the sale.
+\end{enumerate}
+
+\subsection{Business Rules}
+\begin{itemize}
+  \item Stock is checked before sale confirmation.
+  \item Expired stock is excluded.
+  \item Stock is deducted FIFO by batch.
+  \item Prices are recalculated by the backend from database values.
+  \item Pharmacist discounts require the cashier discount setting to be enabled.
+  \item Sale records store immutable line snapshots of price, cost, discount, and tax.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1.05cm, every node/.style={font=\small}, box/.style={draw=pcDark, rounded corners, fill=pcSoft, minimum width=3.2cm, minimum height=0.75cm, align=center}, decision/.style={diamond, draw=pcDark, fill=pcSoft, aspect=2, align=center}, arr/.style={-Latex, thick}]
+\node[box] (search) {Search Medicine};
+\node[box, below=of search] (cart) {Add to Cart};
+\node[decision, below=of cart] (stock) {Stock valid?};
+\node[box, right=of stock] (error) {Show Error};
+\node[box, below=of stock] (pay) {Choose Payment};
+\node[box, below=of pay] (fifo) {Deduct FIFO Batches};
+\node[box, below=of fifo] (receipt) {Save Sale and Receipt};
+\draw[arr] (search) -- (cart);
+\draw[arr] (cart) -- (stock);
+\draw[arr] (stock) -- node[above]{No} (error);
+\draw[arr] (stock) -- node[right]{Yes} (pay);
+\draw[arr] (pay) -- (fifo);
+\draw[arr] (fifo) -- (receipt);
+\end{tikzpicture}
+\caption{POS sale validation and confirmation flow}
+\end{figure}
+
+\section{Medicine Catalog}
+Owners use the medicine catalog to add and maintain product records.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{Field} & \textbf{Purpose} \\
+\midrule
+Name & Medicine display name and search key. \\
+Generic name & Active ingredient or generic identity. \\
+Brand name & Manufacturer or brand. \\
+Category & Tablet, Syrup, Injection, OTC, or Prescription. \\
+Unit & Strip, Bottle, Vial, Box, or Sachet. \\
+Retail price & Selling price. Must be greater than or equal to purchase price. \\
+Purchase price & Cost price. Hidden from pharmacists. \\
+Reorder level & Low-stock threshold. \\
+Shelf location & Physical storage location. \\
+Notes & Extra operational notes. \\
+\bottomrule
+\end{longtable}
+
+Opening stock may be entered when creating a medicine. PharmaCare creates an opening batch and records the stock movement.
+
+\section{Suppliers and Purchases}
+Suppliers store company details, contact information, payment terms, and notes. Purchases record stock received from suppliers.
+
+\subsection{Recording a Purchase}
+\begin{enumerate}
+  \item Open Purchases and click Record Purchase.
+  \item Select supplier.
+  \item Enter invoice number, purchase date, and payment status.
+  \item Add medicine line items with quantity, expiry date, and unit purchase price.
+  \item Save the purchase.
+\end{enumerate}
+Saving a purchase creates purchase records, batch records, and positive stock movements inside one atomic transaction.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=1cm, every node/.style={font=\small}, box/.style={draw=pcDark, rounded corners, fill=pcSoft, minimum width=3.4cm, minimum height=0.7cm, align=center}, arr/.style={-Latex, thick}]
+\node[box] (purchase) {Purchase Header};
+\node[box, below left=of purchase] (item) {Purchase Item};
+\node[box, below=of purchase] (batch) {Batch Created};
+\node[box, below right=of purchase] (ledger) {Stock Movement};
+\node[box, below=of batch] (stock) {Available Stock Updated};
+\draw[arr] (purchase) -- (item);
+\draw[arr] (item) -- (batch);
+\draw[arr] (batch) -- (ledger);
+\draw[arr] (ledger) -- (stock);
+\end{tikzpicture}
+\caption{Purchase intake and stock update process}
+\end{figure}
+
+\section{Returns and Corrections}
+PharmaCare supports customer returns, supplier returns, and stock write-offs.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{5cm}>{\raggedright\arraybackslash}p{5cm}}
+\toprule
+\textbf{Action} & \textbf{Used When} & \textbf{Stock Effect} \\
+\midrule
+Customer return & Customer returns sold items. & Resellable stock is restored. Damaged or expired return is logged as loss. \\
+Supplier return & Owner sends purchased stock back to supplier. & Stock is deducted from selected batch. \\
+Write-off & Stock is damaged, expired, or unusable. & Stock is deducted and loss is logged. \\
+\bottomrule
+\end{longtable}
+
+Returns cannot exceed original sale quantities. All returns store reason, date, condition, quantity, and processing user.
+
+\section{Debt Tracking}
+Debt tracking is used for formal customer credit records.
+\begin{enumerate}
+  \item Create a debt with customer name, items, due date, and notes.
+  \item Record partial or full payments.
+  \item The system updates paid, remaining, overdue, and due-soon status.
+\end{enumerate}
+Debt alerts appear on the dashboard for overdue and due-soon amounts.
+
+\section{Reports}
+Reports are Owner-only. Purchase prices, profit, and margin data are protected at the backend command layer, not only hidden in the interface.
+
+\begin{longtable}{clp{7cm}c}
+\toprule
+\textbf{No.} & \textbf{Report} & \textbf{Use} & \textbf{Date Filter} \\
+\midrule
+1 & Daily Sales Summary & Daily sale count, items, gross, discount, tax, net, and profit. & Yes \\
+2 & Monthly P\&L & Revenue, COGS, refunds, write-offs, gross profit, and net profit. & Yes \\
+3 & Top Selling Medicines & Best-selling medicines by quantity and revenue. & Yes \\
+4 & Slow-Moving Stock & Medicines with no sales in selected period. & Yes \\
+5 & Low Stock & Medicines at or below reorder level. & No \\
+6 & Expiry Report & Batch expiry status, days remaining, and potential loss. & No \\
+7 & Supplier Purchases & Spend, order count, and last purchase by supplier. & Yes \\
+8 & Sales by User & Per-cashier sales and performance. & Yes \\
+9 & Profit Margin & Margin percentage and profit by medicine. & Yes \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  xbar,
+  width=12cm,
+  height=6cm,
+  xmin=0,
+  xlabel={Example sales quantity},
+  symbolic y coords={Paracetamol,Amoxicillin,Cough Syrup,ORS,Ibuprofen},
+  ytick=data,
+  nodes near coords,
+  ymajorgrids=false,
+  xmajorgrids=true,
+  grid style={pcLine}
+]
+\addplot[fill=pcDark] coordinates {(95,Paracetamol) (68,Amoxicillin) (54,Cough Syrup) (41,ORS) (39,Ibuprofen)};
+\end{axis}
+\end{tikzpicture}
+\caption{Example top-selling medicines chart}
+\end{figure}
+
+\section{Expiry Tracking}
+Expiry tracking works at batch level. The default warning threshold is 60 days and the critical threshold is 30 days.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{3cm}>{\raggedright\arraybackslash}p{7cm}}
+\toprule
+\textbf{Status} & \textbf{Color} & \textbf{Meaning} \\
+\midrule
+OK & Green & Expiry is outside the warning window. \\
+Warning & Amber & Expiry is within configured warning days. \\
+Critical & Red & Expiry is within configured critical days. \\
+Expired & Dark red & Medicine is past expiry and blocked from sale. \\
+\bottomrule
+\end{longtable}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar stacked,
+  width=12cm,
+  height=6cm,
+  ylabel={Batches},
+  symbolic x coords={This Month,Next Month,60 Days,90 Days},
+  xtick=data,
+  legend style={at={(0.5,-0.2)},anchor=north,legend columns=3},
+  ymajorgrids=true,
+  grid style={pcLine}
+]
+\addplot[fill=pcRed] coordinates {(This Month,4) (Next Month,2) (60 Days,1) (90 Days,0)};
+\addplot[fill=pcAmber] coordinates {(This Month,2) (Next Month,5) (60 Days,8) (90 Days,3)};
+\addplot[fill=pcGreen] coordinates {(This Month,0) (Next Month,1) (60 Days,3) (90 Days,9)};
+\legend{Critical,Warning,OK}
+\end{axis}
+\end{tikzpicture}
+\caption{Example expiry risk distribution}
+\end{figure}
+
+\section{Settings}
+Settings are organized into Pharmacy Info, Financial, Inventory, and Backup.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{Tab} & \textbf{Settings} \\
+\midrule
+Pharmacy Info & Pharmacy name, owner name, phone, address, currency symbol, and logo path. \\
+Financial & Tax rate, tax default, cashier discount permission, and owner recovery email. \\
+Inventory & Default reorder level, expiry warning days, and expiry critical days. \\
+Backup & Auto-backup time, local backup path, Google Drive connection, and backup status. \\
+\bottomrule
+\end{longtable}
+
+\section{Backup and Restore}
+Backups protect the local SQLite database.
+\begin{itemize}
+  \item Manual backup is started from Settings.
+  \item Automatic backup runs at the configured time while the app is running.
+  \item Local backup can be used for USB or offline fallback.
+  \item Google Drive backup uploads to the configured Drive account when internet is available.
+  \item Restore requires Owner confirmation.
+  \item A pre-restore backup is created before any restore operation.
+\end{itemize}
+
+\section{Audit Log}
+The audit log shows the last login attempts with username, timestamp, success or failure, and failure reason. It is Owner-only.
+
+\section{Keyboard Shortcuts}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{Key} & \textbf{Action} \\
+\midrule
+Enter on login & Submit login form. \\
+Tab in POS & Move through search, quantity, discount, bill discount, tax, payment, customer name, and confirm. \\
+Typing in POS search & Filters medicine results live. \\
+Dialog close button & Cancels or closes current dialog. \\
+\bottomrule
+\end{longtable}
+
+\section{Troubleshooting}
+\begin{longtable}{>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}p{9cm}}
+\toprule
+\textbf{Problem} & \textbf{What to Check} \\
+\midrule
+Application does not start & Check that another instance is not running. Review backend logs. Restore from backup if the database is damaged. \\
+Sale is blocked & Check available stock, expiry date, quantity, and discount permission. \\
+Google Drive backup fails & Check client ID, client secret, internet connection, and Drive authorization. \\
+Email OTP does not arrive & Check SMTP environment settings and owner email address. \\
+Stock looks incorrect & Review purchase, sale, return, and write-off history. Restore from backup only if data is corrupted. \\
+\bottomrule
+\end{longtable}
+
+\section{FAQ}
+\textbf{Do I need internet?} No. Internet is optional for Google Drive backup and email OTP recovery.\\[0.5em]
+\textbf{Where is data stored?} In the local SQLite database in the application data directory.\\[0.5em]
+\textbf{Can pharmacists see purchase prices?} No. Purchase price and profit data are hidden and blocked by backend role checks.\\[0.5em]
+\textbf{How does FIFO work?} Stock is deducted from the earliest-expiring valid batch first.\\[0.5em]
+\textbf{How many backups are kept?} The system keeps recent backups according to configured retention, with the default design preserving the last 30 daily backups.
+
+\end{document}

@@ -28,6 +28,7 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
   const [expiresMinutes, setExpiresMinutes] = useState(15);
   const [ownerIds, setOwnerIds] = useState<number[]>([]);
+  const [ownerUsernames, setOwnerUsernames] = useState<Record<number, string>>({});
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,8 +55,12 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
     setLoading(true);
     setError(null);
     try {
-      const ids = await tauri.setup.verifyRecoveryCode(code);
+      const owners = await tauri.setup.verifyRecoveryCode(code);
+      const ids = owners.map(o => o.id);
+      const nameMap: Record<number, string> = {};
+      for (const o of owners) nameMap[o.id] = o.username;
       setOwnerIds(ids);
+      setOwnerUsernames(nameMap);
       if (ids.length === 1) {
         setSelectedUserId(ids[0]);
       }
@@ -163,7 +168,7 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
                   >
                     <option value="">Select...</option>
                     {ownerIds.map((id) => (
-                      <option key={id} value={id}>Owner #{id}</option>
+                      <option key={id} value={id}>{ownerUsernames[id] || `Owner #${id}`}</option>
                     ))}
                   </select>
                 </div>
@@ -193,7 +198,10 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
             <DialogHeader>
               <DialogTitle>Password Reset Successful</DialogTitle>
               <DialogDescription>
-                You can now log in with your new password.
+                Your password has been reset. Your username{ownerIds.length > 1 ? 's' : ''}:{' '}
+                <strong>{ownerIds.map(id => ownerUsernames[id] || `Owner #${id}`).join(', ')}</strong>
+                <br />
+                You can now log in.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

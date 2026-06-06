@@ -2,19 +2,18 @@ import { useEffect, useCallback } from 'react';
 import { useTauriCommand } from '../../hooks/useTauriCommand';
 import { useSettings } from '../../hooks/useSettings';
 import { tauri } from '../../lib/tauri';
+import { formatDate } from '@/lib/formatDate';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { FileDown } from 'lucide-react';
 import { ExpiryPDF } from '../../lib/pdf/ExpiryPDF';
+import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { ExpiryReportDetailRow } from '../../types/report';
 
@@ -106,15 +105,11 @@ export function ExpiryReport({ session }: ExpiryReportProps) {
               Potential Loss: {currencySymbol}{totalPotentialLoss.toFixed(2)}
             </p>
           </div>
-          <PDFDownloadLink
+          <ExportPdfButton
             document={<ExpiryPDF data={rows} warningDays={warningDays} criticalDays={criticalDays} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
             fileName={`expiry-report-${new Date().toISOString().split('T')[0]}.pdf`}
-          >
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-1" />
-              Export PDF
-            </Button>
-          </PDFDownloadLink>
+            sessionToken={session.token}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -148,7 +143,7 @@ export function ExpiryReport({ session }: ExpiryReportProps) {
                     <TableCell className="text-right">{row.original_qty}</TableCell>
                     <TableCell className="text-right">{row.remaining_qty}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.unit_cost.toFixed(2)}</TableCell>
-                    <TableCell>{row.expiry_date}</TableCell>
+                    <TableCell>{formatDate(row.expiry_date)}</TableCell>
                     <TableCell className={`text-right font-bold ${
                       row.days_remaining <= 0 ? 'text-red-600' :
                       row.days_remaining <= criticalDays ? 'text-red-500' :

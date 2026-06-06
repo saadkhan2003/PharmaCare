@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ShoppingCart, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { POSCartItem } from '@/components/pos/POSCartItem';
 import { POSPaymentForm } from '@/components/pos/POSPaymentForm';
 import { useTauriCommand } from '@/hooks/useTauriCommand';
+import { useSettings } from '@/hooks/useSettings';
 import { tauri } from '@/lib/tauri';
 import type { SessionDto } from '@/types/session';
 import type { CartItem } from '@/pages/POSPage';
@@ -46,6 +47,12 @@ export function POSCartPanel({
   const [taxEnabled, setTaxEnabled] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [customerName, setCustomerName] = useState('');
+
+  const { settings } = useSettings();
+  const taxRatePercent = useMemo(
+    () => settings?.default_tax_rate ?? 0,
+    [settings]
+  );
 
   const { execute: confirmSale, loading: confirmLoading, error: confirmError } = useTauriCommand<SaleReceiptDto>();
 
@@ -132,6 +139,7 @@ export function POSCartPanel({
             onBillDiscountChange={setBillDiscount}
             taxEnabled={taxEnabled}
             onTaxToggle={() => setTaxEnabled((prev) => !prev)}
+            taxRatePercent={taxRatePercent}
             paymentMethod={paymentMethod}
             onPaymentMethodChange={setPaymentMethod}
             customerName={customerName}

@@ -10,6 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { tauri } from '@/lib/tauri';
+import { formatDate } from '@/lib/formatDate';
 import type { PurchaseListDto } from '@/types/purchase';
 
 interface PurchaseListProps {
@@ -71,7 +72,7 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
       <TableBody>
         {purchases.map((purchase) => (
           <TableRow key={purchase.id}>
-            <TableCell>{purchase.purchase_date}</TableCell>
+            <TableCell>{formatDate(purchase.purchase_date)}</TableCell>
             <TableCell>{purchase.invoice_number || '-'}</TableCell>
             <TableCell className="font-medium">{purchase.supplier_name}</TableCell>
             <TableCell className="text-right">{purchase.item_count}</TableCell>
@@ -99,7 +100,7 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
               </Badge>
             </TableCell>
             <TableCell className="text-sm text-muted-foreground">
-              {new Date(purchase.created_at).toLocaleDateString()}
+              {formatDate(purchase.created_at)}
             </TableCell>
           </TableRow>
         ))}

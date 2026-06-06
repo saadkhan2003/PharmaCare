@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Search as SearchIcon, RotateCcw } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { formatDate } from '@/lib/formatDate';
 import type {
   PurchaseForReturnDto, PurchaseItemForReturnDto,
   SupplierReturnItemDto, ReturnReceiptDto,
@@ -251,7 +252,7 @@ export function SupplierReturnForm({
               <div className="text-sm">
                 <span className="font-medium">Purchase #{purchase.id}</span>
                 <span className="text-muted-foreground ml-2">
-                  — {new Date(purchase.purchase_date).toLocaleDateString()}
+                  — {formatDate(purchase.purchase_date)}
                 </span>
               </div>
               <div className="text-sm sm:text-right">
@@ -307,7 +308,7 @@ export function SupplierReturnForm({
                           {currencySymbol}{item.purchase_price.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {new Date(item.expiry_date).toLocaleDateString()}
+                          {formatDate(item.expiry_date)}
                         </TableCell>
                         <TableCell>
                           <Input

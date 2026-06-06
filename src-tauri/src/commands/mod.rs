@@ -12,3 +12,4 @@ pub mod return_commands;
 pub mod report_commands;
 pub mod backup_commands;
 pub mod debt_commands;
+pub mod pdf_commands;

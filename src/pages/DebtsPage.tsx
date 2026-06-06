@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 import { tauri } from '@/lib/tauri';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +14,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Loader2, Plus, Phone, MessageCircle } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
+import { formatDate } from '@/lib/formatDate';
 import type { SessionDto } from '@/types/session';
 import type { DebtorListItem } from '@/types/debt';
+import type { MedicineListItem } from '@/types/medicine';
+
+const MIN_MEDICINE_SEARCH_LENGTH = 2;
 
 export function DebtsPage({ session }: { session: SessionDto }) {
+  const { settings } = useSettings();
+  const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
   const [debts, setDebts] = useState<DebtorListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -26,6 +34,9 @@ export function DebtsPage({ session }: { session: SessionDto }) {
   const [medicineName, setMedicineName] = useState('');
   const [medQty, setMedQty] = useState(1);
   const [medAmount, setMedAmount] = useState(0);
+  const [selectedMedicinePrice, setSelectedMedicinePrice] = useState<number | null>(null);
+  const [medicineResults, setMedicineResults] = useState<MedicineListItem[]>([]);
+  const [searchingMedicines, setSearchingMedicines] = useState(false);
   const [items, setItems] = useState<{ medicine_name: string; quantity: number; amount: number }[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -42,10 +53,37 @@ export function DebtsPage({ session }: { session: SessionDto }) {
     tauri.debt.list(session.token).then(setDebts).finally(() => setLoading(false));
   }, [session.token, refreshKey]);
 
+  useEffect(() => {
+    const query = medicineName.trim();
+    if (query.length < MIN_MEDICINE_SEARCH_LENGTH || selectedMedicinePrice !== null) {
+      setMedicineResults([]);
+      setSearchingMedicines(false);
+      return;
+    }
+
+    setSearchingMedicines(true);
+    const timer = window.setTimeout(() => {
+      tauri.medicines
+        .search(session.token, query)
+        .then((results) => setMedicineResults(results.filter((m) => m.is_active)))
+        .catch(() => setMedicineResults([]))
+        .finally(() => setSearchingMedicines(false));
+    }, 200);
+
+    return () => window.clearTimeout(timer);
+  }, [medicineName, selectedMedicinePrice, session.token]);
+
   const handleAddItem = () => {
     if (!medicineName.trim() || medQty <= 0 || medAmount <= 0) return;
     setItems([...items, { medicine_name: medicineName.trim(), quantity: medQty, amount: medAmount }]);
-    setMedicineName(''); setMedQty(1); setMedAmount(0);
+    setMedicineName(''); setMedQty(1); setMedAmount(0); setSelectedMedicinePrice(null); setMedicineResults([]);
+  };
+
+  const handleQuantityChange = (qty: number) => {
+    setMedQty(qty);
+    if (selectedMedicinePrice !== null && qty > 0) {
+      setMedAmount(Number((selectedMedicinePrice * qty).toFixed(2)));
+    }
   };
 
   const handleSave = async () => {
@@ -74,9 +112,26 @@ export function DebtsPage({ session }: { session: SessionDto }) {
     finally { setPaying(false); }
   };
 
-  const openWhatsApp = (phoneNum: string, nameStr: string, remaining: number) => {
-    const msg = encodeURIComponent(`Dear ${nameStr}, this is a reminder from PharmaCare about your pending balance of ${remaining.toFixed(2)} Rs. Please clear it at your earliest convenience. Thank you.`);
-    window.open(`https://wa.me/${phoneNum.replace(/[^0-9]/g, '')}?text=${msg}`, '_blank');
+  const openWhatsApp = (phoneNum: string, nameStr: string, remaining: number, dueDate: string, totalAmount: number, paidAmount: number, daysRemaining: number) => {
+    const cleanPhone = phoneNum.replace(/[^0-9]/g, '');
+    const dueLabel = daysRemaining < 0
+      ? `${Math.abs(daysRemaining)} day(s) overdue`
+      : daysRemaining === 0
+        ? 'due today'
+        : `due in ${daysRemaining} day(s)`;
+    const msg = encodeURIComponent(
+      `Assalam-o-Alaikum ${nameStr},
+
+This is a friendly reminder from ${pharmacyName}.
+
+Your outstanding balance of Rs. ${remaining.toFixed(2)} (out of Rs. ${totalAmount.toFixed(2)}, Rs. ${paidAmount.toFixed(2)} paid) is ${dueLabel} (${dueDate}).
+
+Kindly clear it at your earliest convenience. We value your trust.
+
+Thank you,
+${pharmacyName}`
+    );
+    open(`https://wa.me/${cleanPhone}?text=${msg}`);
   };
 
   const statusBadge = (status: string, days: number) => {
@@ -118,8 +173,46 @@ export function DebtsPage({ session }: { session: SessionDto }) {
                   </div>
                 ))}
                 <div className="flex gap-2 items-end">
-                  <div className="flex-1"><Input value={medicineName} onChange={e => setMedicineName(e.target.value)} placeholder="Medicine name" size={1} /></div>
-                  <div className="w-16"><Input type="number" min={1} value={medQty} onChange={e => setMedQty(Number(e.target.value))} placeholder="Qty" /></div>
+                  <div className="relative flex-1">
+                    <Input
+                      value={medicineName}
+                      onChange={e => {
+                        setMedicineName(e.target.value);
+                        setSelectedMedicinePrice(null);
+                      }}
+                      placeholder="Search medicine"
+                      size={1}
+                    />
+                    {medicineName.trim().length >= MIN_MEDICINE_SEARCH_LENGTH && selectedMedicinePrice === null && (
+                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-40 overflow-y-auto rounded-md border bg-popover shadow-md">
+                        {searchingMedicines ? (
+                          <div className="p-2 text-xs text-muted-foreground">Searching...</div>
+                        ) : medicineResults.length === 0 ? (
+                          <div className="p-2 text-xs text-muted-foreground">No medicines found</div>
+                        ) : (
+                          medicineResults.map((medicine) => (
+                            <button
+                              key={medicine.id}
+                              type="button"
+                              className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-sm hover:bg-accent"
+                              onClick={() => {
+                                setMedicineName(medicine.name);
+                                setSelectedMedicinePrice(medicine.retail_price);
+                                setMedAmount(Number((medicine.retail_price * medQty).toFixed(2)));
+                                setMedicineResults([]);
+                              }}
+                            >
+                              <span>{medicine.name}</span>
+                              <span className="shrink-0 text-xs text-muted-foreground">
+                                Rs. {medicine.retail_price.toFixed(2)} | Stock {medicine.current_stock}
+                              </span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-16"><Input type="number" min={1} value={medQty} onChange={e => handleQuantityChange(Number(e.target.value))} placeholder="Qty" /></div>
                   <div className="w-24"><Input type="number" min={0} step={0.01} value={medAmount} onChange={e => setMedAmount(Number(e.target.value))} placeholder="Amount" /></div>
                   <Button variant="outline" size="sm" onClick={handleAddItem}>+</Button>
                 </div>
@@ -164,12 +257,12 @@ export function DebtsPage({ session }: { session: SessionDto }) {
                   <TableCell>{d.total_amount.toFixed(2)}</TableCell>
                   <TableCell>{d.paid_amount.toFixed(2)}</TableCell>
                   <TableCell className="font-semibold">{d.remaining.toFixed(2)}</TableCell>
-                  <TableCell className="text-sm">{d.due_date}</TableCell>
+                  <TableCell className="text-sm">{formatDate(d.due_date)}</TableCell>
                   <TableCell>{statusBadge(d.status, d.days_remaining)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {d.phone && d.remaining > 0 && (
-                        <Button variant="ghost" size="icon" onClick={() => openWhatsApp(d.phone!, d.customer_name, d.remaining)} title="Send WhatsApp reminder">
+                        <Button variant="ghost" size="icon" onClick={() => openWhatsApp(d.phone!, d.customer_name, d.remaining, d.due_date, d.total_amount, d.paid_amount, d.days_remaining)} title="Send WhatsApp reminder">
                           <MessageCircle className="h-4 w-4 text-green-600" />
                         </Button>
                       )}

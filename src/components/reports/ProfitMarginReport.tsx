@@ -6,14 +6,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { FileDown } from 'lucide-react';
 import { ProfitMarginPDF } from '../../lib/pdf/ProfitMarginPDF';
+import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { ProfitMarginRow } from '../../types/report';
 
@@ -86,15 +84,11 @@ export function ProfitMarginReport({ session, startDate, endDate }: ProfitMargin
               Avg Margin: {avgMargin.toFixed(1)}% | Total Profit: {currencySymbol}{totalProfit.toFixed(2)}
             </p>
           </div>
-          <PDFDownloadLink
+          <ExportPdfButton
             document={<ProfitMarginPDF data={rows} startDate={startDate} endDate={endDate} pharmacyName={pharmacyName} currencySymbol={currencySymbol} />}
             fileName={`profit-margin-${startDate}-to-${endDate}.pdf`}
-          >
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-1" />
-              Export PDF
-            </Button>
-          </PDFDownloadLink>
+            sessionToken={session.token}
+          />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
