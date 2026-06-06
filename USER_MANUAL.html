@@ -12,50 +12,50 @@
       --font-body: 'DM Sans', system-ui, sans-serif;
       --font-heading: 'Outfit', system-ui, sans-serif;
       --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
-      --bg: #f4f6f9;
+      --bg: #f7f7f7;
       --surface: #ffffff;
       --surface-elevated: #ffffff;
-      --border: rgba(0, 0, 0, 0.07);
-      --border-bright: rgba(0, 0, 0, 0.14);
-      --text: #1a1e2b;
-      --text-dim: #6b7380;
-      --accent: #1e3a5f;
-      --accent-dim: rgba(30, 58, 95, 0.07);
-      --accent-glow: rgba(30, 58, 95, 0.03);
-      --gold: #d4a73a;
-      --gold-dim: rgba(212, 167, 58, 0.12);
-      --teal: #0d9488;
-      --teal-dim: rgba(13, 148, 136, 0.10);
-      --rose: #be123c;
-      --rose-dim: rgba(190, 18, 60, 0.08);
+      --border: #ebebeb;
+      --border-bright: #d4d4d4;
+      --text: #252525;
+      --text-dim: #8e8e8e;
+      --accent: #343434;
+      --accent-dim: rgba(52, 52, 52, 0.08);
+      --accent-glow: rgba(52, 52, 52, 0.03);
+      --gold: #343434;
+      --gold-dim: rgba(52, 52, 52, 0.12);
+      --teal: #6b7280;
+      --teal-dim: rgba(107, 114, 128, 0.10);
+      --rose: #dc2626;
+      --rose-dim: rgba(220, 38, 38, 0.08);
       --amber: #d97706;
       --amber-dim: rgba(217, 119, 6, 0.10);
-      --emerald: #059669;
-      --emerald-dim: rgba(5, 150, 105, 0.10);
+      --emerald: #16a34a;
+      --emerald-dim: rgba(22, 163, 74, 0.10);
       --header-height: 0px;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0b0f17;
-        --surface: #131827;
-        --surface-elevated: #1a2035;
-        --border: rgba(255, 255, 255, 0.06);
-        --border-bright: rgba(255, 255, 255, 0.12);
-        --text: #e2e8f0;
-        --text-dim: #8892a8;
-        --accent: #3b7bb7;
-        --accent-dim: rgba(59, 123, 183, 0.10);
-        --accent-glow: rgba(59, 123, 183, 0.04);
-        --gold: #e4b83e;
-        --gold-dim: rgba(228, 184, 62, 0.12);
-        --teal: #2dd4bf;
-        --teal-dim: rgba(45, 212, 191, 0.10);
-        --rose: #f43f5e;
-        --rose-dim: rgba(244, 63, 94, 0.08);
+        --bg: #121212;
+        --surface: #1e1e1e;
+        --surface-elevated: #2a2a2a;
+        --border: rgba(255, 255, 255, 0.08);
+        --border-bright: rgba(255, 255, 255, 0.16);
+        --text: #e0e0e0;
+        --text-dim: #9e9e9e;
+        --accent: #e0e0e0;
+        --accent-dim: rgba(224, 224, 224, 0.10);
+        --accent-glow: rgba(224, 224, 224, 0.04);
+        --gold: #e0e0e0;
+        --gold-dim: rgba(224, 224, 224, 0.12);
+        --teal: #9e9e9e;
+        --teal-dim: rgba(158, 158, 158, 0.10);
+        --rose: #ef4444;
+        --rose-dim: rgba(239, 68, 68, 0.08);
         --amber: #f59e0b;
         --amber-dim: rgba(245, 158, 11, 0.10);
-        --emerald: #34d399;
-        --emerald-dim: rgba(52, 211, 153, 0.10);
+        --emerald: #4ade80;
+        --emerald-dim: rgba(74, 222, 128, 0.10);
       }
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -913,19 +913,19 @@ flowchart TD
     theme: 'base',
     look: 'classic',
     themeVariables: {
-      background: isDark ? '#131827' : '#ffffff',
-      primaryColor: isDark ? '#1a2035' : '#f4f6f9',
-      primaryBorderColor: isDark ? '#3b7bb7' : '#1e3a5f',
-      primaryTextColor: isDark ? '#e2e8f0' : '#1a1e2b',
-      lineColor: isDark ? '#3b7bb7' : '#1e3a5f',
-      secondaryColor: isDark ? '#1e2d45' : '#e8ecf3',
-      tertiaryColor: isDark ? '#1a2035' : '#f4f6f9',
+      background: isDark ? '#1e1e1e' : '#ffffff',
+      primaryColor: isDark ? '#2a2a2a' : '#f7f7f7',
+      primaryBorderColor: isDark ? '#e0e0e0' : '#343434',
+      primaryTextColor: isDark ? '#e0e0e0' : '#252525',
+      lineColor: isDark ? '#e0e0e0' : '#343434',
+      secondaryColor: isDark ? '#333333' : '#ebebeb',
+      tertiaryColor: isDark ? '#1e1e1e' : '#f7f7f7',
       fontFamily: 'DM Sans, system-ui, sans-serif',
       fontSize: '14px',
-      edgeLabelBackground: isDark ? '#131827' : '#ffffff',
-      nodeBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.14)',
-      clusterBkg: isDark ? 'rgba(59,123,183,0.04)' : 'rgba(30,58,95,0.03)',
-      clusterBorder: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)',
+      edgeLabelBackground: isDark ? '#1e1e1e' : '#ffffff',
+      nodeBorder: isDark ? 'rgba(255,255,255,0.16)' : '#d4d4d4',
+      clusterBkg: isDark ? 'rgba(224,224,224,0.04)' : 'rgba(52,52,52,0.03)',
+      clusterBorder: isDark ? 'rgba(255,255,255,0.08)' : '#ebebeb',
     }
   });
 </script>
