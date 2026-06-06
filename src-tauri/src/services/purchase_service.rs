@@ -99,6 +99,8 @@ pub fn record_purchase(
             line_cost,
         )?;
 
+        let batch_code = format!("B-{}", item_id);
+
         let batch_id = batch_repo::insert(
             &tx,
             item.medicine_id,
@@ -108,6 +110,7 @@ pub fn record_purchase(
             item.quantity,  // quantity
             item.quantity,  // remaining_qty = quantity (D-20)
             &item.expiry_date,
+            Some(&batch_code),
         )?;
 
         // Link purchase_item to batch for traceability

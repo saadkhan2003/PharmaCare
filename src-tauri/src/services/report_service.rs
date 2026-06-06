@@ -374,3 +374,62 @@ pub fn get_profit_margin(
 
     rows.collect::<Result<Vec<_>, _>>().map_err(CommandError::from)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers;
+
+    /// Regression test for the Expiry Report SQL — ensures the query joins
+    /// purchase_items correctly and selects valid columns from batches.
+    #[test]
+    fn test_expiry_report_runs_with_empty_db() {
+        let db = test_helpers::setup_test_db();
+        let rows = get_expiry_report(&db, 60, 30).expect("expiry report should not error");
+        assert!(rows.is_empty(), "fresh DB should have no batches");
+    }
+
+    /// Regression test — with a seeded medicine and batch, the query must
+    /// return the batch row (and not crash on the batch_code column lookup).
+    #[test]
+    fn test_expiry_report_returns_seeded_batch() {
+        let db = test_helpers::setup_test_db();
+        let med_id = test_helpers::seed_medicine(&db, "Paracetamol");
+
+        // Insert a batch directly (no purchase/purchase_items needed for the
+        // report SQL test — only batches + medicines are joined).
+        db.execute(
+            "INSERT INTO batches (medicine_id, purchase_id, purchase_item_id, purchase_price, quantity, remaining_qty, expiry_date, batch_code) \
+             VALUES (?1, NULL, NULL, ?2, ?3, ?4, date('now', '-10 days'), 'BATCH-001')",
+            rusqlite::params![med_id, 5.0, 50, 50],
+        )
+        .unwrap();
+
+        let rows = get_expiry_report(&db, 60, 30).expect("expiry report should not error");
+        assert_eq!(rows.len(), 1, "should return the one expired batch");
+        assert_eq!(rows[0].medicine_name, "Paracetamol");
+        assert_eq!(rows[0].batch_code.as_deref(), Some("BATCH-001"));
+        assert_eq!(rows[0].status, "expired");
+    }
+
+    /// Regression test — opening-stock batches (no purchase_id) should still
+    /// appear in the report with batch_code as a string.
+    #[test]
+    fn test_expiry_report_includes_opening_stock_batches() {
+        let db = test_helpers::setup_test_db();
+        let med_id = test_helpers::seed_medicine(&db, "Opening Stock Med");
+
+        db.execute(
+            "INSERT INTO batches (medicine_id, purchase_id, purchase_item_id, purchase_price, quantity, remaining_qty, expiry_date, batch_code) \
+             VALUES (?1, NULL, NULL, ?2, ?3, ?4, date('now', '+5 days'), 'OPEN-001')",
+            rusqlite::params![med_id, 5.0, 10, 10],
+        )
+        .unwrap();
+
+        let rows = get_expiry_report(&db, 60, 30).expect("expiry report should not error");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].batch_code.as_deref(), Some("OPEN-001"));
+        // 5 days remaining is within critical window (30) and warning window (60)
+        assert_eq!(rows[0].status, "critical");
+    }
+}

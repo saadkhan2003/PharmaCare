@@ -19,8 +19,26 @@ export function useTauriCommand<T>() {
       setData(result);
       return result;
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : typeof err === 'string' ? err : 'An error occurred';
+      let message = 'An error occurred';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err;
+      } else if (typeof err === 'object' && err !== null) {
+        const e = err as { message?: unknown; code?: unknown };
+        if (typeof e.message === 'string' && e.message.length > 0) {
+          message = e.message;
+        } else if (typeof e.code === 'string' && e.code.length > 0) {
+          message = `Error (${e.code})`;
+        } else {
+          try {
+            message = JSON.stringify(err);
+          } catch {
+            message = 'An error occurred';
+          }
+        }
+      }
+      console.error('[useTauriCommand] command failed:', err);
       setError(message);
       throw err;
     } finally {

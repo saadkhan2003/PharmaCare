@@ -5,6 +5,8 @@ use crate::models::{Batch, ExpiryReportRow};
 /// Inserts a new batch. Returns the new row id.
 /// Accepts &Connection (works for both standalone Connection and Transaction via Deref).
 /// `purchase_id` can be None for opening stock batches.
+/// `batch_code` is optional; pass None to leave it null (legacy rows), or pass Some("...")
+/// to store a user-visible batch identifier.
 pub fn insert(
     conn: &Connection,
     medicine_id: i64,
@@ -14,10 +16,11 @@ pub fn insert(
     quantity: i64,
     remaining_qty: i64,
     expiry_date: &str,
+    batch_code: Option<&str>,
 ) -> Result<i64, rusqlite::Error> {
     conn.execute(
-        "INSERT INTO batches (medicine_id, purchase_id, purchase_item_id, purchase_price, quantity, remaining_qty, expiry_date) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT INTO batches (medicine_id, purchase_id, purchase_item_id, purchase_price, quantity, remaining_qty, expiry_date, batch_code) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         rusqlite::params![
             medicine_id,
             purchase_id,
@@ -26,6 +29,7 @@ pub fn insert(
             quantity,
             remaining_qty,
             expiry_date,
+            batch_code,
         ],
     )?;
     Ok(conn.last_insert_rowid())
