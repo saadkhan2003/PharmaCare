@@ -2,62 +2,78 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
 import { SetupWizardPage } from './pages/SetupWizardPage';
-import { POSPage } from './pages/POSPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { UsersPage } from './pages/UsersPage';
-import { AuditLogPage } from './pages/AuditLogPage';
-import { MedicinesPage } from './pages/MedicinesPage';
-import { SuppliersPage } from './pages/SuppliersPage';
-import { PurchasesPage } from './pages/PurchasesPage';
-import { ExpiryReportPage } from './pages/ExpiryReportPage';
-import { CustomerReturnsPage } from './pages/CustomerReturnsPage';
-import { SupplierReturnsPage } from './pages/SupplierReturnsPage';
-import { WriteOffPage } from './pages/WriteOffPage';
-import { ReturnHistoryPage } from './pages/ReturnHistoryPage';
-import { ReportsPage } from './pages/ReportsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { DebtsPage } from './pages/DebtsPage';
-import { SalesHistoryPage } from './pages/SalesHistoryPage';
-import { BatchesPage } from './pages/BatchesPage';
 import { AppShell } from './components/layout/AppShell';
 import { ToastProvider } from './components/ui/toast-provider';
+import { BackupStatusBanner } from './components/BackupStatusBanner';
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { tauri } from './lib/tauri';
 import type { CreateOwnerDto } from './lib/tauri';
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTauriCommand } from './hooks/useTauriCommand';
+import { playSuccess } from './lib/sounds';
 import './App.css';
+
+const POSPage = React.lazy(() => import('./pages/POSPage').then(m => ({ default: m.POSPage })));
+const SalesHistoryPage = React.lazy(() => import('./pages/SalesHistoryPage').then(m => ({ default: m.SalesHistoryPage })));
+const DashboardPage = React.lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const MedicinesPage = React.lazy(() => import('./pages/MedicinesPage').then(m => ({ default: m.MedicinesPage })));
+const UsersPage = React.lazy(() => import('./pages/UsersPage').then(m => ({ default: m.UsersPage })));
+const AuditLogPage = React.lazy(() => import('./pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })));
+const SuppliersPage = React.lazy(() => import('./pages/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
+const PurchasesPage = React.lazy(() => import('./pages/PurchasesPage').then(m => ({ default: m.PurchasesPage })));
+const ExpiryReportPage = React.lazy(() => import('./pages/ExpiryReportPage').then(m => ({ default: m.ExpiryReportPage })));
+const CustomerReturnsPage = React.lazy(() => import('./pages/CustomerReturnsPage').then(m => ({ default: m.CustomerReturnsPage })));
+const SupplierReturnsPage = React.lazy(() => import('./pages/SupplierReturnsPage').then(m => ({ default: m.SupplierReturnsPage })));
+const WriteOffPage = React.lazy(() => import('./pages/WriteOffPage').then(m => ({ default: m.WriteOffPage })));
+const ReturnHistoryPage = React.lazy(() => import('./pages/ReturnHistoryPage').then(m => ({ default: m.ReturnHistoryPage })));
+const ReportsPage = React.lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const DebtsPage = React.lazy(() => import('./pages/DebtsPage').then(m => ({ default: m.DebtsPage })));
+const BatchesPage = React.lazy(() => import('./pages/BatchesPage').then(m => ({ default: m.BatchesPage })));
+
+function AuthenticatedShell({ session, onLogout }: { session: import('./types/session').SessionDto; onLogout: () => void }) {
+  useGlobalShortcuts(session);
+  return (
+    <>
+      <ToastProvider>
+      <AppShell session={session} onLogout={onLogout}>
+        {session.role === 'owner' && <BackupStatusBanner session={session} />}
+        <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>}>
+          <Routes>
+            <Route path="/pos" element={<div className="animate-in"><POSPage session={session} /></div>} />
+            <Route path="/pos/history" element={<div className="animate-in"><SalesHistoryPage session={session} /></div>} />
+            <Route path="/dashboard" element={<div className="animate-in"><DashboardPage session={session} /></div>} />
+            <Route path="/medicines" element={<div className="animate-in"><MedicinesPage session={session} /></div>} />
+            <Route path="/returns/customer" element={<div className="animate-in"><CustomerReturnsPage session={session} /></div>} />
+            {session.role === 'owner' && (
+              <>
+                <Route path="/users" element={<div className="animate-in"><UsersPage session={session} /></div>} />
+                <Route path="/audit" element={<div className="animate-in"><AuditLogPage session={session} /></div>} />
+                <Route path="/suppliers" element={<div className="animate-in"><SuppliersPage session={session} /></div>} />
+                <Route path="/purchases" element={<div className="animate-in"><PurchasesPage session={session} /></div>} />
+                <Route path="/batches" element={<div className="animate-in"><BatchesPage session={session} /></div>} />
+                <Route path="/expiry-report" element={<div className="animate-in"><ExpiryReportPage session={session} /></div>} />
+                <Route path="/returns/supplier" element={<div className="animate-in"><SupplierReturnsPage session={session} /></div>} />
+                <Route path="/returns/write-off" element={<div className="animate-in"><WriteOffPage session={session} /></div>} />
+                <Route path="/returns/history" element={<div className="animate-in"><ReturnHistoryPage session={session} /></div>} />
+                <Route path="/reports" element={<div className="animate-in"><ReportsPage session={session} /></div>} />
+                <Route path="/settings" element={<div className="animate-in"><SettingsPage session={session} /></div>} />
+                <Route path="/debts" element={<div className="animate-in"><DebtsPage session={session} /></div>} />
+              </>
+            )}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </React.Suspense>
+      </AppShell>
+      </ToastProvider>
+    </>
+  );
+}
 
 function AuthenticatedApp({ session, onLogout }: { session: import('./types/session').SessionDto; onLogout: () => void }) {
   return (
     <BrowserRouter>
-      <ToastProvider>
-      <AppShell session={session} onLogout={onLogout}>
-        <Routes>
-          <Route path="/pos" element={<div className="animate-in"><POSPage session={session} /></div>} />
-          <Route path="/pos/history" element={<div className="animate-in"><SalesHistoryPage session={session} /></div>} />
-          <Route path="/dashboard" element={<div className="animate-in"><DashboardPage session={session} /></div>} />
-          <Route path="/medicines" element={<div className="animate-in"><MedicinesPage session={session} /></div>} />
-          <Route path="/returns/customer" element={<div className="animate-in"><CustomerReturnsPage session={session} /></div>} />
-          {session.role === 'owner' && (
-            <>
-              <Route path="/users" element={<div className="animate-in"><UsersPage session={session} /></div>} />
-              <Route path="/audit" element={<div className="animate-in"><AuditLogPage session={session} /></div>} />
-              <Route path="/suppliers" element={<div className="animate-in"><SuppliersPage session={session} /></div>} />
-              <Route path="/purchases" element={<div className="animate-in"><PurchasesPage session={session} /></div>} />
-              <Route path="/batches" element={<div className="animate-in"><BatchesPage session={session} /></div>} />
-              <Route path="/expiry-report" element={<div className="animate-in"><ExpiryReportPage session={session} /></div>} />
-              <Route path="/returns/supplier" element={<div className="animate-in"><SupplierReturnsPage session={session} /></div>} />
-              <Route path="/returns/write-off" element={<div className="animate-in"><WriteOffPage session={session} /></div>} />
-              <Route path="/returns/history" element={<div className="animate-in"><ReturnHistoryPage session={session} /></div>} />
-              <Route path="/reports" element={<div className="animate-in"><ReportsPage session={session} /></div>} />
-              <Route path="/settings" element={<div className="animate-in"><SettingsPage session={session} /></div>} />
-              <Route path="/debts" element={<div className="animate-in"><DebtsPage session={session} /></div>} />
-            </>
-          )}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AppShell>
-      </ToastProvider>
+      <AuthenticatedShell session={session} onLogout={onLogout} />
     </BrowserRouter>
   );
 }
@@ -72,6 +88,7 @@ function App() {
     try {
       const result = await createOwner(() => tauri.setup.createOwner(payload));
       if (result) {
+        playSuccess();
         onSetupComplete(result);
       }
     } catch (err: unknown) {
@@ -103,7 +120,12 @@ function App() {
 
   // Not authenticated: show login screen
   if (!session) {
-    return <LoginPage onLogin={login} error={error} loading={loginLoading} />;
+    const handleLogin = async (username: string, password: string) => {
+      const result = await login(username, password);
+      if (result) playSuccess();
+      return result;
+    };
+    return <LoginPage onLogin={handleLogin} error={error} loading={loginLoading} />;
   }
 
   // Authenticated: show AppShell with routing

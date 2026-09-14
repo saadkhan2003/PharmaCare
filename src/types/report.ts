@@ -151,3 +151,14 @@ export interface BackupFileInfo {
   name: string;
   created_time: string;
 }
+
+// ── Database Status ──
+
+export interface DbStatus {
+  db_path: string;
+  db_size_bytes: number;
+  migration_version: number;
+  total_migrations: number;
+  wal_mode: boolean;
+  foreign_keys: boolean;
+}

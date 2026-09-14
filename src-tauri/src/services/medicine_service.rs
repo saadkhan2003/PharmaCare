@@ -2,7 +2,8 @@ use rusqlite::Connection;
 
 use crate::errors::CommandError;
 use crate::models::{
-    CreateMedicineDto, MedicineDto, MedicineListItem, MedicinePharmacistDto, UpdateMedicineDto,
+    CreateMedicineDto, CsvImportResult, MedicineDto, MedicineListItem, MedicinePharmacistDto,
+    PaginatedList, UpdateMedicineDto,
 };
 use crate::repository::{batch_repo, medicine_repo};
 use crate::services::stock_ledger_service;
@@ -73,6 +74,156 @@ pub fn create_medicine(
     Ok(dto)
 }
 
+/// Imports medicines from a CSV string. Returns import summary.
+pub fn import_medicines_csv(
+    db: &Connection,
+    csv_data: &str,
+    user_id: i64,
+) -> Result<CsvImportResult, CommandError> {
+    let mut rdr = csv::Reader::from_reader(csv_data.as_bytes());
+    let headers: Vec<String> = rdr
+        .headers()?
+        .iter()
+        .map(|h| h.trim().to_lowercase())
+        .collect();
+
+    let expected = [
+        "name",
+        "generic_name",
+        "brand_name",
+        "category",
+        "unit",
+        "purchase_price",
+        "retail_price",
+        "reorder_level",
+        "shelf_location",
+        "notes",
+    ];
+    for col in &expected {
+        if !headers.iter().any(|h| h == col) {
+            return Err(CommandError::validation(&format!(
+                "Missing required column: {}",
+                col
+            )));
+        }
+    }
+
+    let get_col = |row: &csv::StringRecord, name: &str| -> String {
+        let idx = headers.iter().position(|h| h == name).unwrap_or(999);
+        row.get(idx).unwrap_or("").trim().to_string()
+    };
+
+    let mut imported: i64 = 0;
+    let mut skipped: i64 = 0;
+    let mut errors: Vec<String> = Vec::new();
+
+    for result in rdr.records() {
+        let row = match result {
+            Ok(r) => r,
+            Err(e) => {
+                skipped += 1;
+                errors.push(format!("Row parse error: {}", e));
+                continue;
+            }
+        };
+
+        let name = get_col(&row, "name");
+        if name.is_empty() {
+            skipped += 1;
+            errors.push("Skipped row: name is empty".into());
+            continue;
+        }
+
+        let category = get_col(&row, "category");
+        let unit = get_col(&row, "unit");
+        let purchase_price_str = get_col(&row, "purchase_price");
+        let retail_price_str = get_col(&row, "retail_price");
+
+        if category.is_empty() || unit.is_empty() {
+            skipped += 1;
+            errors.push(format!(
+                "Skipped '{}': category and unit are required",
+                name
+            ));
+            continue;
+        }
+
+        let purchase_price: f64 = match purchase_price_str.parse() {
+            Ok(v) => v,
+            Err(_) => {
+                skipped += 1;
+                errors.push(format!("Skipped '{}': invalid purchase_price", name));
+                continue;
+            }
+        };
+        let retail_price: f64 = match retail_price_str.parse() {
+            Ok(v) => v,
+            Err(_) => {
+                skipped += 1;
+                errors.push(format!("Skipped '{}': invalid retail_price", name));
+                continue;
+            }
+        };
+
+        let reorder_level_str = get_col(&row, "reorder_level");
+        let reorder_level: Option<i64> = if reorder_level_str.is_empty() {
+            None
+        } else {
+            reorder_level_str.parse().ok()
+        };
+
+        let generic_name = get_col(&row, "generic_name");
+        let brand_name = get_col(&row, "brand_name");
+        let shelf_location = get_col(&row, "shelf_location");
+        let notes = get_col(&row, "notes");
+
+        let dto = CreateMedicineDto {
+            name,
+            generic_name: if generic_name.is_empty() {
+                None
+            } else {
+                Some(generic_name)
+            },
+            brand_name: if brand_name.is_empty() {
+                None
+            } else {
+                Some(brand_name)
+            },
+            category,
+            unit,
+            retail_price,
+            purchase_price,
+            reorder_level,
+            shelf_location: if shelf_location.is_empty() {
+                None
+            } else {
+                Some(shelf_location)
+            },
+            notes: if notes.is_empty() {
+                None
+            } else {
+                Some(notes)
+            },
+            initial_stock: None,
+            initial_expiry_date: None,
+        };
+
+        match create_medicine(db, &dto, user_id) {
+            Ok(_) => imported += 1,
+            Err(e) => {
+                skipped += 1;
+                errors.push(format!("Skipped '{}': {}", dto.name, e.message));
+            }
+        }
+    }
+
+    Ok(CsvImportResult {
+        imported,
+        skipped,
+        errors,
+    })
+}
+
 /// Updates an existing medicine. Validates retail_price >= purchase_price if both provided.
 pub fn update_medicine(
     db: &Connection,
@@ -126,13 +277,13 @@ pub fn delete_medicine(db: &Connection, id: i64) -> Result<(), CommandError> {
     Ok(())
 }
 
-/// Lists all medicines enriched with current stock.
-pub fn list_medicines(db: &Connection) -> Result<Vec<MedicineListItem>, CommandError> {
-    let medicines = medicine_repo::find_all(db)?;
-    let mut results = Vec::new();
+pub fn list_medicines(db: &Connection, page: i64, per_page: i64) -> Result<PaginatedList<MedicineListItem>, CommandError> {
+    let offset = (page - 1) * per_page;
+    let (medicines, total) = medicine_repo::find_all(db, offset, per_page)?;
+    let mut items = Vec::new();
     for m in medicines {
         let current_stock = batch_repo::get_current_stock(db, m.id)?;
-        results.push(MedicineListItem {
+        items.push(MedicineListItem {
             id: m.id,
             name: m.name,
             generic_name: m.generic_name,
@@ -146,17 +297,17 @@ pub fn list_medicines(db: &Connection) -> Result<Vec<MedicineListItem>, CommandE
             is_active: m.is_active,
         });
     }
-    Ok(results)
+    Ok(PaginatedList::new(items, total, page, per_page))
 }
 
-/// Searches medicines (owner — full DTO with purchase_price).
-pub fn search_medicines(db: &Connection, query: &str) -> Result<Vec<MedicineListItem>, CommandError> {
+pub fn search_medicines(db: &Connection, query: &str, page: i64, per_page: i64) -> Result<PaginatedList<MedicineListItem>, CommandError> {
     let pattern = format!("%{}%", query);
-    let medicines = medicine_repo::search(db, &pattern)?;
-    let mut results = Vec::new();
+    let offset = (page - 1) * per_page;
+    let (medicines, total) = medicine_repo::search(db, &pattern, offset, per_page)?;
+    let mut items = Vec::new();
     for m in medicines {
         let current_stock = batch_repo::get_current_stock(db, m.id)?;
-        results.push(MedicineListItem {
+        items.push(MedicineListItem {
             id: m.id,
             name: m.name,
             generic_name: m.generic_name,
@@ -170,25 +321,26 @@ pub fn search_medicines(db: &Connection, query: &str) -> Result<Vec<MedicineList
             is_active: m.is_active,
         });
     }
-    Ok(results)
+    Ok(PaginatedList::new(items, total, page, per_page))
 }
 
-/// Searches medicines for pharmacist — returns DTO WITHOUT purchase_price (D-15).
-/// Enforced at SERVICE layer, not just UI.
 pub fn search_medicines_pharmacist(
     db: &Connection,
     query: &str,
-) -> Result<Vec<MedicinePharmacistDto>, CommandError> {
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedList<MedicinePharmacistDto>, CommandError> {
     let pattern = format!("%{}%", query);
-    let medicines = medicine_repo::search(db, &pattern)?;
-    let mut results = Vec::new();
+    let offset = (page - 1) * per_page;
+    let (medicines, total) = medicine_repo::search(db, &pattern, offset, per_page)?;
+    let mut items = Vec::new();
     for m in medicines {
         let current_stock = batch_repo::get_current_stock(db, m.id)?;
         let mut dto = MedicinePharmacistDto::from(m);
         dto.current_stock = current_stock;
-        results.push(dto);
+        items.push(dto);
     }
-    Ok(results)
+    Ok(PaginatedList::new(items, total, page, per_page))
 }
 
 /// Gets a single medicine by id, enriched with current stock.
@@ -262,9 +414,10 @@ mod tests {
             initial_stock: None, initial_expiry_date: None,
         };
         create_medicine(&db, &dto, uid).unwrap();
-        let list = list_medicines(&db).unwrap();
-        assert_eq!(list.len(), 1);
-        assert_eq!(list[0].name, "Test Med");
+        let result = list_medicines(&db, 1, 50).unwrap();
+        assert_eq!(result.items.len(), 1);
+        assert_eq!(result.items[0].name, "Test Med");
+        assert_eq!(result.total, 1);
     }
 
     #[test]
@@ -279,8 +432,209 @@ mod tests {
             initial_stock: None, initial_expiry_date: None,
         };
         create_medicine(&db, &dto, uid).unwrap();
-        let results = search_medicines_pharmacist(&db, "Panadol").unwrap();
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].name, "Panadol");
+        let results = search_medicines_pharmacist(&db, "Panadol", 1, 50).unwrap();
+        assert_eq!(results.items.len(), 1);
+        assert_eq!(results.items[0].name, "Panadol");
+    }
+
+    #[test]
+    fn test_create_medicine_invalid_category() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Bad Med".into(), generic_name: None, brand_name: None,
+            category: "InvalidCat".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: None, shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        assert!(create_medicine(&db, &dto, uid).is_err());
+    }
+
+    #[test]
+    fn test_create_medicine_invalid_unit() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Bad Med".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "InvalidUnit".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: None, shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        assert!(create_medicine(&db, &dto, uid).is_err());
+    }
+
+    fn default_update_dto() -> UpdateMedicineDto {
+        UpdateMedicineDto {
+            name: None, generic_name: None, brand_name: None,
+            category: None, unit: None, retail_price: None,
+            purchase_price: None, reorder_level: None,
+            shelf_location: None, notes: None,
+        }
+    }
+
+    #[test]
+    fn test_update_medicine() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        let med = create_medicine(&db, &dto, uid).unwrap();
+
+        let mut update = default_update_dto();
+        update.name = Some("Panadol Extra".into());
+        update.retail_price = Some(15.0);
+        let updated = update_medicine(&db, med.id, &update).unwrap();
+        assert_eq!(updated.name, "Panadol Extra");
+        assert!((updated.retail_price - 15.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_update_medicine_not_found() {
+        let db = test_helpers::setup_test_db();
+        let update = default_update_dto();
+        assert!(update_medicine(&db, 999, &update).is_err());
+    }
+
+    #[test]
+    fn test_update_medicine_price_validation() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        let med = create_medicine(&db, &dto, uid).unwrap();
+
+        let mut update = default_update_dto();
+        update.retail_price = Some(2.0);
+        // retail_price 2.0 < purchase_price 5.0 => error
+        assert!(update_medicine(&db, med.id, &update).is_err());
+    }
+
+    #[test]
+    fn test_deactivate_medicine() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        let med = create_medicine(&db, &dto, uid).unwrap();
+        deactivate_medicine(&db, med.id).unwrap();
+
+        // find_by_id returns the row but is_active should be false
+        let fetched = get_medicine_by_id(&db, med.id).unwrap();
+        assert!(!fetched.is_active);
+    }
+
+    #[test]
+    fn test_deactivate_medicine_not_found() {
+        let db = test_helpers::setup_test_db();
+        assert!(deactivate_medicine(&db, 999).is_err());
+    }
+
+    #[test]
+    fn test_search_medicines() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(), generic_name: Some("Paracetamol".into()), brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        create_medicine(&db, &dto, uid).unwrap();
+
+        let results = search_medicines(&db, "Para", 1, 50).unwrap();
+        assert_eq!(results.items.len(), 1);
+        assert_eq!(results.items[0].name, "Panadol");
+
+        let results = search_medicines(&db, "Ibuprofen", 1, 50).unwrap();
+        assert_eq!(results.items.len(), 0);
+    }
+
+    #[test]
+    fn test_search_medicines_excludes_inactive() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        let med = create_medicine(&db, &dto, uid).unwrap();
+        deactivate_medicine(&db, med.id).unwrap();
+
+        let results = search_medicines(&db, "Panadol", 1, 50).unwrap();
+        assert_eq!(results.items.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_medicine_no_records() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Delete Me".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: None, initial_expiry_date: None,
+        };
+        let med = create_medicine(&db, &dto, uid).unwrap();
+        delete_medicine(&db, med.id).unwrap();
+
+        let result = get_medicine_by_id(&db, med.id);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete_medicine_with_records_fails() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Has Stock".into(), generic_name: None, brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: None, notes: None,
+            initial_stock: Some(50), initial_expiry_date: None,
+        };
+        let med = create_medicine(&db, &dto, uid).unwrap();
+        // Has a batch from initial_stock => should fail
+        assert!(delete_medicine(&db, med.id).is_err());
+    }
+
+    #[test]
+    fn test_get_medicine_by_id() {
+        let db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let dto = CreateMedicineDto {
+            name: "Panadol".into(), generic_name: Some("Paracetamol".into()), brand_name: None,
+            category: "Tablet".into(), unit: "Strip".into(),
+            retail_price: 10.0, purchase_price: 5.0,
+            reorder_level: Some(10), shelf_location: Some("A1".into()), notes: None,
+            initial_stock: Some(100), initial_expiry_date: Some("2027-12-31".into()),
+        };
+        let med = create_medicine(&db, &dto, uid).unwrap();
+
+        let fetched = get_medicine_by_id(&db, med.id).unwrap();
+        assert_eq!(fetched.name, "Panadol");
+        assert_eq!(fetched.current_stock, 100);
+        assert_eq!(fetched.shelf_location.as_deref(), Some("A1"));
     }
 }

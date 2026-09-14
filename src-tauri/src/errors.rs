@@ -100,3 +100,12 @@ impl From<reqwest::Error> for CommandError {
         }
     }
 }
+
+impl From<csv::Error> for CommandError {
+    fn from(e: csv::Error) -> Self {
+        CommandError {
+            code: "CSV".into(),
+            message: format!("CSV parsing error: {}", e),
+        }
+    }
+}

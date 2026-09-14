@@ -25,6 +25,7 @@ import type { MedicineDto, CreateMedicineDto, UpdateMedicineDto } from '@/types/
 interface MedicineFormProps {
   open: boolean;
   onClose: () => void;
+  onSave?: () => void;
   sessionToken: string;
   medicineId?: number;
   role: string;
@@ -72,6 +73,7 @@ const emptyForm: FormState = {
 export function MedicineForm({
   open,
   onClose,
+  onSave,
   sessionToken,
   medicineId,
   role,
@@ -188,8 +190,9 @@ export function MedicineForm({
           initial_stock: initialStock && initialStock > 0 ? initialStock : null,
           initial_expiry_date: form.initial_expiry_date.trim() || null,
         };
-        await tauri.medicines.create(sessionToken, payload);
+      await tauri.medicines.create(sessionToken, payload);
       }
+      onSave?.();
       onClose();
     } catch (err: unknown) {
       setSubmitError(
@@ -198,7 +201,7 @@ export function MedicineForm({
     } finally {
       setSubmitting(false);
     }
-  }, [form, isEdit, medicineId, sessionToken, isOwner, onClose, validate]);
+  }, [form, isEdit, medicineId, sessionToken, isOwner, onClose, onSave, validate]);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -270,13 +273,14 @@ export function MedicineForm({
             {/* Category */}
             <div className="grid gap-2">
               <Label htmlFor="category">Category *</Label>
+              <div className="w-full">
               <Select
                 value={form.category}
                 onValueChange={(value: string | null) => {
                   if (value) setForm((prev) => ({ ...prev, category: value }));
                 }}
               >
-                <SelectTrigger id="category">
+                <SelectTrigger id="category" className="w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,6 +291,7 @@ export function MedicineForm({
                   ))}
                 </SelectContent>
               </Select>
+              </div>
               {errors.category && (
                 <p className="text-xs text-destructive">{errors.category}</p>
               )}
@@ -295,13 +300,14 @@ export function MedicineForm({
             {/* Unit */}
             <div className="grid gap-2">
               <Label htmlFor="unit">Unit *</Label>
+              <div className="w-full">
               <Select
                 value={form.unit}
                 onValueChange={(value: string | null) => {
                   if (value) setForm((prev) => ({ ...prev, unit: value }));
                 }}
               >
-                <SelectTrigger id="unit">
+                <SelectTrigger id="unit" className="w-full">
                   <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
                 <SelectContent>
@@ -312,6 +318,7 @@ export function MedicineForm({
                   ))}
                 </SelectContent>
               </Select>
+              </div>
               {errors.unit && (
                 <p className="text-xs text-destructive">{errors.unit}</p>
               )}

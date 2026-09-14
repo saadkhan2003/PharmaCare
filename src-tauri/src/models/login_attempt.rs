@@ -20,3 +20,13 @@ pub struct LoginAttemptDto {
     pub failure_reason: Option<String>,
     pub created_at: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginAttemptFilters {
+    pub username: Option<String>,
+    pub success: Option<bool>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}

@@ -1,0 +1,401 @@
+name,generic_name,brand_name,category,unit,retail_price,purchase_price,reorder_level,shelf_location,notes
+
+Panadol,Paracetamol,GSK,Tablet,Strip,25.00,18.00,50,A1-01,Analgesic/Antipyretic
+Brufen,Ibuprofen,Abbott,Tablet,Strip,35.00,25.00,40,A1-02,NSAID
+Aprin,Diclofenac,Hamdard,Tablet,Strip,30.00,22.00,30,A1-03,NSAID
+Methrin,Mefenamic Acid,Sami,Tablet,Strip,40.00,28.00,35,A1-04,NSAID
+Cataflam,Diclofenac,Novartis,Tablet,Strip,55.00,40.00,25,A1-05,NSAID
+Nexium,Esomeprazole,AstraZeneca,Tablet,Strip,120.00,85.00,20,B1-01,PPI
+Omepral,Omeprazole,Sami,Tablet,Strip,45.00,32.00,30,B1-02,PPI
+Losec,Omeprazole,AstraZeneca,Tablet,Strip,150.00,110.00,15,B1-03,PPI
+Risperdal,Risperidone,Johnson & Johnson,Tablet,Strip,180.00,130.00,10,C1-01,Antipsychotic
+Valium,Diazepam,Roche,Tablet,Strip,60.00,42.00,20,C1-02,Benzodiazepine
+Xanax,Alprazolam,Pfizer,Tablet,Strip,90.00,65.00,15,C1-03,Benzodiazepine
+Zepam,Nitrazepam,Roche,Tablet,Strip,50.00,35.00,25,C1-04,Benzodiazepine
+Ativan,Lorazepam,Wyeth,Tablet,Strip,70.00,50.00,20,C1-05,Benzodiazepine
+Prozac,Fluoxetine,Eli Lilly,Tablet,Strip,200.00,145.00,10,D1-01,SSRI
+Zoloft,Sertraline,Pfizer,Tablet,Strip,180.00,130.00,12,D1-02,SSRI
+Cipramil,Citalopram,Lundbeck,Tablet,Strip,120.00,85.00,15,D1-03,SSRI
+Paxil,Paroxetine,GSK,Tablet,Strip,160.00,115.00,10,D1-04,SSRI
+Lexapro,Escitalopram,Lundbeck,Tablet,Strip,220.00,160.00,8,D1-05,SSRI
+Duloxetine,Cymbalta,Eli Lilly,Tablet,Strip,250.00,180.00,8,D1-06,SNRI
+Venlafaxine,Effexor,Pfizer,Tablet,Strip,180.00,130.00,10,D1-07,SNRI
+Amitriptyline,Tryptizol,MSD,Tablet,Strip,30.00,22.00,30,D1-08,TCA
+Neurontin,Gabapentin,Pfizer,Tablet,Strip,150.00,110.00,15,D1-09,Anticonvulsant
+Tegretol,Carbamazepine,Novartis,Tablet,Strip,80.00,55.00,20,D1-10,Anticonvulsant
+Depakote,Valproic Acid,Abbott,Tablet,Strip,100.00,72.00,15,D1-11,Anticonvulsant
+Lamictal,Lamotrigine,GSK,Tablet,Strip,200.00,145.00,10,D1-12,Anticonvulsant
+Keppra,Levetiracetam,UCB,Tablet,Strip,280.00,200.00,8,D1-13,Anticonvulsant
+Dilantin,Phenytoin,Pfizer,Tablet,Strip,45.00,32.00,25,D1-14,Anticonvulsant
+Glucophage,Metformin,Merck,Tablet,Strip,60.00,42.00,40,E1-01,Antidiabetic
+Daonil,Glibenclamide,Hoechst,Tablet,Strip,25.00,18.00,35,E1-02,Sulfonylurea
+Amaryl,Glimepiride,Sanofi,Tablet,Strip,80.00,55.00,25,E1-03,Sulfonylurea
+Januvia,Sitagliptin,MSD,Tablet,Strip,350.00,250.00,10,E1-04,DPP-4 Inhibitor
+Galvus,Vildagliptin,Novartis,Tablet,Strip,300.00,215.00,12,E1-05,DPP-4 Inhibitor
+Jardiance,Empagliflozin,Boehringer,Tablet,Strip,400.00,290.00,8,E1-06,SGLT2 Inhibitor
+Forxiga,Dapagliflozin,AstraZeneca,Tablet,Strip,380.00,275.00,8,E1-07,SGLT2 Inhibitor
+Glycomet-GP,Glimepiride+Metformin,USV,Tablet,Strip,55.00,38.00,30,E1-08,Combination
+Diabetamine,Metformin,Sami,Tablet,Strip,35.00,25.00,40,E1-09,Metformin
+Nolvadex,Tamoxifen,AstraZeneca,Tablet,Strip,300.00,215.00,8,F1-01,Anticancer
+Methotrexate,Methotrexate,Pfizer,Tablet,Strip,120.00,85.00,10,F1-02,Anticancer
+Capecitabine,Xeloda,Roche,Tablet,Strip,800.00,575.00,5,F1-03,Anticancer
+Imatinib,Gleevec,Novartis,Tablet,Strip,2500.00,1800.00,3,F1-04,Anticancer
+Erlotinib,Tarceva,Roche,Tablet,Strip,3000.00,2150.00,2,F1-05,Anticancer
+Letrozole,Femara,Novartis,Tablet,Strip,450.00,325.00,6,F1-06,Anticancer
+Anastrozole,Arimidex,AstraZeneca,Tablet,Strip,400.00,290.00,6,F1-07,Anticancer
+Exemestane,Aromasin,Pfizer,Tablet,Strip,380.00,275.00,6,F1-08,Anticancer
+Bicalutamide,Casodex,AstraZeneca,Tablet,Strip,350.00,250.00,8,F1-09,Anticancer
+Nilutamide,Noltam,Sanofi,Tablet,Strip,300.00,215.00,8,F1-10,Anticancer
+Doxorubicin,Adriamycin,Pfizer,Injection,Box,500.00,360.00,5,F1-11,Anticancer Injection
+Cisplatin,Cisplatin,Fresenius,Injection,Box,200.00,145.00,10,F1-12,Anticancer Injection
+Carboplatin,Carboplatin,Fresenius,Injection,Box,350.00,250.00,8,F1-13,Anticancer Injection
+Paclitaxel,Taxol,Bristol-Myers,Injection,Box,1200.00,865.00,5,F1-14,Anticancer Injection
+5-Fluouracil,5-FU,Various,Injection,Box,80.00,55.00,15,F1-15,Anticancer Injection
+Zofran,Ondansetron,GSK,Tablet,Strip,65.00,45.00,25,G1-01,Antiemetic
+Emend,Aprepitant,MSD,Tablet,Strip,350.00,250.00,8,G1-02,Antiemetic
+Maxolon,Metoclopramide,GSK,Syrup,Bottle,30.00,22.00,30,G1-03,Antiemetic
+Domperidone,Motilium,Janssen,Tablet,Strip,45.00,32.00,30,G1-04,Prokinetic
+Amoxicillin,Amoxil,GSK,Tablet,Strip,50.00,35.00,40,H1-01,Antibiotic
+Azithromycin,Zithromax,Pfizer,Tablet,Strip,80.00,55.00,35,H1-02,Antibiotic
+Ciprofloxacin,Ciproxin,Bayer,Tablet,Strip,40.00,28.00,40,H1-03,Antibiotic
+Levofloxacin,Tavanic,Sanofi,Tablet,Strip,120.00,85.00,25,H1-04,Antibiotic
+Cefixime,Suprax,Sanofi,Tablet,Strip,150.00,110.00,20,H1-05,Cephalosporin
+Ceftriaxone,Rocephin,Roche,Injection,Box,90.00,65.00,15,H1-06,Cephalosporin Injection
+Augmentin,Amoxicillin+Clavulanate,GSK,Tablet,Strip,120.00,85.00,30,H1-07,Beta-lactam
+Moxatag,Amoxicillin+Clavulanate,Abbott,Syrup,Bottle,95.00,68.00,25,H1-08,Beta-lactam Syrup
+Ceporex,Cefalexin,GSK,Tablet,Strip,80.00,55.00,25,H1-09,Cephalosporin
+Zinacef,Cefuroxime,GSK,Injection,Box,110.00,78.00,15,H1-10,Cephalosporin Injection
+Tinidazole,Tinidazole,Various,Tablet,Strip,25.00,18.00,35,H1-11,Antiprotozoal
+Metronidazole,Flagyl,Sanofi,Tablet,Strip,15.00,10.00,50,H1-12,Antiprotozoal
+Fluconazole,Diflucan,Pfizer,Tablet,Strip,90.00,65.00,20,H1-13,Antifungal
+Itraconazole,Sporanox,Janssen,Tablet,Strip,180.00,130.00,12,H1-14,Antifungal
+Terbinafine,Lamisil,Novartis,Tablet,Strip,100.00,72.00,20,H1-15,Antifungal
+Nystatin,Nystatin,Various,Tablet,Strip,35.00,25.00,25,H1-16,Antifungal
+Acyclovir,Zovirax,GSK,Tablet,Strip,80.00,55.00,30,H1-17,Antiviral
+Valacyclovir,Valtrex,GSK,Tablet,Strip,200.00,145.00,15,H1-18,Antiviral
+Oseltamivir,Tamiflu,Roche,Tablet,Strip,600.00,430.00,5,H1-19,Antiviral
+Artemether,Lumefantrine,Novartis,Tablet,Strip,150.00,110.00,20,H1-20,Antimalarial
+Chloroquine,Resochin,Bayer,Tablet,Strip,15.00,10.00,30,H1-21,Antimalarial
+Atovaquone+Proguanil,Malarone,GSK,Tablet,Strip,500.00,360.00,10,H1-22,Antimalarial
+Doxycycline,Vibramycin,Pfizer,Tablet,Strip,60.00,42.00,25,H1-23,Antimalarial/Antibiotic
+Albendazole,Alben,GSK,Tablet,Strip,20.00,14.00,40,H1-24,Antihelminthic
+Mebendazole,Vermox,Janssen,Tablet,Strip,30.00,22.00,35,H1-25,Antihelminthic
+Ivermectin,Ivermectin,Various,Tablet,Strip,40.00,28.00,25,H1-26,Antiparasitic
+Praziquantel,Biltricide,Bayer,Tablet,Strip,200.00,145.00,10,H1-27,Antiparasitic
+Atenolol,Tenormin,AstraZeneca,Tablet,Strip,35.00,25.00,30,I1-01,Beta-blocker
+Metoprolol,Lopressor,Sandoz,Tablet,Strip,40.00,28.00,30,I1-02,Beta-blocker
+Bisoprolol,Concor,Merck,Tablet,Strip,55.00,38.00,25,I1-03,Beta-blocker
+Carvedilol,Coreg,GSK,Tablet,Strip,80.00,55.00,20,I1-04,Beta-blocker
+Propranolol,Inderal,AstraZeneca,Tablet,Strip,25.00,18.00,35,I1-05,Beta-blocker
+Amlodipine,Norvasc,Pfizer,Tablet,Strip,60.00,42.00,30,I1-06,CCB
+Nifedipine,Adalat,Bayer,Tablet,Strip,45.00,32.00,25,I1-07,CCB
+Diltiazem,Cardizem,Bayer,Tablet,Strip,70.00,50.00,20,I1-08,CCB
+Verapamil,Calan,Abbott,Tablet,Strip,50.00,35.00,20,I1-09,CCB
+Lisinopril,Prinivil,MSD,Tablet,Strip,55.00,38.00,25,I1-10,ACE Inhibitor
+Enalapril,Renitec,MSD,Tablet,Strip,40.00,28.00,30,I1-11,ACE Inhibitor
+Ramipril,Altace,Sanofi,Tablet,Strip,80.00,55.00,20,I1-12,ACE Inhibitor
+Losartan,Cozaar,MSD,Tablet,Strip,90.00,65.00,20,I1-13,ARB
+Valsartan,Diovan,Novartis,Tablet,Strip,100.00,72.00,18,I1-14,ARB
+Telmisartan,Telma,Glenmark,Tablet,Strip,65.00,45.00,22,I1-15,ARB
+Irbesartan,Aprovel,Sanofi,Tablet,Strip,110.00,78.00,15,I1-16,ARB
+Hydralazine,Apresoline,Novartis,Tablet,Strip,30.00,22.00,20,I1-17,Vasodilator
+Minoxidil,Rogaine,Pfizer,Tablet,Strip,150.00,110.00,10,I1-18,Vasodilator
+Digoxin,Lanoxin,GSK,Tablet,Strip,25.00,18.00,20,I1-19,Cardiac Glycoside
+Furosemide,Lasix,Sanofi,Tablet,Strip,20.00,14.00,40,I1-20,Diuretic
+Hydrochlorothiazide,Esidrix,Novartis,Tablet,Strip,15.00,10.00,45,I1-21,Diuretic
+Spironolactone,Aldactone,Pfizer,Tablet,Strip,40.00,28.00,25,I1-22,Diuretic
+Torsemide,Remedex,Sanofi,Tablet,Strip,60.00,42.00,20,I1-23,Diuretic
+Aspirin,Disprin,Reckitt,Tablet,Strip,15.00,10.00,50,J1-01,Antiplatelet
+Clopidogrel,Plavix,Sanofi,Tablet,Strip,200.00,145.00,15,J1-02,Antiplatelet
+Warfarin,Coumadin,Bristol-Myers,Tablet,Strip,30.00,22.00,25,J1-03,Anticoagulant
+Heparin,Heparin,Pfizer,Injection,Box,150.00,110.00,10,J1-04,Anticoagulant
+Enoxaparin,Clexane,Sanofi,Injection,Box,400.00,290.00,8,J1-05,LMWH
+Rivaroxaban,Xarelto,Bayer,Tablet,Strip,500.00,360.00,5,J1-06,DOAC
+Apixaban,Eliquis,Pfizer,Tablet,Strip,550.00,395.00,5,J1-07,DOAC
+Dabigatran,Pradaxa,Boehringer,Tablet,Strip,450.00,325.00,5,J1-08,DOAC
+Atorvastatin,Lipitor,Pfizer,Tablet,Strip,120.00,85.00,25,K1-01,Statin
+Rosuvastatin,Crestor,AstraZeneca,Tablet,Strip,150.00,110.00,22,K1-02,Statin
+Simvastatin,Zocor,MSD,Tablet,Strip,80.00,55.00,30,K1-03,Statin
+Pravastatin,Pravachol,BMS,Tablet,Strip,90.00,65.00,20,K1-04,Statin
+Fenofibrate,Tricor,Abbott,Tablet,Strip,100.00,72.00,18,K1-05,Fibrate
+Gemfibrozil,Lopid,Pfizer,Tablet,Strip,70.00,50.00,20,K1-06,Fibrate
+Ezetimibe,Zetia,MSD,Tablet,Strip,200.00,145.00,12,K1-07,Cholesterol Absorption
+Omega-3,Omacor,Sanofi,Tablet,Strip,180.00,130.00,15,K1-08,OMEGA-3
+Niacin,Niasin,Various,Tablet,Strip,40.00,28.00,20,K1-09,Niacin
+Prednisolone,Prednisolone,Various,Tablet,Strip,15.00,10.00,40,L1-01,Corticosteroid
+Dexamethasone,Decadron,MSD,Tablet,Strip,20.00,14.00,35,L1-02,Corticosteroid
+Methylprednisolone,Solu-Medrol,Pfizer,Injection,Box,120.00,85.00,15,L1-03,Corticosteroid Injection
+Betamethasone,Celestone,Schering,Tablet,Strip,25.00,18.00,25,L1-04,Corticosteroid
+Hydrocortisone,Hydrocortisone,Various,OTC,Box,30.00,22.00,30,L1-05,Corticosteroid Topical
+Beclomethasone,Becotide,GSK,Prescription,Box,200.00,145.00,15,L1-06,Inhaled Steroid
+Fluticasone,Flixotide,GSK,Prescription,Box,350.00,250.00,10,L1-07,Inhaled Steroid
+Budesonide,Pulmicort,AstraZeneca,Prescription,Box,400.00,290.00,8,L1-08,Inhaled Steroid
+Montelukast,Singulair,MSD,Tablet,Strip,120.00,85.00,20,L1-09,Leukotriene Modifier
+Salbutamol,Ventolin,GSK,Prescription,Box,120.00,85.00,25,L1-10,Bronchodilator
+Ipratropium,Atrovent,Boehringer,Prescription,Box,150.00,110.00,15,L1-11,Bronchodilator
+Theophylline,Theo-Dur,Various,Tablet,Strip,30.00,22.00,30,L1-12,Xanthine
+Terbutaline,Bricanyl,AstraZeneca,Syrup,Bottle,35.00,25.00,25,L1-13,Bronchodilator Syrup
+Ambroxol,Mucosolvan,Boehringer,Syrup,Bottle,50.00,35.00,25,L1-14,Expectorant
+Acetylcysteine,Fluimucil,Zambon,Tablet,Strip,60.00,42.00,20,L1-15,Mucolytic
+Carbocisteine,Mucodyne,Sanofi,Tablet,Strip,80.00,55.00,18,L1-16,Mucolytic
+Bromhexine,Bisolvon,Boehringer,Syrup,Bottle,35.00,25.00,30,L1-17,Expectorant
+Guaifenesin,Robitussin,Pfizer,Syrup,Bottle,45.00,32.00,25,L1-18,Expectorant
+Dextromethorphan,Romilar,Hoffmann,Tablet,Strip,30.00,22.00,30,L1-19,Antitussive
+Codeine,Codeine Phosphate,Various,Tablet,Strip,25.00,18.00,15,L2-01,Antitussive Opioid
+Loperamide,Imodium,Janssen,Tablet,Strip,50.00,35.00,25,M1-01,Antidiarrheal
+ORS,ORS,Various,Prescription,Sachet,10.00,7.00,100,M1-02,Rehydration
+Lactulose,Duphalac,Abbott,Syrup,Bottle,60.00,42.00,20,M1-03,Laxative
+Bisacodyl,Dulcolax,Bayer,Tablet,Strip,20.00,14.00,30,M1-04,Laxative
+Senna,Sennamid,Various,Tablet,Strip,15.00,10.00,35,M1-05,Laxative
+Psyllium,Ispaghula Husk,Various,Prescription,Box,45.00,32.00,25,M1-06,Bulk Forming
+Ondansetron,Zofran,GSK,Syrup,Bottle,55.00,38.00,20,M1-07,Antiemetic Syrup
+Domperidone,Motilium,Janssen,Syrup,Bottle,35.00,25.00,30,M1-08,Prokinetic Syrup
+Pantoprazole,Pantoloc,Takeda,Tablet,Strip,80.00,55.00,25,B1-04,PPI
+Rabeprazole,Pariet,Janssen,Tablet,Strip,90.00,65.00,22,B1-05,PPI
+Lansoprazole,Prevacid,Takeda,Tablet,Strip,75.00,53.00,25,B1-06,PPI
+Famotidine,Pepcid,MSD,Tablet,Strip,50.00,35.00,25,B1-07,H2 Blocker
+Ranitidine,Zantac,GSK,Tablet,Strip,30.00,22.00,30,B1-08,H2 Blocker
+Sucralfate,Sucrafil,Various,Tablet,Strip,40.00,28.00,20,B1-09,Cytoprotective
+Misoprostol,Cytotec,Pfizer,Tablet,Strip,60.00,42.00,15,B1-10,Prostaglandin
+Omeprazole+Clarithromycin+Amoxicillin,H.pylori Triple Therapy,Various,Prescription,Box,300.00,215.00,10,B1-11,H.pylori Kit
+Vitamin C,Cevex,Various,Tablet,Strip,25.00,18.00,50,N1-01,Vitamin
+Vitamin D3,D3-Vit,Various,Tablet,Strip,60.00,42.00,30,N1-02,Vitamin
+Vitamin B Complex,Becosules,Pfizer,Tablet,Strip,30.00,22.00,40,N1-03,Vitamin
+Vitamin B12,Cobamin,Various,Tablet,Strip,35.00,25.00,25,N1-04,Vitamin
+Folic Acid,Folic Acid,Various,Tablet,Strip,10.00,7.00,50,N1-05,Vitamin
+Iron,Occobolin,Various,Tablet,Strip,20.00,14.00,40,N1-06,Mineral
+Calcium,Calpol 500,GSK,Tablet,Strip,30.00,22.00,35,N1-07,Mineral
+Zinc,Zincovit,Various,Tablet,Strip,25.00,18.00,30,N1-08,Mineral
+Multivitamin,Supradyn,Bayer,Tablet,Strip,55.00,38.00,30,N1-09,Multivitamin
+Centrum,Centrum,Pfizer,Tablet,Box,350.00,250.00,10,N1-10,Multivitamin Premium
+E-Vit,E-Vit,Various,Tablet,Strip,30.00,22.00,25,N1-11,Vitamin E
+Becosules Syrup,Becosules,Pfizer,Syrup,Bottle,50.00,35.00,25,N1-12,Vitamin Syrup
+Iron+Folic Acid,Iron Folic,Various,Tablet,Strip,12.00,8.00,50,N1-13,Iron Supplement
+Calcium+Vitamin D,Cal-D-Vita,Various,Tablet,Strip,45.00,32.00,30,N1-14,Calcium Combo
+Omega-3 Fish Oil,Cardiovascular,Various,Tablet,Box,180.00,130.00,15,N1-15,Supplement
+Coenzyme Q10,CoQ10,Various,Tablet,Box,250.00,180.00,8,N1-16,Supplement
+Probiotics,Acidophilus,Various,Tablet,Box,120.00,85.00,15,N1-17,Probiotic
+Glucosamine,Glucosamine,Various,Tablet,Box,150.00,110.00,12,N1-18,Supplement
+Collagen,Collagen,Various,Prescription,Box,200.00,145.00,10,N1-19,Supplement
+Melatonin,Melatonin,Various,Tablet,Box,100.00,72.00,15,N1-20,Sleep Aid
+Paracetamol Syrup,Paracetamol,GSK,Syrup,Bottle,25.00,18.00,40,A1-06,Analgesic Syrup
+Brufen Syrup,Ibuprofen,Abbott,Syrup,Bottle,40.00,28.00,35,A1-07,NSAID Syrup
+Panadol Extra,Paracetamol+Caffeine,GSK,Tablet,Strip,35.00,25.00,40,A1-08,Analgesic
+Solpadeine,Paracetamol+Codeine,GSK,Tablet,Strip,50.00,35.00,25,A1-09,Opioid Combination
+Tramadol,Tramal,GSK,Tablet,Strip,60.00,42.00,15,A1-10,Opioid Analgesic
+Morphine,Morphine Sulfate,Pfizer,Tablet,Strip,80.00,55.00,8,A1-11,Opioid Strong
+Pethidine,Pethidine,Various,Injection,Box,40.00,28.00,10,A1-12,Opioid Injection
+Diclofenac Gel,Voltaren Emulgel,GSK,OTC,Box,80.00,55.00,25,A1-13,Topical NSAID
+Capsaicin,Capsaicin,Various,OTC,Box,50.00,35.00,20,A1-14,Topical Analgesic
+Lidocaine,Lidocaine,Various,OTC,Box,30.00,22.00,25,A1-15,Topical Anesthetic
+Benzoyl Peroxide,Benzac,GSK,OTC,Box,120.00,85.00,15,O1-01,Acne Treatment
+Clindamycin,Clindamycin,Various,OTC,Box,60.00,42.00,20,O1-02,Topical Antibiotic
+Tretinoin,Retin-A,Various,OTC,Box,150.00,110.00,10,O1-03,Retinoid
+Hydroquinone,Hydroquinone,Various,OTC,Box,80.00,55.00,12,O1-04,Skin Lightening
+Fluocinolone,Synalar,GSK,OTC,Box,40.00,28.00,20,O1-05,Topical Steroid
+Betnovate,Gbetamethasone,GSK,OTC,Box,45.00,32.00,25,O1-06,Topical Steroid
+Clobetasol,Dermovate,GSK,OTC,Box,50.00,35.00,20,O1-07,Topical Steroid Potent
+Permethrin,Permethrin,Various,OTC,Box,35.00,25.00,20,O1-08,Scabicide
+Terbinafine Cream,Lamisil,Novartis,OTC,Box,80.00,55.00,20,O1-09,Topical Antifungal
+Miconazole,Daktarin,Janssen,OTC,Box,40.00,28.00,25,O1-10,Topical Antifungal
+Ketoconazole,Nizoral,Janssen,OTC,Bottle,120.00,85.00,15,O1-11,Antifungal Shampoo
+Selenium Sulfide,Selsun,Abbott,OTC,Bottle,100.00,72.00,15,O1-12,Antifungal Shampoo
+Calamine,Calamine Lotion,Various,OTC,Bottle,25.00,18.00,30,O1-13,Anti-itch
+Cetirizine,Zyrtec,Johnson & Johnson,Tablet,Strip,50.00,35.00,35,P1-01,Antihistamine
+Loratadine,Clarityne,Bayer,Tablet,Strip,45.00,32.00,35,P1-02,Antihistamine
+Fexofenadine,Telfast,Sanofi,Tablet,Strip,80.00,55.00,25,P1-03,Antihistamine
+Levocetirizine,Xyzal,UCB,Tablet,Strip,60.00,42.00,25,P1-04,Antihistamine
+Chlorpheniramine,Piriton,GSK,Tablet,Strip,20.00,14.00,30,P1-05,Antihistamine
+Diphenhydramine,Benadryl,Johnson & Johnson,Syrup,Bottle,35.00,25.00,30,P1-06,Antihistamine Syrup
+Promethazine,Phenergan,Sanofi,Syrup,Bottle,40.00,28.00,20,P1-07,Antihistamine Sedating
+Montelukast+Levocetirizine,Deriphyllin,Various,Tablet,Strip,90.00,65.00,20,P1-08,Anti-allergy Combo
+Epinephrine,Adrenaline,Pfizer,Injection,Box,100.00,72.00,10,P1-09,Anaphylaxis
+Dexamethasone Injection,Decadron,MSD,Injection,Box,25.00,18.00,20,L1-20,Steroid Injection
+Prednisolone Eye Drops,Prednisolone,Various,Prescription,Bottle,30.00,22.00,20,L1-21,Steroid Eye
+Timolol,Timoptic,MSD,Prescription,Bottle,60.00,42.00,15,Q1-01,Glaucoma
+Betaxolol,Betoptic,Alcon,Prescription,Bottle,80.00,55.00,12,Q1-02,Glaucoma
+Latanoprost,Xalatan,Pfizer,Prescription,Bottle,200.00,145.00,10,Q1-03,Glaucoma PG Analog
+Dorzolamide,Trusopt,MSD,Prescription,Bottle,150.00,110.00,10,Q1-04,Glaucoma CAI
+Pilocarpine,Pilocarpine,Various,Prescription,Bottle,30.00,22.00,15,Q1-05,Glaucoma Miotic
+Atropine,Atropine,Various,Prescription,Bottle,25.00,18.00,15,Q1-06,Mydriatic
+Cyclopentolate,Cyclogyl,Alcon,Prescription,Bottle,35.00,25.00,12,Q1-07,Mydriatic
+Tropicamide,Mydriacyl,Alcon,Prescription,Bottle,40.00,28.00,12,Q1-08,Mydriatic
+Artificial Tears,Lubristil,Various,Prescription,Bottle,30.00,22.00,25,Q1-09,Lubricant Eye
+Fluorescein,Fluorets,Bausch,Prescription,Box,20.00,14.00,15,Q1-10,Diagnostic Eye
+Omeprazole Capsule,Omeprazole,Various,Tablet,Strip,35.00,25.00,35,B1-12,PPI Capsule
+Pantoprazole Sodium,Pantoprazole,Various,Tablet,Strip,55.00,38.00,28,B1-13,PPI
+Esomeprazole+Naproxen,Duexis,Horizon,Tablet,Strip,250.00,180.00,8,B1-14,Combination
+Rabeprazole+Domperidone,Rabeprazole DC,Various,Tablet,Strip,65.00,45.00,25,B1-15,Prokinetic PPI
+Ondansetron Injection,Ondansetron,Various,Injection,Box,40.00,28.00,15,G1-05,Antiemetic Injection
+Granisetron,Kytril,Roche,Injection,Box,80.00,55.00,10,G1-06,5HT3 Antagonist
+Metoclopramide Injection,Maxolon,GSK,Injection,Box,20.00,14.00,20,G1-07,Prokinetic Injection
+Promethazine Injection,Phenergan,Sanofi,Injection,Box,25.00,18.00,15,G1-08,Antiemetic Injection
+Diazepam Injection,Valium,Roche,Injection,Box,40.00,28.00,10,C1-06,Benzo Injection
+Lorazepam Injection,Ativan,Wyeth,Injection,Box,50.00,35.00,8,C1-07,Benzo Injection
+Midazolam,Dormicum,Roche,Injection,Box,60.00,42.00,10,C1-08,Benzo Injection
+Haloperidol,Haldol,Janssen,Tablet,Strip,30.00,22.00,15,C1-09,Typical Antipsychotic
+Olanzapine,Zyprexa,Eli Lilly,Tablet,Strip,200.00,145.00,10,C1-10,Atypical Antipsychotic
+Quetiapine,Seroquel,AstraZeneca,Tablet,Strip,180.00,130.00,10,C1-11,Atypical Antipsychotic
+Aripiprazole,Abilify,Otsuka,Tablet,Strip,300.00,215.00,8,C1-12,Atypical Antipsychotic
+Haloperidol Injection,Haldol,Janssen,Injection,Box,25.00,18.00,12,C1-13,Antipsychotic Injection
+Lithium,Lithobid,Pfizer,Tablet,Strip,40.00,28.00,15,C1-14,Mood Stabilizer
+Carbamazepine Syrup,Tegretol,Novartis,Syrup,Bottle,60.00,42.00,15,D1-15,Anticonvulsant Syrup
+Valproic Syrup,Depakote,Abbott,Syrup,Bottle,70.00,50.00,12,D1-16,Anticonvulsant Syrup
+Levetiracetam Syrup,Keppra,UCB,Syrup,Bottle,200.00,145.00,8,D1-17,Anticonvulsant Syrup
+Topiramate,Topamax,Janssen,Tablet,Strip,250.00,180.00,8,D1-18,Anticonvulsant
+Gabapentin Syrup,Neurontin,Pfizer,Syrup,Bottle,120.00,85.00,10,D1-19,Neuropathic Pain Syrup
+Pregabalin,Lyrica,Pfizer,Tablet,Strip,200.00,145.00,10,D1-20,Neuropathic Pain
+Duloxetine Syrup,Cymbalta,Eli Lilly,Tablet,Strip,200.00,145.00,8,D1-21,SNRI
+Metformin 500mg,Glucophage XR,Merck,Tablet,Strip,35.00,25.00,40,E1-10,Extended Release
+Gliclazide,Gliclazide,Various,Tablet,Strip,20.00,14.00,35,E1-11,Sulfonylurea
+Pioglitazone,Actos,Takeda,Tablet,Strip,100.00,72.00,15,E1-12,Thiazolidinedione
+Empagliflozin+Metformin,Glyxambi,Boehringer,Tablet,Strip,450.00,325.00,5,E1-13,Combination
+Insulin Regular,Humulin R,Eli Lilly,Injection,Box,200.00,145.00,10,E1-14,Insulin
+Insulin Glargine,Lantus,Sanofi,Injection,Box,500.00,360.00,5,E1-15,Long-acting Insulin
+Insulin Aspart,NovoRapid,Novo Nordisk,Injection,Box,450.00,325.00,5,E1-16,Rapid Insulin
+Insulin Lispro,Humalog,Eli Lilly,Injection,Box,450.00,325.00,5,E1-17,Rapid Insulin
+Glucagon,Glucagon,Eli Lilly,Injection,Box,150.00,110.00,5,E1-18,Emergency Glucose
+Diazoxide,Proglycem,Various,Tablet,Strip,300.00,215.00,5,E1-19,Antihypoglycemic
+Hydroxychloroquine,Plaquenil,Sanofi,Tablet,Strip,80.00,55.00,20,H1-28,DMARD/Antimalarial
+Methotrexate Injection,Methotrexate,Pfizer,Injection,Box,100.00,72.00,8,H1-29,DMARD Injection
+Sulfasalazine,Azulfidine,Pfizer,Tablet,Strip,50.00,35.00,18,H1-30,DMARD
+Azathioprine,Imuran,GSK,Tablet,Strip,60.00,42.00,12,H1-31,Immunosuppressant
+Cyclosporine,Neoral,Novartis,Tablet,Strip,200.00,145.00,8,H1-32,Immunosuppressant
+Tacrolimus,Prograf,Astellas,Tablet,Strip,350.00,250.00,5,H1-33,Immunosuppressant
+Mycophenolate,CellCept,Roche,Tablet,Strip,300.00,215.00,5,H1-34,Immunosuppressant
+Colchicine,Colchicine,Various,Tablet,Strip,40.00,28.00,25,H1-35,Gout
+Allopurinol,Zyloprim,GSK,Tablet,Strip,25.00,18.00,30,H1-36,Gout
+Febuxostat,Uloric,Takeda,Tablet,Strip,120.00,85.00,12,H1-37,Gout
+Sildenafil,Viagra,Pfizer,Tablet,Strip,500.00,360.00,8,R1-01,PDE5 Inhibitor
+Tadalafil,Cialis,Lilly,Tablet,Strip,450.00,325.00,8,R1-02,PDE5 Inhibitor
+Finasteride,Propecia,MSD,Tablet,Strip,200.00,145.00,10,R1-03,5-ARI
+Tamsulosin,Flomax,Boehringer,Tablet,Strip,100.00,72.00,15,R1-04,Alpha Blocker
+Dutasteride,Avodart,GSK,Tablet,Strip,250.00,180.00,8,R1-05,5-ARI
+Doxazosin,Cardura,Pfizer,Tablet,Strip,50.00,35.00,18,R1-06,Alpha Blocker
+Alfuzosin,Uroxatral,Sanofi,Tablet,Strip,80.00,55.00,15,R1-07,Alpha Blocker
+Clomiphene,Serophene,Sanofi,Tablet,Strip,120.00,85.00,10,R1-08,Ovulation Induction
+Letrozole,Femara,Novartis,Tablet,Strip,200.00,145.00,8,R1-09,Ovulation Induction
+Progesterone,Utrogestan,Pfizer,Tablet,Strip,80.00,55.00,15,R1-10,Progestogen
+Medroxyprogesterone,Provera,Pfizer,Tablet,Strip,30.00,22.00,25,R1-11,Progestogen
+Ethinyl Estradiol+Levonorgestrel,Loette,Various,Tablet,Strip,50.00,35.00,30,R1-12,Oral Contraceptive
+Ethinyl Estradiol+Desogestrel,Marvelon,Various,Tablet,Strip,45.00,32.00,30,R1-13,Oral Contraceptive
+Levonorgrel,Postinor-2,Gedea,Tablet,Strip,100.00,72.00,15,R1-14,Emergency Contraceptive
+Mifepristone+Misoprostol,Mifegyne,Various,Tablet,Box,300.00,215.00,5,R1-15,Medical Abortion
+Misoprostol,Cytotec,Pfizer,Tablet,Strip,80.00,55.00,10,R1-16,Prostaglandin
+Oxytocin,Oxytocin,Various,Injection,Box,25.00,18.00,15,R1-17,Uterotonic
+Ergometrine,Ergometrine,Various,Injection,Box,30.00,22.00,12,R1-18,Uterotonic
+Tranexamic Acid,Tranexamic,Various,Tablet,Strip,40.00,28.00,20,R1-19,Antifibrinolytic
+Ethamsylate,Etamsylate,Various,Tablet,Strip,25.00,18.00,20,R1-20,Hemostatic
+Vitamin K,Phytonadione,Various,Injection,Box,20.00,14.00,15,R1-21,Antidote
+Protamine Sulfate,Protamine,Pfizer,Injection,Box,80.00,55.00,8,R1-22,Heparin Antidote
+Naloxone,Narcan,Mallinckrodt,Injection,Box,200.00,145.00,5,R1-23,Opioid Antidote
+Flumazenil,Romazicon,Roche,Injection,Box,100.00,72.00,5,R1-24,Benzo Antidote
+Acetylcysteine Injection,Parvolex,Aac Pharma,Injection,Box,50.00,35.00,10,R1-25,Acetaminophen Antidote
+Physostigmine,Physostigmine,Various,Injection,Box,60.00,42.00,5,R1-26,Anticholinesterase
+Neostigmine,Neostigmine,Various,Injection,Box,30.00,22.00,10,R1-27,Anticholinesterase
+Atropine Sulfate Injection,Atropine,Various,Injection,Box,15.00,10.00,15,R1-28,Anticholinergic
+Adrenaline Injection,Adrenaline,Various,Injection,Box,20.00,14.00,15,R1-29,Vasopressor
+Dopamine,Dopamine,Hospira,Injection,Box,40.00,28.00,8,R1-30,Vasopressor
+Noradrenaline,Noradrenaline,Hospira,Injection,Box,50.00,35.00,8,R1-31,Vasopressor
+Dobutamine,Dobutamine,Hospira,Injection,Box,60.00,42.00,8,R1-32,Vasopressor
+Nitroglycerin,Nitrolingual,Pfizer,Prescription,Box,150.00,110.00,12,R1-33,Nitrate
+Isosorbide Mononitrate,Imdur,AstraZeneca,Tablet,Strip,80.00,55.00,20,R1-34,Nitrate
+Hydralazine Injection,Apresoline,Novartis,Injection,Box,25.00,18.00,10,R1-35,Vasodilator
+Sodium Nitroprusside,Nipride,Roche,Injection,Box,100.00,72.00,5,R1-36,Vasodilator
+Magnesium Sulfate,MgSO4,Various,Injection,Box,10.00,7.00,20,R1-37,Anticonvulsant/Relaxant
+Calcium Gluconate,Calcium Gluconate,Various,Injection,Box,15.00,10.00,15,R1-38,Calcium Supplement IV
+Potassium Chloride,KCl,Various,Tablet,Strip,15.00,10.00,25,R1-39,Electrolyte
+Normal Saline,NaCl 0.9%,Various,Prescription,Box,20.00,14.00,50,R1-40,IV Fluid
+Ringer Lactate,Ringer Lactate,Various,Prescription,Box,25.00,18.00,40,R1-41,IV Fluid
+Dextrose 5%,D5W,Various,Prescription,Box,18.00,12.00,45,R1-42,IV Fluid
+Mannitol,Mannitol,Various,Prescription,Box,40.00,28.00,10,R1-43,Osmotic Diuretic
+Dexamethasone Eye Drops,Maxidex,Alcon,Prescription,Bottle,35.00,25.00,20,Q1-11,Steroid Eye Drops
+Ofloxacin Eye Drops,Exocin,Allergan,Prescription,Bottle,40.00,28.00,20,Q1-12,Antibiotic Eye Drops
+Ciprofloxacin Eye Drops,Ciloxan,Alcon,Prescription,Bottle,45.00,32.00,18,Q1-13,Antibiotic Eye Drops
+Gentamicin Eye Drops,Gentamicin,Various,Prescription,Bottle,20.00,14.00,25,Q1-14,Antibiotic Eye Drops
+Chloramphenicol Eye Drops,Chloramphenicol,Various,Prescription,Bottle,15.00,10.00,30,Q1-15,Antibiotic Eye Drops
+Betamethasone Eye Drops,Betnesol,GSK,Prescription,Bottle,30.00,22.00,15,Q1-16,Steroid Eye Drops
+Naphazoline,Privine,Various,Prescription,Bottle,15.00,10.00,20,Q1-17,Decongestant Eye Drops
+Pheniramine Eye Drops,Avil,Various,Prescription,Bottle,15.00,10.00,18,Q1-18,Antihistamine Eye Drops
+Hypromellose,Artificial Tears,Various,Prescription,Bottle,25.00,18.00,25,Q1-19,Lubricant Eye Drops
+Sodium Hyaluronate,Hyluron,Various,Prescription,Bottle,80.00,55.00,12,Q2-01,Lubricant Premium
+Pilocarpine Eye Drops,Pilocarpine,Various,Prescription,Bottle,25.00,18.00,12,Q2-02,Glaucoma
+Dorzolamide+Timolol,Cosopt,MSD,Prescription,Bottle,200.00,145.00,8,Q2-03,Glaucoma Combo
+Brimonidine,Alphagan,Allergan,Prescription,Bottle,180.00,130.00,10,Q2-04,Glaucoma Alpha Agonist
+Apraclonidine,Iopidine,Alcon,Prescription,Bottle,120.00,85.00,8,Q2-05,Glaucoma
+Carbachol,Miostat,Alcon,Prescription,Bottle,60.00,42.00,8,Q2-06,Miotic
+Levobunolol,Betagan,Allergan,Prescription,Bottle,80.00,55.00,10,Q2-07,Beta-blocker Eye
+Carteolol,Ocupress,Alcon,Prescription,Bottle,70.00,50.00,10,Q2-08,Beta-blocker Eye
+Acetazolamide,Diamox,Lederle,Tablet,Strip,30.00,22.00,20,Q2-09,Carbonic Anhydrase Inhibitor
+Methazolamide,Neptazane,Various,Tablet,Strip,80.00,55.00,10,Q2-10,CAI
+Dorzolamide Injection,Dorzolamide,Various,Prescription,Bottle,100.00,72.00,8,Q2-11,CAI
+Bevacizumab,Lucentis,Genentech,Injection,Box,1500.00,1080.00,3,Q2-12,VEGF Inhibitor
+Ranibizumab,Lucentis,Genentech,Injection,Box,1500.00,1080.00,3,Q2-13,VEGF Inhibitor
+Triamcinolone,Trivaris,Various,Injection,Box,100.00,72.00,5,Q2-14,Steroid Injection Eye
+Dexamethasone Implant,Ozurdex,Allergan,Prescription,Box,800.00,575.00,3,Q2-15,Steroid Implant
+Pegaptanib,Macugen,Pfizer,Injection,Box,1000.00,720.00,3,Q2-16,VEGF Inhibitor
+Acetaminophen+Codeine,Tylenol with Codeine,J&J,Tablet,Strip,60.00,42.00,15,A1-14,Opioid Combination
+Hydrocodone+Acetaminophen,Vicodin,Abbott,Tablet,Strip,80.00,55.00,10,A1-15,Opioid Combination
+Oxycodone,OxyContin,Pfizer,Tablet,Strip,120.00,85.00,8,A1-16,Opioid Strong
+Oxycodone+Acetaminophen,Percocet,Endo,Tablet,Strip,90.00,65.00,10,A1-17,Opioid Combo
+Tramadol+Acetaminophen,Ultracet,J&J,Tablet,Strip,50.00,35.00,18,A1-18,Opioid Combo
+Tapentadol,Nucynta,Grünenthal,Tablet,Strip,150.00,110.00,8,A1-19,Atypical Opioid
+Buprenorphine,Nubain,Various,Injection,Box,50.00,35.00,10,A1-20,Partial Agonist
+Fentanyl,Sublimaze,Janssen,Injection,Box,80.00,55.00,5,A1-21,Potent Opioid
+Methadone,Methadone,Various,Tablet,Strip,20.00,14.00,12,A1-22,Opioid Maintenance
+Pentazocine,Talwin,Sanofi,Tablet,Strip,40.00,28.00,12,A1-23,Partial Agonist
+Nefopam,Acupan,Various,Tablet,Strip,60.00,42.00,15,A1-24,Non-Opioid Analgesic
+Celecoxib,Celebrex,Pfizer,Tablet,Strip,150.00,110.00,15,A1-25,COX-2 Inhibitor
+Etoricoxib,Arcoxia,MSD,Tablet,Strip,100.00,72.00,18,A1-26,COX-2 Inhibitor
+Parecoxib,Dynastat,Pfizer,Injection,Box,120.00,85.00,8,A1-27,COX-2 Injectable
+Naproxen,Naproxen,Various,Tablet,Strip,30.00,22.00,30,A1-28,NSAID
+Ketoprofen,Ketoprofen,Various,Tablet,Strip,35.00,25.00,25,A1-29,NSAID
+Piroxicam,Feldene,Pfizer,Tablet,Strip,30.00,22.00,20,A1-30,NSAID
+Meloxicam,Mobic,Boehringer,Tablet,Strip,40.00,28.00,25,A1-31,NSAID
+Indomethacin,Indocin,MSD,Tablet,Strip,40.00,28.00,15,A1-32,NSAID
+Fenoprofen,Nalfon,Various,Tablet,Strip,45.00,32.00,15,A1-33,NSAID
+Flurbiprofen,Ansaid,Pfizer,Tablet,Strip,50.00,35.00,15,A1-34,NSAID
+Oxaprozin,Daypro,GSK,Tablet,Strip,60.00,42.00,12,A1-35,NSAID
+Sulindac,Clinoril,MSD,Tablet,Strip,40.00,28.00,15,A1-36,NSAID
+Tolmetin,Tolectin,Various,Tablet,Strip,35.00,25.00,15,A1-37,NSAID
+Etodolac,Etodolac,Various,Tablet,Strip,40.00,28.00,18,A1-38,NSAID
+Choline Magnesium Trisalicylate,Trilisate,Various,Tablet,Strip,30.00,22.00,15,A1-39,Salicylate
+Salsalate,Disalcid,Various,Tablet,Strip,30.00,22.00,15,A1-40,Salicylate
+Diflunisal,Dolobid,MSD,Tablet,Strip,40.00,28.00,12,A1-41,Salicylate
+Acetaminophen IV,Ofirmev,Cadence,Injection,Box,200.00,145.00,8,A1-42,IV Analgesic
+Ketorolac,Toradol,Abbott,Injection,Box,30.00,22.00,15,A1-43,Injectable NSAID
+Ketorolac Eye Drops,Acular,Allergan,Prescription,Bottle,80.00,55.00,12,Q2-17,NSAID Eye Drops
+Nepafenac,Nevanac,Alcon,Prescription,Bottle,120.00,85.00,8,Q2-18,NSAID Eye Drops
+Bromfenac,Bromday,Bausch,Prescription,Bottle,100.00,72.00,10,Q2-19,NSAID Eye Drops
+Diclofenac Eye Drops,Voltaren Ophthalmic,Various,Prescription,Bottle,40.00,28.00,15,Q2-20,NSAID Eye Drops
+Loteprednol,Alrex,Bausch,Prescription,Bottle,80.00,55.00,10,Q2-21,Steroid Eye Drops
+Fluorometholone,Flarex,Alcon,Prescription,Bottle,60.00,42.00,12,Q2-22,Steroid Eye Drops
+Medrysone,HMS,Allergan,Prescription,Bottle,50.00,35.00,10,Q2-23,Steroid Eye Drops
+Dexamethasone Liposomal,Dextenza,D corporate,Prescription,Box,500.00,360.00,5,Q2-24,Steroid Implant
+Cromolyn Sodium,Intal,Multiple,Prescription,Bottle,30.00,22.00,15,Q2-25,Mast Cell Stabilizer
+Nedocromil,Tilade,Multiple,Prescription,Box,150.00,110.00,8,L1-22,Mast Cell Stabilizer
+Olopatadine,Patanol,Alcon,Prescription,Bottle,80.00,55.00,12,Q2-26,Antihistamine Eye Drops
+Emedastine,Emadine,Alcon,Prescription,Bottle,70.00,50.00,12,Q2-27,Antihistamine Eye Drops
+Azelastine,Astepro,Teva,Prescription,Box,60.00,42.00,15,P1-10,Nasal Antihistamine
+Fluticasone Nasal,Flonase,GSK,Prescription,Box,80.00,55.00,20,P1-11,Nasal Steroid
+Mometasone Nasal,Nasonex,MSD,Prescription,Box,100.00,72.00,15,P1-12,Nasal Steroid
+Triamcinolone Nasal,Nasacort,Allergan,Prescription,Box,70.00,50.00,18,P1-13,Nasal Steroid
+Budesonide Nasal,Rhinocort,AstraZeneca,Prescription,Box,90.00,65.00,15,P1-14,Nasal Steroid
+Ipratropium Nasal,Atrovent Nasal,Boehringer,Prescription,Box,60.00,42.00,12,P1-15,Nasal Anticholinergic
+Oxymetazoline Nasal,Afrin,Various,Prescription,Box,20.00,14.00,25,P1-16,Nasal Decongestant
+Xylometazoline Nasal,Otrivin,Various,Prescription,Box,18.00,12.00,25,P1-17,Nasal Decongestant
+Pseudoephedrine Nasal,Sudafed,Pfizer,Tablet,Strip,20.00,14.00,30,P1-18,Oral Decongestant
+Phenylephrine Nasal,Neo-Synephrine,Various,Prescription,Box,15.00,10.00,20,P1-19,Nasal Decongestant
+Montelukast Nasal,Singulair Nasal,MSD,Prescription,Box,100.00,72.00,10,P1-20,Nasal Leukotriene
+Cromoglycate Nasal,Cromolyn Nasal,Various,Prescription,Box,25.00,18.00,15,P1-21,Nasal Mast Cell Stabilizer
+Oxymetazoline Eye Drops,Visine LRC,Johnson & Johnson,Prescription,Bottle,10.00,7.00,30,P1-22,Decongestant Eye Drops
+Naphazoline+Pheniramine,Opcon-A,Bausch,Prescription,Bottle,12.00,8.00,25,P1-23,Decongestant Eye Drops
+Tetrahydrozoline Eye Drops,Visine,Johnson & Johnson,Prescription,Bottle,10.00,7.00,30,P1-24,Decongestant Eye Drops
+Benzonatate,Tessalon,Various,Tablet,Strip,60.00,42.00,15,L1-23,Antitussive Non-narcotic
+Cough Syrup,Dextromethorphan,Various,Syrup,Bottle,25.00,18.00,30,L1-24,Cough Syrup
+Benzonatate Capsule,Tessalon Perle,Various,Tablet,Strip,70.00,50.00,12,L1-25,Antitussive Non-narcotic
+Camphor+Menthol,Camphor Rub,Various,OTC,Box,15.00,10.00,25,L1-26,Cough Suppressant Topical
+Guaifenesin+Dextromethorphan,Mucinex DM,Reckitt,Tablet,Strip,35.00,25.00,25,L1-27,Expectorant+Antitussive
+Guaifenesin+Codeine,Prometh with Codeine,Various,Syrup,Bottle,40.00,28.00,15,L1-28,Opioid Cough Syrup
+Benzonatate+Guaifenesen,Combination,Various,Tablet,Strip,55.00,38.00,12,L1-29,Combination Cough
+Benzonatate Lozenge,Tessalon,Various,Prescription,Sachet,8.00,5.50,30,L1-30,Cough Lozenge

@@ -3,6 +3,7 @@ use tauri::State;
 use crate::errors::CommandError;
 use crate::guards::{require_owner, require_session};
 use crate::models::*;
+use crate::models::pagination::PaginatedList;
 use crate::services::sale_service;
 use crate::state::AppState;
 
@@ -39,10 +40,14 @@ pub fn list_sales(
     query: String,
     start_date: String,
     end_date: String,
-) -> Result<Vec<SaleListDto>, CommandError> {
-    let _session = require_session(&state, &session_token)?;
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedList<SaleListDto>, CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let per_page = per_page.clamp(10, 200);
+    let page = if page < 1 { 1 } else { page };
     let db = state.db.lock()?;
-    sale_service::list_sales(&db, &query, &start_date, &end_date)
+    sale_service::list_sales(&db, &query, &start_date, &end_date, page, per_page)
 }
 
 #[tauri::command]

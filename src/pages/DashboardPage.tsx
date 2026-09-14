@@ -46,7 +46,7 @@ interface DashboardPageProps {
 export function DashboardPage({ session }: DashboardPageProps) {
   const isOwner = session.role === 'owner';
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
 
   const {

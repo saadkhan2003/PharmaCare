@@ -178,7 +178,7 @@ export function AddUserDialog({ session, onUserAdded }: AddUserDialogProps) {
                 }
               }}
             >
-              <SelectTrigger id="role">
+              <SelectTrigger id="role" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

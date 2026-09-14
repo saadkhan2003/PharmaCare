@@ -21,7 +21,6 @@ mod migrations;
 mod test_helpers;
 
 use state::AppState;
-use models::StoredSession;
 
 fn main() {
     dotenvy::dotenv().ok();
@@ -53,8 +52,10 @@ fn main() {
             // 4. Run schema migrations via rusqlite_migration
             migration_defs.to_latest(&mut conn)?;
 
-            // 5. Load existing sessions from SQLite for crash recovery (D-04)
-            let sessions = load_sessions(&conn)?;
+            // 5. Clear stale sessions on startup (H-3 fix: sessions should not survive restarts)
+            //    Old sessions from crashed processes are cleared to prevent token reuse.
+            conn.execute("DELETE FROM sessions", [])?;
+            let sessions = HashMap::new();
 
             // 6. Register AppState in Tauri's state management
             app.manage(AppState {
@@ -80,6 +81,7 @@ fn main() {
             commands::setup_commands::verify_recovery_code,
             commands::setup_commands::reset_with_recovery_code,
             commands::audit_commands::get_login_attempts,
+            commands::audit_commands::get_login_attempts_filtered,
             // Phase 2 commands
             commands::medicine_commands::create_medicine,
             commands::medicine_commands::update_medicine,
@@ -89,6 +91,7 @@ fn main() {
             commands::medicine_commands::search_medicines,
             commands::medicine_commands::search_medicines_pharmacist,
             commands::medicine_commands::get_medicine,
+            commands::medicine_commands::import_medicines_csv,
             commands::supplier_commands::create_supplier,
             commands::supplier_commands::update_supplier,
             commands::supplier_commands::deactivate_supplier,
@@ -148,37 +151,8 @@ fn main() {
             commands::batch_commands::list_batches,
             commands::batch_commands::update_batch,
             commands::pdf_commands::save_pdf,
+            commands::db_commands::get_db_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");
-}
-
-/// Loads all sessions from the SQLite sessions table into an in-memory HashMap.
-///
-/// This enables crash recovery: if the app restarts, existing sessions
-/// are available so the user doesn't need to re-login immediately.
-/// Sessions are keyed by their UUID v4 token string.
-fn load_sessions(conn: &Connection) -> Result<HashMap<String, StoredSession>, Box<dyn std::error::Error>> {
-    let mut stmt = conn.prepare(
-        "SELECT token, user_id, username, role, full_name, created_at FROM sessions",
-    )?;
-
-    let session_iter = stmt.query_map([], |row| {
-        Ok(StoredSession {
-            token: row.get(0)?,
-            user_id: row.get(1)?,
-            username: row.get(2)?,
-            role: row.get(3)?,
-            full_name: row.get(4)?,
-            created_at: row.get(5)?,
-        })
-    })?;
-
-    let mut map = HashMap::new();
-    for session in session_iter {
-        if let Ok(s) = session {
-            map.insert(s.token.clone(), s);
-        }
-    }
-    Ok(map)
 }

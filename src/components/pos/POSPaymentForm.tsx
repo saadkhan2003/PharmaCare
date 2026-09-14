@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { playToggle } from '@/lib/sounds';
 import type { CartItem } from '@/pages/POSPage';
 
 interface POSPaymentFormProps {
@@ -117,7 +118,7 @@ export function POSPaymentForm({
         <Select
           value={paymentMethod}
           onValueChange={(value: string | null) => {
-            if (value) onPaymentMethodChange(value);
+            if (value) { playToggle(); onPaymentMethodChange(value); }
           }}
         >
           <SelectTrigger

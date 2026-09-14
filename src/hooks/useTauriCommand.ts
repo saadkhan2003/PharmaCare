@@ -12,6 +12,7 @@ export function useTauriCommand<T>() {
   const [loading, setLoading] = useState(false);
 
   const execute = useCallback(async (command: () => Promise<T>) => {
+    setData(null); // L-1 fix: clear stale data before new request
     setError(null);
     setLoading(true);
     try {

@@ -184,13 +184,14 @@ pub fn find_by_purchase_id(
 /// Decrements remaining_qty on a batch by the given amount.
 ///
 /// The CHECK remaining_qty >= ?2 prevents accidental over-deduction.
-/// This should be called inside a transaction alongside sale header + item inserts.
-pub fn decrement_remaining_qty(conn: &Connection, batch_id: i64, decrement_by: i64) -> Result<(), rusqlite::Error> {
-    conn.execute(
+/// Returns the number of rows affected — callers MUST check this to detect
+/// stock inconsistencies (C-4 fix). Returns 0 if insufficient stock.
+pub fn decrement_remaining_qty(conn: &Connection, batch_id: i64, decrement_by: i64) -> Result<usize, rusqlite::Error> {
+    let rows = conn.execute(
         "UPDATE batches SET remaining_qty = remaining_qty - ?2 WHERE id = ?1 AND remaining_qty >= ?2",
         rusqlite::params![batch_id, decrement_by],
     )?;
-    Ok(())
+    Ok(rows)
 }
 
 /// Finds all batches for a given medicine.
@@ -262,4 +263,160 @@ pub fn update_metadata(
         rusqlite::params![batch_id, batch_code, expiry_date],
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_helpers;
+
+    #[test]
+    fn test_insert_batch() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        let batch_id = insert(&db, mid, None, None, 5.0, 100, 100, "2027-12-31", Some("BATCH-001")).unwrap();
+        assert!(batch_id > 0);
+
+        let batches = find_by_medicine(&db, mid).unwrap();
+        assert_eq!(batches.len(), 1);
+        assert_eq!(batches[0].quantity, 100);
+        assert_eq!(batches[0].remaining_qty, 100);
+
+        // Verify batch_code via direct query (Batch struct doesn't store batch_code)
+        let code: Option<String> = db.query_row(
+            "SELECT batch_code FROM batches WHERE id = ?1",
+            rusqlite::params![batch_id],
+            |r| r.get(0),
+        ).unwrap();
+        assert_eq!(code.as_deref(), Some("BATCH-001"));
+    }
+
+    #[test]
+    fn test_get_current_stock() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        insert(&db, mid, None, None, 5.0, 100, 80, "2027-12-31", None).unwrap();
+
+        let stock = get_current_stock(&db, mid).unwrap();
+        assert_eq!(stock, 80);
+    }
+
+    #[test]
+    fn test_get_current_stock_excludes_expired() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        // Expired batch
+        insert(&db, mid, None, None, 5.0, 100, 100, "2020-01-01", None).unwrap();
+        // Non-expired batch
+        insert(&db, mid, None, None, 5.0, 50, 50, "2099-12-31", None).unwrap();
+
+        let stock = get_current_stock(&db, mid).unwrap();
+        assert_eq!(stock, 50); // Only non-expired counted
+    }
+
+    #[test]
+    fn test_find_fifo_eligible() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        // Batch expiring sooner (2027)
+        let b1 = insert(&db, mid, None, None, 5.0, 100, 100, "2027-06-01", None).unwrap();
+        // Batch expiring later (2028)
+        let b2 = insert(&db, mid, None, None, 6.0, 100, 100, "2028-12-31", None).unwrap();
+
+        let fifo = find_fifo_eligible(&db, mid).unwrap();
+        assert_eq!(fifo.len(), 2);
+        // Should be ordered by expiry ASC (sooner first)
+        assert_eq!(fifo[0].id, b1);
+        assert_eq!(fifo[1].id, b2);
+    }
+
+    #[test]
+    fn test_find_fifo_eligible_excludes_expired() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        insert(&db, mid, None, None, 5.0, 100, 100, "2020-01-01", None).unwrap();
+        insert(&db, mid, None, None, 5.0, 100, 100, "2099-12-31", None).unwrap();
+
+        let fifo = find_fifo_eligible(&db, mid).unwrap();
+        assert_eq!(fifo.len(), 1); // Only non-expired
+    }
+
+    #[test]
+    fn test_decrement_remaining_qty_success() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        let batch_id = insert(&db, mid, None, None, 5.0, 100, 100, "2027-12-31", None).unwrap();
+
+        let rows = decrement_remaining_qty(&db, batch_id, 30).unwrap();
+        assert_eq!(rows, 1);
+
+        let stock = get_current_stock(&db, mid).unwrap();
+        assert_eq!(stock, 70);
+    }
+
+    #[test]
+    fn test_decrement_remaining_qty_insufficient() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        let batch_id = insert(&db, mid, None, None, 5.0, 10, 10, "2027-12-31", None).unwrap();
+
+        let rows = decrement_remaining_qty(&db, batch_id, 20).unwrap();
+        assert_eq!(rows, 0); // CHECK prevents over-deduction
+    }
+
+    #[test]
+    fn test_expiry_report() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        insert(&db, mid, None, None, 5.0, 100, 100, "2027-06-01", None).unwrap();
+
+        let report = get_expiry_report(&db, None, None).unwrap();
+        assert_eq!(report.len(), 1);
+        assert_eq!(report[0].medicine_name, "Panadol");
+        assert!(report[0].days_remaining > 0);
+    }
+
+    #[test]
+    fn test_expiry_report_excludes_zero_remaining() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        insert(&db, mid, None, None, 5.0, 100, 0, "2027-06-01", None).unwrap();
+
+        let report = get_expiry_report(&db, None, None).unwrap();
+        assert_eq!(report.len(), 0);
+    }
+
+    #[test]
+    fn test_increment_remaining_qty() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        let batch_id = insert(&db, mid, None, None, 5.0, 100, 80, "2027-12-31", None).unwrap();
+
+        increment_remaining_qty(&db, batch_id, 10).unwrap();
+        let stock = get_current_stock(&db, mid).unwrap();
+        assert_eq!(stock, 90);
+    }
+
+    #[test]
+    fn test_update_metadata() {
+        let db = test_helpers::setup_test_db();
+        let mid = test_helpers::seed_medicine(&db, "Panadol");
+        let batch_id = insert(&db, mid, None, None, 5.0, 100, 100, "2027-12-31", None).unwrap();
+
+        update_metadata(&db, batch_id, Some("NEW-CODE"), "2028-06-15").unwrap();
+
+        let code: Option<String> = db.query_row(
+            "SELECT batch_code FROM batches WHERE id = ?1",
+            rusqlite::params![batch_id],
+            |r| r.get(0),
+        ).unwrap();
+        assert_eq!(code.as_deref(), Some("NEW-CODE"));
+
+        let expiry: String = db.query_row(
+            "SELECT expiry_date FROM batches WHERE id = ?1",
+            rusqlite::params![batch_id],
+            |r| r.get(0),
+        ).unwrap();
+        assert_eq!(expiry, "2028-06-15");
+    }
 }

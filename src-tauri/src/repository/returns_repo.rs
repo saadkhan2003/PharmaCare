@@ -79,9 +79,13 @@ pub fn find_by_sale_item(
     Ok(results)
 }
 
-/// Lists all returns ordered by date descending (most recent first).
-/// Used by ReturnHistoryPage to display all return activity.
-pub fn list_all(conn: &Connection) -> Result<Vec<ReturnListItemDto>, rusqlite::Error> {
+pub fn list_all(conn: &Connection, offset: i64, limit: i64) -> Result<(Vec<ReturnListItemDto>, i64), rusqlite::Error> {
+    let total: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM returns",
+        [],
+        |row| row.get(0),
+    )?;
+
     let mut stmt = conn.prepare(
         "SELECT r.id, r.return_type, r.reference_id, r.medicine_id,
                 COALESCE(m.name, 'Unknown') as medicine_name,
@@ -89,10 +93,11 @@ pub fn list_all(conn: &Connection) -> Result<Vec<ReturnListItemDto>, rusqlite::E
                 r.processed_by, r.return_date
          FROM returns r
          LEFT JOIN medicines m ON m.id = r.medicine_id
-         ORDER BY r.return_date DESC",
+         ORDER BY r.return_date DESC
+         LIMIT ?1 OFFSET ?2",
     )?;
 
-    let rows = stmt.query_map([], |row| {
+    let rows = stmt.query_map(rusqlite::params![limit, offset], |row| {
         Ok(ReturnListItemDto {
             id: row.get(0)?,
             return_type: row.get(1)?,
@@ -112,7 +117,7 @@ pub fn list_all(conn: &Connection) -> Result<Vec<ReturnListItemDto>, rusqlite::E
     for row in rows {
         results.push(row?);
     }
-    Ok(results)
+    Ok((results, total))
 }
 
 /// Finds a return by id (for receipt lookup).

@@ -8,6 +8,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Pagination } from '@/components/ui/pagination';
 import { tauri } from '@/lib/tauri';
 import type { ReturnListItemDto } from '@/types/return';
 import type { SessionDto } from '@/types/session';
@@ -47,13 +48,17 @@ export function ReturnHistoryPage({ session }: Props) {
   const [returns, setReturns] = useState<ReturnListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const perPage = 50;
 
   const loadReturns = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await tauri.returns.listReturns(session.token);
-      setReturns(data);
+      const result = await tauri.returns.listReturns(session.token, page, perPage);
+      setReturns(result.items);
+      setTotalPages(result.total_pages);
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : 'Failed to load return history'
@@ -61,7 +66,7 @@ export function ReturnHistoryPage({ session }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [session.token]);
+  }, [session.token, page, perPage]);
 
   useEffect(() => {
     loadReturns();
@@ -172,6 +177,8 @@ export function ReturnHistoryPage({ session }: Props) {
               </button>
             </div>
           )}
+
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </CardContent>
       </Card>
     </div>

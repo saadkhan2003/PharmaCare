@@ -3,8 +3,8 @@ import type { SessionDto, SetupStatus } from '../types/session';
 import type { UserDto, CreateUserDto, LoginAttemptDto } from '../types/user';
 import type { LoginDto } from '../types/session';
 import type {
-  MedicineDto, MedicineListItem, MedicinePharmacistDto,
-  CreateMedicineDto, UpdateMedicineDto,
+  MedicineDto, MedicineListItem, MedicinePharmacistDto, PaginatedList,
+  CreateMedicineDto, UpdateMedicineDto, CsvImportResult,
 } from '../types/medicine';
 import type {
   SupplierDto, CreateSupplierDto, UpdateSupplierDto,
@@ -17,6 +17,7 @@ import type {
   DailySalesRow, MonthlyPnLRow, TopSellerRow, SlowMovingRow,
   LowStockRow, ExpiryReportDetailRow, SupplierPurchaseRow, SalesByUserRow,
   ProfitMarginRow, UpdateSettingsPayload, BackupStatus, BackupResult, BackupFileInfo,
+  DbStatus,
 } from '../types/report';
 import type {
   MedicinePosDto, ConfirmSaleDto, SaleReceiptDto,
@@ -102,15 +103,27 @@ export const tauri = {
   audit: {
     getLoginAttempts: (sessionToken: string) =>
       invoke<LoginAttemptDto[]>('get_login_attempts', { sessionToken }),
+    getLoginAttemptsFiltered: (
+      sessionToken: string,
+      filters: {
+        username?: string | null;
+        success?: boolean | null;
+        start_date?: string | null;
+        end_date?: string | null;
+        limit?: number | null;
+        offset?: number | null;
+      }
+    ) =>
+      invoke<LoginAttemptDto[]>('get_login_attempts_filtered', { sessionToken, filters }),
   },
 
   medicines: {
-    list: (sessionToken: string) =>
-      invoke<MedicineListItem[]>('list_medicines', { sessionToken }),
-    search: (sessionToken: string, query: string) =>
-      invoke<MedicineListItem[]>('search_medicines', { sessionToken, query }),
-    searchPharmacist: (sessionToken: string, query: string) =>
-      invoke<MedicinePharmacistDto[]>('search_medicines_pharmacist', { sessionToken, query }),
+    list: (sessionToken: string, page: number, perPage: number) =>
+      invoke<PaginatedList<MedicineListItem>>('list_medicines', { sessionToken, page, perPage }),
+    search: (sessionToken: string, query: string, page: number, perPage: number) =>
+      invoke<PaginatedList<MedicineListItem>>('search_medicines', { sessionToken, query, page, perPage }),
+    searchPharmacist: (sessionToken: string, query: string, page: number, perPage: number) =>
+      invoke<PaginatedList<MedicinePharmacistDto>>('search_medicines_pharmacist', { sessionToken, query, page, perPage }),
     create: (sessionToken: string, payload: CreateMedicineDto) =>
       invoke<MedicineDto>('create_medicine', { sessionToken, payload }),
     update: (sessionToken: string, medicineId: number, payload: UpdateMedicineDto) =>
@@ -121,6 +134,8 @@ export const tauri = {
       invoke<void>('delete_medicine', { sessionToken, medicineId }),
     get: (sessionToken: string, medicineId: number) =>
       invoke<MedicineDto>('get_medicine', { sessionToken, medicineId }),
+    importCsv: (sessionToken: string, csvData: string) =>
+      invoke<CsvImportResult>('import_medicines_csv', { sessionToken, csvData }),
   },
 
   suppliers: {
@@ -153,7 +168,7 @@ export const tauri = {
   },
 
   settings: {
-    get: () => invoke<SettingsMap>('get_settings'),
+    get: (sessionToken: string) => invoke<SettingsMap>('get_settings', { sessionToken }),
     update: (sessionToken: string, payload: UpdateSettingsPayload) =>
       invoke<void>('update_settings', { sessionToken, payload }),
   },
@@ -204,8 +219,8 @@ export const tauri = {
       invoke<MedicinePosDto[]>('search_medicines_pos', { sessionToken, query }),
     confirmSale: (sessionToken: string, payload: ConfirmSaleDto) =>
       invoke<SaleReceiptDto>('confirm_sale', { sessionToken, payload }),
-    list: (sessionToken: string, query?: string, startDate?: string, endDate?: string) =>
-      invoke<SaleListDto[]>('list_sales', { sessionToken, query: query ?? '', startDate: startDate ?? '', endDate: endDate ?? '' }),
+    list: (sessionToken: string, query?: string, startDate?: string, endDate?: string, page?: number, perPage?: number) =>
+      invoke<PaginatedList<SaleListDto>>('list_sales', { sessionToken, query: query ?? '', startDate: startDate ?? '', endDate: endDate ?? '', page: page ?? 1, perPage: perPage ?? 50 }),
     getDetail: (sessionToken: string, saleId: number) =>
       invoke<SaleDetailDto>('get_sale_detail', { sessionToken, saleId }),
     getOwnerDashboard: (sessionToken: string) =>
@@ -225,8 +240,8 @@ export const tauri = {
       invoke<SaleForReturnDto>('search_sale_for_return', { sessionToken, saleId }),
     searchPurchaseForReturn: (sessionToken: string, purchaseId: number) =>
       invoke<PurchaseForReturnDto>('search_purchase_for_return', { sessionToken, purchaseId }),
-    listReturns: (sessionToken: string) =>
-      invoke<ReturnListItemDto[]>('list_returns', { sessionToken }),
+    listReturns: (sessionToken: string, page: number, perPage: number) =>
+      invoke<PaginatedList<ReturnListItemDto>>('list_returns', { sessionToken, page, perPage }),
   },
 
   debt: {
@@ -254,5 +269,10 @@ export const tauri = {
   pdf: {
     save: (sessionToken: string, fileName: string, bytes: number[]) =>
       invoke<string | null>('save_pdf', { sessionToken, fileName, bytes }),
+  },
+
+  db: {
+    getStatus: (sessionToken: string) =>
+      invoke<DbStatus>('get_db_status', { sessionToken }),
   },
 };

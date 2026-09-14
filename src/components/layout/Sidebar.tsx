@@ -12,6 +12,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, Undo2, RotateCcw, Trash2, BarChart3, Settings, PanelLeftClose, PanelLeft, HandCoins, History, Boxes } from 'lucide-react';
+import { playClick } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 import { cn } from '@/lib/utils';
 
@@ -91,7 +92,7 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     isActive={location.pathname === item.url}
-                    onClick={() => navigate(item.url)}
+                    onClick={() => { playClick(); navigate(item.url); }}
                     tooltip={isCollapsed ? item.title : undefined}
                     className={cn(
                       'transition-all duration-150',

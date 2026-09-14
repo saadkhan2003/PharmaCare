@@ -126,14 +126,16 @@ pub fn find_recent(
     query: &str,
     start_date: &str,
     end_date: &str,
-) -> Result<Vec<SaleListDto>, rusqlite::Error> {
+    offset: i64,
+    limit: i64,
+) -> Result<(Vec<SaleListDto>, i64), rusqlite::Error> {
     let mut conditions: Vec<String> = Vec::new();
     let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
     if !query.is_empty() {
         let pattern = format!("%{}%", query);
         conditions.push(
-            "(CAST(s.id AS TEXT) LIKE ? OR s.customer_name LIKE ? OR s.payment_method LIKE ? OR si.medicine_name LIKE ?)".to_string(),
+            "(CAST(s.id AS TEXT) LIKE ? OR s.customer_name LIKE ? OR s.payment_method LIKE ? OR m.name LIKE ?)".to_string(),
         );
         params.push(Box::new(pattern.clone()));
         params.push(Box::new(pattern.clone()));
@@ -155,18 +157,36 @@ pub fn find_recent(
         format!("WHERE {} ", conditions.join(" AND "))
     };
 
-    let sql = format!(
-        "SELECT s.id, s.total, s.payment_method, s.customer_name, COUNT(si.id) AS item_count, s.created_at \
+    let count_sql = format!(
+        "SELECT COUNT(*) FROM (SELECT s.id \
          FROM sales s \
          LEFT JOIN sale_items si ON si.sale_id = s.id \
+         LEFT JOIN medicines m ON m.id = si.medicine_id \
          {} \
-         GROUP BY s.id \
-         ORDER BY s.created_at DESC \
-         LIMIT 200",
+         GROUP BY s.id)",
         where_clause
     );
 
-    let mut stmt = conn.prepare(&sql)?;
+    let total: i64 = if params.is_empty() {
+        conn.query_row(&count_sql, [], |row| row.get(0))?
+    } else {
+        let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        conn.query_row(&count_sql, param_refs.as_slice(), |row| row.get(0))?
+    };
+
+    let data_sql = format!(
+        "SELECT s.id, s.total, s.payment_method, s.customer_name, COUNT(si.id) AS item_count, s.created_at \
+         FROM sales s \
+         LEFT JOIN sale_items si ON si.sale_id = s.id \
+         LEFT JOIN medicines m ON m.id = si.medicine_id \
+         {} \
+         GROUP BY s.id \
+         ORDER BY s.created_at DESC \
+         LIMIT {} OFFSET {}",
+        where_clause, limit, offset
+    );
+
+    let mut stmt = conn.prepare(&data_sql)?;
 
     let rows: Vec<SaleListDto> = if params.is_empty() {
         stmt.query_map([], |row| {
@@ -195,7 +215,7 @@ pub fn find_recent(
         .collect::<Result<Vec<_>, _>>()?
     };
 
-    Ok(rows)
+    Ok((rows, total))
 }
 
 pub fn find_detail_items(conn: &Connection, sale_id: i64) -> Result<Vec<SaleDetailItemDto>, rusqlite::Error> {

@@ -70,11 +70,13 @@ export function WriteOffForm({
     debounceRef.current = setTimeout(async () => {
       setSearchingMedicine(true);
       try {
-        const results = await tauri.medicines.search(
+        const result = await tauri.medicines.search(
           sessionToken,
-          medicineSearchTerm
+          medicineSearchTerm,
+          1,
+          200
         );
-        setMedicineResults(results.filter((m) => m.is_active));
+        setMedicineResults(result.items.filter((m) => m.is_active));
       } catch {
         setMedicineResults([]);
       } finally {

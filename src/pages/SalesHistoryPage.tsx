@@ -3,6 +3,7 @@ import { tauri } from '@/lib/tauri';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/ui/pagination';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -22,14 +23,24 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const perPage = 50;
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, startDate, endDate]);
 
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(() => {
-      tauri.sales.list(session.token, searchTerm, startDate, endDate).then(setSales).finally(() => setLoading(false));
+      tauri.sales.list(session.token, searchTerm, startDate, endDate, page, perPage).then((result) => {
+        setSales(result.items);
+        setTotalPages(result.total_pages);
+      }).finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(timer);
-  }, [session.token, searchTerm, startDate, endDate]);
+  }, [session.token, searchTerm, startDate, endDate, page, perPage]);
 
   const openDetail = async (saleId: number) => {
     setDetailLoading(true);
@@ -122,6 +133,8 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
           </Table>
         </Card>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
         <DialogContent className="sm:max-w-3xl">

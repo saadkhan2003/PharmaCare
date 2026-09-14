@@ -48,7 +48,7 @@ interface MedicineSearchResult {
   purchase_price: number;
 }
 
-const MIN_MEDICINE_SEARCH_LENGTH = 2;
+const MIN_MEDICINE_SEARCH_LENGTH = 1;
 
 function createEmptyItem(): ItemRow {
   return {
@@ -98,10 +98,10 @@ export function PurchaseForm({
       }
       setSearchingMedicines((prev) => ({ ...prev, [itemId]: true }));
       try {
-        const results = await tauri.medicines.search(sessionToken, query);
+        const result = await tauri.medicines.search(sessionToken, query, 1, 200);
         setMedicineResults((prev) => ({
           ...prev,
-          [itemId]: results
+          [itemId]: result.items
             .filter((m) => m.is_active)
             .map((m) => ({
               id: m.id,
@@ -298,13 +298,14 @@ export function PurchaseForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="supplier">Supplier *</Label>
+            <div className="w-full">
             <Select
               value={selectedSupplierId}
               onValueChange={(value: string | null) => {
                 setSelectedSupplierId(value || '');
               }}
             >
-              <SelectTrigger id="supplier">
+              <SelectTrigger id="supplier" className="w-full">
                 <SelectValue placeholder="Select supplier">
                   {selectedSupplier
                     ? `${selectedSupplier.company_name}${selectedSupplier.contact_person ? ` — ${selectedSupplier.contact_person}` : ''}`
@@ -320,6 +321,7 @@ export function PurchaseForm({
                 ))}
               </SelectContent>
             </Select>
+            </div>
           </div>
 
           <div className="grid gap-2">
@@ -338,19 +340,23 @@ export function PurchaseForm({
               id="purchase_date"
               type="date"
               value={purchaseDate}
-              onChange={(e) => setPurchaseDate(e.target.value)}
+              onChange={(e) => {
+                setPurchaseDate(e.target.value);
+                e.target.blur();
+              }}
             />
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="payment_status">Payment Status *</Label>
+            <div className="w-full">
             <Select
               value={paymentStatus}
               onValueChange={(value: string | null) => {
                 setPaymentStatus(value || 'Pending');
               }}
             >
-              <SelectTrigger id="payment_status">
+              <SelectTrigger id="payment_status" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -361,6 +367,7 @@ export function PurchaseForm({
                 ))}
               </SelectContent>
             </Select>
+            </div>
           </div>
 
           <div className="grid gap-2 sm:col-span-2">

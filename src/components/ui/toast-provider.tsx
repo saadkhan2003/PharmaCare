@@ -31,17 +31,17 @@ const icons: Record<ToastType, React.ComponentType<{ className?: string }>> = {
 };
 
 const colors: Record<ToastType, string> = {
-  success: 'border-l-green-500 bg-green-50 dark:bg-green-950',
-  error: 'border-l-red-500 bg-red-50 dark:bg-red-950',
-  info: 'border-l-blue-500 bg-blue-50 dark:bg-blue-950',
-  warning: 'border-l-amber-500 bg-amber-50 dark:bg-amber-950',
+  success: 'border-l-green-400 bg-green-600 text-white',
+  error: 'border-l-red-400 bg-red-600 text-white',
+  info: 'border-l-blue-400 bg-blue-600 text-white',
+  warning: 'border-l-amber-400 bg-amber-600 text-white',
 };
 
 const iconColors: Record<ToastType, string> = {
-  success: 'text-green-600 dark:text-green-400',
-  error: 'text-red-600 dark:text-red-400',
-  info: 'text-blue-600 dark:text-blue-400',
-  warning: 'text-amber-600 dark:text-amber-400',
+  success: 'text-white',
+  error: 'text-white',
+  info: 'text-white',
+  warning: 'text-white',
 };
 
 let nextId = 0;
@@ -64,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-[380px] max-w-[calc(100vw-2rem)]">
         {toasts.map((t) => {
           const Icon = icons[t.type];
           return (
@@ -77,12 +77,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', iconColors[t.type])} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{t.title}</p>
+                <p className="text-sm font-medium text-white break-words">{t.title}</p>
                 {t.description && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                  <p className="text-xs text-white/80 mt-0.5">{t.description}</p>
                 )}
               </div>
-              <button onClick={() => removeToast(t.id)} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => removeToast(t.id)} className="shrink-0 text-white/70 hover:text-white transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>

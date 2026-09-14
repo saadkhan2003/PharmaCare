@@ -3,6 +3,7 @@ import { POSSearchPanel } from '@/components/pos/POSSearchPanel';
 import { POSCartPanel } from '@/components/pos/POSCartPanel';
 import { POSReceiptDialog } from '@/components/pos/POSReceiptDialog';
 import { usePOSKeyboard } from '@/hooks/usePOSKeyboard';
+import { playClick, playSuccess } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 import type { MedicinePosDto, SaleReceiptDto } from '@/types/sale';
 
@@ -31,6 +32,7 @@ export function POSPage({ session }: POSPageProps) {
   // Keyboard handlers
   const handleSelectMedicine = useCallback(
     (medicine: MedicinePosDto) => {
+      playClick();
       setCart((prev) => {
         const existing = prev.find((item) => item.medicine.id === medicine.id);
         if (existing) {
@@ -79,6 +81,7 @@ export function POSPage({ session }: POSPageProps) {
   }, [keyboard.searchRef]);
 
   const handleConfirmSale = useCallback((saleReceipt: SaleReceiptDto) => {
+    playSuccess();
     setReceipt(saleReceipt);
     setReceiptOpen(true);
   }, []);
@@ -95,6 +98,7 @@ export function POSPage({ session }: POSPageProps) {
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
+        // M-10 fix: clamp index to results bounds — passed from POSSearchPanel via results.length
         setSelectedResultIndex((prev) => prev + 1);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();

@@ -1,17 +1,19 @@
 use tauri::State;
 
 use crate::errors::CommandError;
-use crate::guards::require_owner;
+use crate::guards::{require_owner, require_session};
 use crate::models::{SettingsMap, UpdateSettingsPayload};
 use crate::services::settings_service;
 use crate::state::AppState;
 
 /// Returns all settings as a typed SettingsMap.
-/// No auth guard needed — settings contain no sensitive data (T-02-07).
+/// Requires a valid session (H-1 fix: prevents unauthenticated access to owner PII).
 #[tauri::command]
 pub fn get_settings(
     state: State<'_, AppState>,
+    session_token: String,
 ) -> Result<SettingsMap, CommandError> {
+    let _session = require_session(&state, &session_token)?;
     let db = state.db.lock()?;
     settings_service::get_settings(&db)
 }

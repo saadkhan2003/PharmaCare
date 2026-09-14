@@ -23,7 +23,7 @@ import type { MedicineListItem } from '@/types/medicine';
 const MIN_MEDICINE_SEARCH_LENGTH = 2;
 
 export function DebtsPage({ session }: { session: SessionDto }) {
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
   const [debts, setDebts] = useState<DebtorListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,8 +64,8 @@ export function DebtsPage({ session }: { session: SessionDto }) {
     setSearchingMedicines(true);
     const timer = window.setTimeout(() => {
       tauri.medicines
-        .search(session.token, query)
-        .then((results) => setMedicineResults(results.filter((m) => m.is_active)))
+        .search(session.token, query, 1, 200)
+        .then((result) => setMedicineResults(result.items.filter((m) => m.is_active)))
         .catch(() => setMedicineResults([]))
         .finally(() => setSearchingMedicines(false));
     }, 200);

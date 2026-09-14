@@ -57,18 +57,23 @@ pub fn find_by_id(db: &Connection, id: i64) -> Result<Option<Medicine>, rusqlite
     }
 }
 
-/// Lists all medicines ordered by name, limited to 200.
-pub fn find_all(db: &Connection) -> Result<Vec<Medicine>, rusqlite::Error> {
+pub fn find_all(db: &Connection, offset: i64, limit: i64) -> Result<(Vec<Medicine>, i64), rusqlite::Error> {
+    let total: i64 = db.query_row(
+        "SELECT COUNT(*) FROM medicines",
+        [],
+        |row| row.get(0),
+    )?;
+
     let mut stmt = db.prepare(
         "SELECT id, name, generic_name, brand_name, category, unit, \
                 retail_price, purchase_price, reorder_level, shelf_location, \
                 notes, is_active, created_at \
          FROM medicines \
          ORDER BY name ASC \
-         LIMIT 200",
+         LIMIT ?1 OFFSET ?2",
     )?;
 
-    let rows = stmt.query_map([], |row| {
+    let rows = stmt.query_map(rusqlite::params![limit, offset], |row| {
         Ok(Medicine {
             id: row.get(0)?,
             name: row.get(1)?,
@@ -90,12 +95,17 @@ pub fn find_all(db: &Connection) -> Result<Vec<Medicine>, rusqlite::Error> {
     for row in rows {
         results.push(row?);
     }
-    Ok(results)
+    Ok((results, total))
 }
 
-/// Searches active medicines by name, generic_name, brand_name, or category.
-/// Pattern should already be wrapped with `%` by the service layer.
-pub fn search(db: &Connection, pattern: &str) -> Result<Vec<Medicine>, rusqlite::Error> {
+pub fn search(db: &Connection, pattern: &str, offset: i64, limit: i64) -> Result<(Vec<Medicine>, i64), rusqlite::Error> {
+    let total: i64 = db.query_row(
+        "SELECT COUNT(*) FROM medicines WHERE is_active = 1 \
+           AND (name LIKE ?1 OR generic_name LIKE ?1 OR brand_name LIKE ?1 OR category LIKE ?1)",
+        rusqlite::params![pattern],
+        |row| row.get(0),
+    )?;
+
     let mut stmt = db.prepare(
         "SELECT id, name, generic_name, brand_name, category, unit, \
                 retail_price, purchase_price, reorder_level, shelf_location, \
@@ -104,10 +114,10 @@ pub fn search(db: &Connection, pattern: &str) -> Result<Vec<Medicine>, rusqlite:
          WHERE is_active = 1 \
            AND (name LIKE ?1 OR generic_name LIKE ?1 OR brand_name LIKE ?1 OR category LIKE ?1) \
          ORDER BY name ASC \
-         LIMIT 50",
+         LIMIT ?2 OFFSET ?3",
     )?;
 
-    let rows = stmt.query_map(rusqlite::params![pattern], |row| {
+    let rows = stmt.query_map(rusqlite::params![pattern, limit, offset], |row| {
         Ok(Medicine {
             id: row.get(0)?,
             name: row.get(1)?,
@@ -129,7 +139,7 @@ pub fn search(db: &Connection, pattern: &str) -> Result<Vec<Medicine>, rusqlite:
     for row in rows {
         results.push(row?);
     }
-    Ok(results)
+    Ok((results, total))
 }
 
 /// Updates a medicine. Only non-None fields are updated.

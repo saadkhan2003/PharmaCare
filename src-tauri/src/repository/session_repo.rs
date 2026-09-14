@@ -29,6 +29,15 @@ pub fn delete(db: &Connection, token: &str) -> Result<(), rusqlite::Error> {
     Ok(())
 }
 
+/// Deletes all sessions older than the given number of hours (L-3 fix).
+pub fn delete_all_expired(db: &Connection, hours: i64) -> Result<(), rusqlite::Error> {
+    db.execute(
+        "DELETE FROM sessions WHERE datetime(created_at, '+' || ?1 || ' hours') < datetime('now')",
+        rusqlite::params![hours],
+    )?;
+    Ok(())
+}
+
 /// Loads all sessions from the sessions table into a Vec.
 /// Called at app startup to restore sessions for crash recovery (D-04).
 pub fn load_all(db: &Connection) -> Result<Vec<StoredSession>, rusqlite::Error> {

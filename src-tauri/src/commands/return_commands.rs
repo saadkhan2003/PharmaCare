@@ -3,6 +3,7 @@ use tauri::State;
 use crate::errors::CommandError;
 use crate::guards::{require_owner, require_session};
 use crate::models::*;
+use crate::models::pagination::PaginatedList;
 use crate::services::return_service;
 use crate::state::AppState;
 
@@ -49,11 +50,17 @@ pub fn process_write_off(
 pub fn list_returns(
     state: State<'_, AppState>,
     session_token: String,
-) -> Result<Vec<ReturnListItemDto>, CommandError> {
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedList<ReturnListItemDto>, CommandError> {
     let _session = require_owner(&state, &session_token)?;
+    let per_page = per_page.clamp(10, 200);
+    let page = if page < 1 { 1 } else { page };
     let db = state.db.lock()?;
-    crate::repository::returns_repo::list_all(&db)
-        .map_err(|e| CommandError::internal(&format!("Failed to list returns: {}", e)))
+    let offset = (page - 1) * per_page;
+    let (items, total) = crate::repository::returns_repo::list_all(&db, offset, per_page)
+        .map_err(|e| CommandError::internal(&format!("Failed to list returns: {}", e)))?;
+    Ok(PaginatedList::new(items, total, page, per_page))
 }
 
 /// Searches for a sale by ID to display items eligible for return.

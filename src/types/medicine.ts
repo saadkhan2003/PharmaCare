@@ -1,3 +1,11 @@
+export interface PaginatedList<T> {
+  items: T[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
 export interface MedicineDto {
   id: number;
   name: string;
@@ -75,3 +83,9 @@ export const MEDICINE_UNITS = ['Strip', 'Bottle', 'Vial', 'Box', 'Sachet'] as co
 
 export type MedicineCategory = typeof MEDICINE_CATEGORIES[number];
 export type MedicineUnit = typeof MEDICINE_UNITS[number];
+
+export interface CsvImportResult {
+  imported: number;
+  skipped: number;
+  errors: string[];
+}

@@ -5,6 +5,7 @@ use crate::models::*;
 use crate::repository::{batch_repo, medicine_repo, sale_repo};
 use crate::services::stock_ledger_service;
 use crate::services::settings_service;
+use crate::models::pagination::PaginatedList;
 
 /// Helper: round to 2 decimal places for financial values.
 fn round2(value: f64) -> f64 {
@@ -16,20 +17,21 @@ fn round2(value: f64) -> f64 {
 /// Takes `&mut Connection` because `rusqlite::Connection::transaction()` requires `&mut self`.
 ///
 /// PHASES:
-/// 1. Validate ALL items BEFORE opening transaction
+/// 1. Validate inputs BEFORE opening transaction
 /// 2. Open rusqlite::Transaction
-/// 3. Server-side computation per item (FIFO allocation, server prices)
+/// 3. Re-check stock INSIDE transaction (C-3 fix) + FIFO allocation
 /// 4. Apply bill discount, calculate tax
 /// 5. INSERT sale header
 /// 6. For each allocation: INSERT sale_item + UPDATE batch + record_movement
-/// 7. COMMIT — ALL or NOTHING
+/// 7. Verify no under-allocation (H-8 fix)
+/// 8. Commit — ALL or NOTHING
 pub fn confirm_sale(
     db: &mut Connection,
     payload: &ConfirmSaleDto,
     user_id: i64,
     role: &str,
 ) -> Result<SaleReceiptDto, CommandError> {
-    // --- PHASE 1: Validate ALL items BEFORE opening transaction ---
+    // --- PHASE 1: Validate inputs BEFORE opening transaction ---
     if payload.items.is_empty() {
         return Err(CommandError::validation(
             "Sale must have at least one item",
@@ -55,7 +57,7 @@ pub fn confirm_sale(
     let settings = settings_service::get_settings(db)?;
     let discount_allowed = role == "owner" || settings.cashier_discount_enabled;
 
-    // Validate each item BEFORE transaction
+    // Validate each item: medicine exists, is active, discount allowed (no stock check here — C-3)
     for (i, item) in payload.items.iter().enumerate() {
         if item.quantity <= 0 {
             return Err(CommandError::validation(&format!(
@@ -83,15 +85,6 @@ pub fn confirm_sale(
             )));
         }
 
-        // Check stock availability
-        let available = stock_ledger_service::get_current_stock(db, item.medicine_id)?;
-        if item.quantity > available {
-            return Err(CommandError::validation(&format!(
-                "Insufficient stock for '{}': requested {}, available {}",
-                medicine.name, item.quantity, available
-            )));
-        }
-
         // Discount check — pharmacist without permission cannot apply discounts (D-38 / T-03-02)
         if item.item_discount > 0.0 && !discount_allowed {
             return Err(CommandError::validation(
@@ -115,8 +108,7 @@ pub fn confirm_sale(
         CommandError::internal(&format!("Failed to start transaction: {}", e))
     })?;
 
-    // --- PHASE 3: Server-side computation per item ---
-    // Subtotal: sum of (qty * retail_price) for all items — server side only (D-35)
+    // --- PHASE 3: Re-check stock INSIDE transaction (C-3 fix) + FIFO allocation ---
     let mut subtotal = 0.0_f64;
     let mut allocations: Vec<SaleItemAllocation> = Vec::new();
 
@@ -137,6 +129,15 @@ pub fn confirm_sale(
         };
 
         let line_total = round2(gross_line - item_discount);
+
+        // Stock check INSIDE transaction (C-3 fix)
+        let available = stock_ledger_service::get_current_stock(&tx, item.medicine_id)?;
+        if item.quantity > available {
+            return Err(CommandError::validation(&format!(
+                "Insufficient stock for '{}': requested {}, available {}",
+                medicine.name, item.quantity, available
+            )));
+        }
 
         // FIFO allocation: find non-expired batches ordered by expiry ASC
         let fifo_batches = batch_repo::find_fifo_eligible(&tx, item.medicine_id)?;
@@ -171,6 +172,14 @@ pub fn confirm_sale(
             });
 
             needed -= take;
+        }
+
+        // H-8 fix: verify full allocation — don't silently under-allocate
+        if needed > 0 {
+            return Err(CommandError::validation(&format!(
+                "Insufficient stock for '{}' across all batches: {} units still needed",
+                medicine.name, needed
+            )));
         }
 
         // Add server-computed line total to subtotal
@@ -226,8 +235,14 @@ pub fn confirm_sale(
             alloc.line_total,
         )?;
 
-        // Decrement batch remaining_qty
-        batch_repo::decrement_remaining_qty(&tx, alloc.batch_id, alloc.quantity)?;
+        // Decrement batch remaining_qty (C-4 fix: check affected rows)
+        let rows_affected = batch_repo::decrement_remaining_qty(&tx, alloc.batch_id, alloc.quantity)?;
+        if rows_affected == 0 {
+            return Err(CommandError::internal(&format!(
+                "Failed to decrement stock for batch {}: insufficient remaining quantity",
+                alloc.batch_id
+            )));
+        }
 
         // Record negative stock movement (D-22: StockLedgerService as single authority)
         stock_ledger_service::record_movement(
@@ -341,13 +356,23 @@ pub fn search_medicines_pos(
     Ok(results)
 }
 
-pub fn list_sales(db: &Connection, query: &str, start_date: &str, end_date: &str) -> Result<Vec<SaleListDto>, CommandError> {
+pub fn list_sales(
+    db: &Connection,
+    query: &str,
+    start_date: &str,
+    end_date: &str,
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedList<SaleListDto>, CommandError> {
     let end = if end_date.is_empty() {
         String::new()
     } else {
         format!("{}T23:59:59", end_date)
     };
-    sale_repo::find_recent(db, query, start_date, &end).map_err(CommandError::from)
+    let offset = (page - 1) * per_page;
+    let (items, total) = sale_repo::find_recent(db, query, start_date, &end, offset, per_page)
+        .map_err(CommandError::from)?;
+    Ok(PaginatedList::new(items, total, page, per_page))
 }
 
 pub fn get_sale_detail(db: &Connection, sale_id: i64) -> Result<SaleDetailDto, CommandError> {
@@ -398,6 +423,20 @@ mod tests {
     use super::*;
     use crate::test_helpers;
 
+    /// Helper: seed a medicine with a batch and return (medicine_id, batch_id).
+    fn seed_med_with_batch(db: &rusqlite::Connection, name: &str, price: f64, qty: i64) -> (i64, i64) {
+        let mid = test_helpers::seed_medicine(db, name);
+        // Update the medicine to set the desired retail_price
+        db.execute(
+            "UPDATE medicines SET retail_price = ?1 WHERE id = ?2",
+            rusqlite::params![price, mid],
+        ).unwrap();
+        let batch_id = crate::repository::batch_repo::insert(
+            db, mid, None, None, price * 0.5, qty, qty, "2099-12-31", Some("BATCH-001"),
+        ).unwrap();
+        (mid, batch_id)
+    }
+
     #[test]
     fn test_confirm_sale_empty_cart() {
         let mut db = test_helpers::setup_test_db();
@@ -407,6 +446,234 @@ mod tests {
             bill_discount: 0.0,
             tax_enabled: false,
             payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let result = confirm_sale(&mut db, &payload, uid, "owner");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_confirm_sale_single_item() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 5, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
+        assert_eq!(receipt.item_count, 1);
+        assert!((receipt.subtotal - 50.0).abs() < 0.01);
+        assert!((receipt.total - 50.0).abs() < 0.01);
+
+        // Stock should be decremented
+        let stock = crate::services::stock_ledger_service::get_current_stock(&db, mid).unwrap();
+        assert_eq!(stock, 45);
+    }
+
+    #[test]
+    fn test_confirm_sale_multiple_items() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid1, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+        let (mid2, _) = seed_med_with_batch(&db, "Ibuprofen", 20.0, 30);
+
+        let payload = ConfirmSaleDto {
+            items: vec![
+                ConfirmSaleItemDto { medicine_id: mid1, quantity: 3, item_discount: 0.0 },
+                ConfirmSaleItemDto { medicine_id: mid2, quantity: 2, item_discount: 0.0 },
+            ],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
+        // 3*10 + 2*20 = 70
+        assert!((receipt.subtotal - 70.0).abs() < 0.01);
+        assert_eq!(receipt.item_count, 2);
+    }
+
+    #[test]
+    fn test_confirm_sale_with_discount() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 10, item_discount: 5.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
+        // 10*10 = 100 subtotal, 5.0 item discount => line_total = 95
+        assert!((receipt.subtotal - 95.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_confirm_sale_with_tax() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 10, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: true,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
+        // subtotal=100, tax_rate defaults to 0.0 in fresh DB => tax_amount=0, total=100
+        assert!((receipt.subtotal - 100.0).abs() < 0.01);
+        assert!((receipt.tax_amount - 0.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_confirm_sale_with_tax_rate() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        // Set tax rate to 10%
+        crate::repository::settings_repo::set_value(&db, "default_tax_rate", "10.0").unwrap();
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 10, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: true,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
+        // subtotal=100, tax=10% => tax_amount=10, total=110
+        assert!((receipt.subtotal - 100.0).abs() < 0.01);
+        assert!((receipt.tax_amount - 10.0).abs() < 0.01);
+        assert!((receipt.total - 110.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_confirm_sale_insufficient_stock() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 5);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 10, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let result = confirm_sale(&mut db, &payload, uid, "owner");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_confirm_sale_deactivated_medicine() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        // Deactivate the medicine
+        crate::repository::medicine_repo::deactivate(&db, mid).unwrap();
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 1, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let result = confirm_sale(&mut db, &payload, uid, "owner");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_confirm_sale_zero_quantity() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 0, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let result = confirm_sale(&mut db, &payload, uid, "owner");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_pos_search_returns_correct_results() {
+        let db = test_helpers::setup_test_db();
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+        // Another medicine that shouldn't match
+        seed_med_with_batch(&db, "Ibuprofen", 20.0, 30);
+
+        let results = search_medicines_pos(&db, "Pan").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id, mid);
+        assert_eq!(results[0].name, "Panadol");
+        assert_eq!(results[0].current_stock, 50);
+        assert!((results[0].retail_price - 10.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_confirm_sale_with_bill_discount() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 10, item_discount: 0.0 }],
+            bill_discount: 20.0,
+            tax_enabled: false,
+            payment_method: "Cash".into(),
+            customer_name: None,
+        };
+        let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
+        // subtotal=100, bill_discount=20 => total=80
+        assert!((receipt.bill_discount - 20.0).abs() < 0.01);
+        assert!((receipt.total - 80.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_confirm_sale_invalid_payment_method() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 1, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Bitcoin".into(),
+            customer_name: None,
+        };
+        let result = confirm_sale(&mut db, &payload, uid, "owner");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_confirm_sale_credit_requires_customer() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 1, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Credit".into(),
             customer_name: None,
         };
         let result = confirm_sale(&mut db, &payload, uid, "owner");

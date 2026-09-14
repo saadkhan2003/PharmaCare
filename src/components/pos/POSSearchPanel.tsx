@@ -62,8 +62,9 @@ export function POSSearchPanel({
           setLoading(false);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!cancelled) {
+          console.error('POS search failed:', err); // M-5 fix: surface errors instead of swallowing
           setLoading(false);
         }
       });
@@ -73,15 +74,15 @@ export function POSSearchPanel({
     };
   }, [debouncedLocal, session.token]);
 
-  // Scroll selected result into view
+  // Scroll selected result into view (M-10 fix: clamp to valid range)
   useEffect(() => {
-    if (resultsContainerRef.current && selectedResultIndex >= 0) {
+    if (resultsContainerRef.current && selectedResultIndex >= 0 && selectedResultIndex < results.length) {
       const el = resultsContainerRef.current.children[selectedResultIndex] as HTMLElement;
       if (el) {
         el.scrollIntoView({ block: 'nearest' });
       }
     }
-  }, [selectedResultIndex]);
+  }, [selectedResultIndex, results.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalQuery(e.target.value);

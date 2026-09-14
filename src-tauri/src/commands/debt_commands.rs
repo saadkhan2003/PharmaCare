@@ -12,8 +12,8 @@ pub fn create_debt(
     payload: CreateDebtRequest,
 ) -> Result<Debtor, CommandError> {
     let _session = require_owner(&state, &session_token)?;
-    let db = state.db.lock()?;
-    debt_service::create_debt(&db, &payload)
+    let mut db = state.db.lock()?;
+    debt_service::create_debt(&mut db, &payload)
 }
 
 #[tauri::command]
@@ -45,8 +45,8 @@ pub fn record_payment(
     amount: f64,
 ) -> Result<Debtor, CommandError> {
     let _session = require_owner(&state, &session_token)?;
-    let db = state.db.lock()?;
-    debt_service::record_payment(&db, debt_id, amount)
+    let mut db = state.db.lock()?;
+    debt_service::record_payment(&mut db, debt_id, amount)
 }
 
 #[tauri::command]

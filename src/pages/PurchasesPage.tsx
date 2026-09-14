@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { PurchaseForm } from '@/components/purchases/PurchaseForm';
 import { PurchaseList } from '@/components/purchases/PurchaseList';
 import { useSettings } from '@/hooks/useSettings';
+import { useToast } from '@/components/ui/toast-provider';
+import { playSuccess } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 
 interface PurchasesPageProps {
@@ -10,12 +12,15 @@ interface PurchasesPageProps {
 
 export function PurchasesPage({ session }: PurchasesPageProps) {
   const [refreshKey, setRefreshKey] = useState(0);
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol || 'Rs.';
+  const { toast } = useToast();
 
-  const handlePurchaseComplete = () => {
+  const handlePurchaseComplete = useCallback(() => {
+    playSuccess();
+    toast('success', 'Purchase recorded successfully');
     setRefreshKey((prev) => prev + 1);
-  };
+  }, [toast]);
 
   return (
     <div>

@@ -3,7 +3,8 @@ use tauri::State;
 use crate::errors::CommandError;
 use crate::guards::{require_owner, require_session};
 use crate::models::{
-    CreateMedicineDto, MedicineDto, MedicineListItem, MedicinePharmacistDto, UpdateMedicineDto,
+    CreateMedicineDto, CsvImportResult, MedicineDto, MedicineListItem, MedicinePharmacistDto,
+    PaginatedList, UpdateMedicineDto,
 };
 use crate::services::medicine_service;
 use crate::state::AppState;
@@ -57,47 +58,53 @@ pub fn delete_medicine(
     medicine_service::delete_medicine(&db, medicine_id)
 }
 
-/// Lists all medicines with current stock. Session required.
 #[tauri::command]
 pub fn list_medicines(
     state: State<'_, AppState>,
     session_token: String,
-) -> Result<Vec<MedicineListItem>, CommandError> {
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedList<MedicineListItem>, CommandError> {
     let _session = require_session(&state, &session_token)?;
+    let per_page = per_page.clamp(10, 200);
+    let page = if page < 1 { 1 } else { page };
     let db = state.db.lock()?;
-    medicine_service::list_medicines(&db)
+    medicine_service::list_medicines(&db, page, per_page)
 }
 
-/// Searches medicines by name/generic/brand/category. Session required.
-/// Returns full DTO with purchase_price for authorized users.
 #[tauri::command]
 pub fn search_medicines(
     state: State<'_, AppState>,
     session_token: String,
     query: String,
-) -> Result<Vec<MedicineListItem>, CommandError> {
-    let _session = require_session(&state, &session_token)?;
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedList<MedicineListItem>, CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let per_page = per_page.clamp(10, 200);
+    let page = if page < 1 { 1 } else { page };
     let db = state.db.lock()?;
-    medicine_service::search_medicines(&db, &query)
+    medicine_service::search_medicines(&db, &query, page, per_page)
 }
 
-/// Searches medicines for pharmacist — returns DTO WITHOUT purchase_price (D-15).
-/// Extra safety: verifies caller is actually a pharmacist.
 #[tauri::command]
 pub fn search_medicines_pharmacist(
     state: State<'_, AppState>,
     session_token: String,
     query: String,
-) -> Result<Vec<MedicinePharmacistDto>, CommandError> {
+    page: i64,
+    per_page: i64,
+) -> Result<PaginatedList<MedicinePharmacistDto>, CommandError> {
     let session = require_session(&state, &session_token)?;
-    // Extra safety: verify caller is actually a pharmacist
     if session.role != "pharmacist" {
         return Err(CommandError::validation(
             "Owner should use search_medicines",
         ));
     }
+    let per_page = per_page.clamp(10, 200);
+    let page = if page < 1 { 1 } else { page };
     let db = state.db.lock()?;
-    medicine_service::search_medicines_pharmacist(&db, &query)
+    medicine_service::search_medicines_pharmacist(&db, &query, page, per_page)
 }
 
 /// Gets a single medicine by id with current stock. Session required.
@@ -110,4 +117,15 @@ pub fn get_medicine(
     let _session = require_session(&state, &session_token)?;
     let db = state.db.lock()?;
     medicine_service::get_medicine_by_id(&db, medicine_id)
+}
+
+#[tauri::command]
+pub fn import_medicines_csv(
+    state: State<'_, AppState>,
+    session_token: String,
+    csv_data: String,
+) -> Result<CsvImportResult, CommandError> {
+    let session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    medicine_service::import_medicines_csv(&db, &csv_data, session.user_id)
 }

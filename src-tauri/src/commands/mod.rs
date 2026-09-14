@@ -13,3 +13,4 @@ pub mod report_commands;
 pub mod backup_commands;
 pub mod debt_commands;
 pub mod pdf_commands;
+pub mod db_commands;

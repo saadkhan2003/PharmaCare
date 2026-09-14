@@ -22,7 +22,7 @@ interface MonthlyPnLReportProps {
 }
 
 export function MonthlyPnLReport({ session, startDate, endDate }: MonthlyPnLReportProps) {
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
 

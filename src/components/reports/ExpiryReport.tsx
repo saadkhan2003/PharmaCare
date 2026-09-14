@@ -22,7 +22,7 @@ interface ExpiryReportProps {
 }
 
 export function ExpiryReport({ session }: ExpiryReportProps) {
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
   const warningDays = settings?.expiry_warning_days ?? 60;

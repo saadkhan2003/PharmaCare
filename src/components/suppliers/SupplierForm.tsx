@@ -17,6 +17,7 @@ import type { SupplierDto, CreateSupplierDto, UpdateSupplierDto } from '@/types/
 interface SupplierFormProps {
   open: boolean;
   onClose: () => void;
+  onSave?: () => void;
   sessionToken: string;
   supplierId?: number;
 }
@@ -46,6 +47,7 @@ const emptyForm: FormState = {
 export function SupplierForm({
   open,
   onClose,
+  onSave,
   sessionToken,
   supplierId,
 }: SupplierFormProps) {
@@ -128,6 +130,7 @@ export function SupplierForm({
         };
         await tauri.suppliers.create(sessionToken, payload);
       }
+      onSave?.();
       onClose();
     } catch (err: unknown) {
       setSubmitError(

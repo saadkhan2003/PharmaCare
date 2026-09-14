@@ -23,7 +23,7 @@ interface SupplierPurchaseReportProps {
 }
 
 export function SupplierPurchaseReport({ session, startDate, endDate }: SupplierPurchaseReportProps) {
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
 

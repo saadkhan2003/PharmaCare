@@ -106,6 +106,14 @@ pub struct MedicineListItem {
     pub is_active: bool,
 }
 
+/// Result of a CSV import operation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CsvImportResult {
+    pub imported: i64,
+    pub skipped: i64,
+    pub errors: Vec<String>,
+}
+
 /// Payload for creating a new medicine (owner-only).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateMedicineDto {

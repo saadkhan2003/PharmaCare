@@ -19,7 +19,7 @@ interface SlowMovingReportProps {
 }
 
 export function SlowMovingReport({ session, startDate, endDate }: SlowMovingReportProps) {
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
 

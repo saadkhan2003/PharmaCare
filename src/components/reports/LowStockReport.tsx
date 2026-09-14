@@ -18,7 +18,7 @@ interface LowStockReportProps {
 }
 
 export function LowStockReport({ session }: LowStockReportProps) {
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
 

@@ -1,21 +1,3 @@
-#![allow(dead_code)]
-
-pub mod state;
-pub mod models;
-pub mod errors;
-pub mod guards;
-pub mod commands;
-pub mod services;
-pub mod repository;
-pub mod migrations;
-
-#[cfg(test)]
-pub mod test_helpers;
-
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![])
-        .run(tauri::generate_context!())
-        .expect("error while running PharmaCare");
-}
+// lib.rs intentionally left minimal — main.rs is the Tauri entry point.
+// Modules are declared in main.rs to avoid duplicate handler registration.
+// This file exists only to support `cargo test` which compiles lib targets.

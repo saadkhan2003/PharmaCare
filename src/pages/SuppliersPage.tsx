@@ -5,7 +5,9 @@ import { Search, Plus } from 'lucide-react';
 import { SupplierList } from '@/components/suppliers/SupplierList';
 import { SupplierForm } from '@/components/suppliers/SupplierForm';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useToast } from '@/components/ui/toast-provider';
 import { tauri } from '@/lib/tauri';
+import { playSuccess } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 import type { SupplierDto } from '@/types/supplier';
 
@@ -14,6 +16,7 @@ interface SuppliersPageProps {
 }
 
 export function SuppliersPage({ session }: SuppliersPageProps) {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
   const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
@@ -63,9 +66,10 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
   const handleDelete = useCallback(
     async (id: number) => {
       await tauri.suppliers.delete(session.token, id);
+      toast('success', 'Supplier deleted');
       setRefreshKey((prev) => prev + 1);
     },
-    [session.token]
+    [session.token, toast]
   );
 
   const handleAddClick = useCallback(() => {
@@ -73,11 +77,22 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
     setFormOpen(true);
   }, []);
 
+  const [formSaved, setFormSaved] = useState(false);
+
+  const handleFormSave = useCallback(() => {
+    setFormSaved(true);
+  }, []);
+
   const handleFormClose = useCallback(() => {
     setFormOpen(false);
+    if (formSaved) {
+      playSuccess();
+      toast('success', editingSupplierId ? 'Supplier updated' : 'Supplier added');
+      setFormSaved(false);
+    }
     setEditingSupplierId(undefined);
     setRefreshKey((prev) => prev + 1);
-  }, []);
+  }, [formSaved, editingSupplierId, toast]);
 
   return (
     <div>
@@ -114,6 +129,7 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
       <SupplierForm
         open={formOpen}
         onClose={handleFormClose}
+        onSave={handleFormSave}
         sessionToken={session.token}
         supplierId={editingSupplierId}
       />

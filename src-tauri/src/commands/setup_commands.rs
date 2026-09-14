@@ -48,7 +48,7 @@ pub fn create_initial_owner(
     state: State<'_, AppState>,
     payload: CreateOwnerPayload,
 ) -> Result<SessionDto, CommandError> {
-    let db = state.db.lock()?;
+    let mut db = state.db.lock()?;
     let mut sessions = state.sessions.lock()?;
 
     if payload.password.len() < 6 {
@@ -57,7 +57,9 @@ pub fn create_initial_owner(
         ));
     }
 
-    let user_count: i64 = db.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))?;
+    // M-9 fix: Use transaction to prevent TOCTOU race condition
+    let tx = db.transaction().map_err(|e| CommandError::internal(&format!("Transaction error: {}", e)))?;
+    let user_count: i64 = tx.query_row("SELECT COUNT(*) FROM users", [], |row| row.get(0))?;
     if user_count > 0 {
         return Err(CommandError::validation(
             "Setup has already been completed",
@@ -71,16 +73,18 @@ pub fn create_initial_owner(
         role: "owner".to_string(),
     };
 
-    let user = user_service::create_user(&db, &create_dto)?;
+    let user = user_service::create_user(&tx, &create_dto)?;
 
     if let Some(email) = &payload.owner_email {
         if !email.trim().is_empty() {
-            db.execute(
+            tx.execute(
                 "INSERT OR REPLACE INTO settings (key, value) VALUES ('owner_email', ?1)",
                 rusqlite::params![email.trim()],
             )?;
         }
     }
+
+    tx.commit().map_err(|e| CommandError::internal(&format!("Commit failed: {}", e)))?;
 
     auth_service::login(&db, &mut sessions, &user.username, &create_dto.password)
         .map_err(CommandError::from)

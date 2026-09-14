@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { tauri } from '../lib/tauri';
 import type { SettingsMap } from '../types/settings';
 
-export function useSettings() {
+export function useSettings(sessionToken: string) {
   const [settings, setSettings] = useState<SettingsMap | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     setLoading(true);
-    invoke<SettingsMap>('get_settings')
+    tauri.settings.get(sessionToken)
       .then(setSettings)
-      .catch(() => {
+      .catch((err) => {
+        console.error('Failed to load settings:', err);
         // Fall back to hardcoded defaults per D-27
         setSettings({
           default_tax_rate: 0,
@@ -34,7 +35,7 @@ export function useSettings() {
         });
       })
       .finally(() => setLoading(false));
-  }, [refreshKey]);
+  }, [refreshKey, sessionToken]);
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), []);
 

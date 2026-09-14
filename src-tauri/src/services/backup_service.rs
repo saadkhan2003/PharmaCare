@@ -478,15 +478,11 @@ pub fn start_backup_timer(_app: tauri::AppHandle, db: Arc<Mutex<Connection>>) {
                     Ok(c) => c,
                     Err(_) => continue,
                 };
-                let settings_conn = match db.lock() {
-                    Ok(c) => c,
-                    Err(_) => continue,
-                };
 
-                let drive_token = settings_repo::get_string(&settings_conn, "google_drive_token")
+                let drive_token = settings_repo::get_string(&conn, "google_drive_token")
                     .ok()
                     .flatten();
-                let local_path = settings_repo::get_string(&settings_conn, "local_backup_path")
+                let local_path = settings_repo::get_string(&conn, "local_backup_path")
                     .ok()
                     .flatten()
                     .filter(|p| !p.is_empty())
@@ -494,14 +490,13 @@ pub fn start_backup_timer(_app: tauri::AppHandle, db: Arc<Mutex<Connection>>) {
 
                 if let Err(e) = run_backup(
                     &conn,
-                    &settings_conn,
+                    &conn,
                     drive_token.is_some(),
                     local_path.as_deref(),
                 ) {
                     eprintln!("Auto-backup failed: {}", e.message);
-                    // Update status to failed
                     let _ = settings_repo::set_value(
-                        &settings_conn,
+                        &conn,
                         "last_backup_status",
                         &format!("auto-backup failed: {}", e.message),
                     );
@@ -637,15 +632,23 @@ pub fn list_drive_backups(access_token: &str) -> Result<Vec<BackupFileInfo>, Com
 
 // ── Helpers ──
 
-/// Simple URL encoding for query parameters.
+/// Simple URL encoding for query parameters. Handles multi-byte UTF-8 (M-7 fix).
 fn urlencode(s: &str) -> String {
-    s.chars()
-        .map(|c| match c {
-            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' | '.' | '~' => c.to_string(),
-            ' ' => "+".to_string(),
-            other => format!("%{:02X}", other as u8),
-        })
-        .collect()
+    let mut result = String::with_capacity(s.len() * 3);
+    for c in s.chars() {
+        match c {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' | '.' | '~' => result.push(c),
+            ' ' => result.push('+'),
+            other => {
+                let mut buf = [0u8; 4];
+                let encoded = other.encode_utf8(&mut buf);
+                for byte in encoded.bytes() {
+                    result.push_str(&format!("%{:02X}", byte));
+                }
+            }
+        }
+    }
+    result
 }
 
 /// Decodes a URL-encoded query value.

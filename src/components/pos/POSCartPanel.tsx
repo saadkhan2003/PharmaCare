@@ -6,6 +6,7 @@ import { POSCartItem } from '@/components/pos/POSCartItem';
 import { POSPaymentForm } from '@/components/pos/POSPaymentForm';
 import { useTauriCommand } from '@/hooks/useTauriCommand';
 import { useSettings } from '@/hooks/useSettings';
+import { useToast } from '@/components/ui/toast-provider';
 import { tauri } from '@/lib/tauri';
 import type { SessionDto } from '@/types/session';
 import type { CartItem } from '@/pages/POSPage';
@@ -48,7 +49,8 @@ export function POSCartPanel({
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [customerName, setCustomerName] = useState('');
 
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
+  const { toast } = useToast();
   const taxRatePercent = useMemo(
     () => settings?.default_tax_rate ?? 0,
     [settings]
@@ -75,13 +77,14 @@ export function POSCartPanel({
       );
 
       if (receipt) {
+        toast('success', 'Sale completed successfully');
         onConfirm(receipt);
       }
     } catch (err: unknown) {
-      // Error is handled by useTauriCommand (sets error state)
+      toast('error', 'Sale failed. Please try again.');
       console.error('Sale confirmation failed:', err);
     }
-  }, [cart, billDiscount, taxEnabled, paymentMethod, customerName, confirmSale, session.token, onConfirm]);
+  }, [cart, billDiscount, taxEnabled, paymentMethod, customerName, confirmSale, session.token, onConfirm, toast]);
 
   return (
     <div className="flex flex-col h-full border rounded-lg bg-card">
@@ -153,7 +156,7 @@ export function POSCartPanel({
             loading={confirmLoading}
           />
           {confirmError && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive break-words">
               {confirmError}
             </div>
           )}

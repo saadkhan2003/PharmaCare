@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { playClick } from '@/lib/sounds';
 import type { CartItem } from '@/pages/POSPage';
 
 interface POSCartItemProps {
@@ -51,7 +52,7 @@ export function POSCartItem({
             value={item.quantity}
             onChange={(e) => {
               const val = parseInt(e.target.value, 10);
-              if (!isNaN(val)) onUpdateQuantity(item.medicine.id, val);
+              if (!isNaN(val)) { playClick(); onUpdateQuantity(item.medicine.id, val); }
             }}
             className="h-9 text-base"
           />

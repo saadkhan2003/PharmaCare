@@ -22,7 +22,7 @@ interface ProfitMarginReportProps {
 }
 
 export function ProfitMarginReport({ session, startDate, endDate }: ProfitMarginReportProps) {
-  const { settings } = useSettings();
+  const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
 
