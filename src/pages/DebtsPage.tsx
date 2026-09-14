@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/table';
 import { Loader2, Plus, Phone, MessageCircle } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
+import { useToast } from '@/components/ui/toast-provider';
+import { dispatchEvent, useAutoRefresh } from '@/lib/eventBus';
 import { formatDate } from '@/lib/formatDate';
 import type { SessionDto } from '@/types/session';
 import type { DebtorListItem } from '@/types/debt';
@@ -24,10 +26,14 @@ const MIN_MEDICINE_SEARCH_LENGTH = 2;
 
 export function DebtsPage({ session }: { session: SessionDto }) {
   const { settings } = useSettings(session.token);
+  const { toast } = useToast();
+  const currencySymbol = settings?.currency_symbol || 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
   const [debts, setDebts] = useState<DebtorListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [internalRefreshKey, setInternalRefreshKey] = useState(0);
+  const [debtsEventKey] = useAutoRefresh('debts-changed');
+  const refreshKey = internalRefreshKey + debtsEventKey;
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -37,6 +43,7 @@ export function DebtsPage({ session }: { session: SessionDto }) {
   const [selectedMedicinePrice, setSelectedMedicinePrice] = useState<number | null>(null);
   const [medicineResults, setMedicineResults] = useState<MedicineListItem[]>([]);
   const [searchingMedicines, setSearchingMedicines] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [items, setItems] = useState<{ medicine_name: string; quantity: number; amount: number }[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -96,8 +103,9 @@ export function DebtsPage({ session }: { session: SessionDto }) {
       });
       setDialogOpen(false);
       setName(''); setPhone(''); setItems([]); setDueDate(''); setNotes('');
-      setRefreshKey(k => k + 1);
-    } catch (err) { alert(err); }
+      dispatchEvent('debts-changed');
+      setInternalRefreshKey(k => k + 1);
+    } catch (err) { toast('error', 'Failed to load debts', err instanceof Error ? err.message : String(err)); }
     finally { setSaving(false); }
   };
 
@@ -107,8 +115,9 @@ export function DebtsPage({ session }: { session: SessionDto }) {
     try {
       await tauri.debt.recordPayment(session.token, payDebtId, payAmount);
       setPayDebtId(null);
-      setRefreshKey(k => k + 1);
-    } catch (err: unknown) { alert(err instanceof Error ? err.message : 'Payment failed'); }
+      dispatchEvent('debts-changed');
+      setInternalRefreshKey(k => k + 1);
+    } catch (err: unknown) { toast('error', 'Payment failed', err instanceof Error ? err.message : String(err)); }
     finally { setPaying(false); }
   };
 
@@ -119,12 +128,12 @@ export function DebtsPage({ session }: { session: SessionDto }) {
       : daysRemaining === 0
         ? 'due today'
         : `due in ${daysRemaining} day(s)`;
-    const msg = encodeURIComponent(
+      const msg = encodeURIComponent(
       `Assalam-o-Alaikum ${nameStr},
 
 This is a friendly reminder from ${pharmacyName}.
 
-Your outstanding balance of Rs. ${remaining.toFixed(2)} (out of Rs. ${totalAmount.toFixed(2)}, Rs. ${paidAmount.toFixed(2)} paid) is ${dueLabel} (${dueDate}).
+Your outstanding balance of ${currencySymbol} ${remaining.toFixed(2)} (out of ${currencySymbol} ${totalAmount.toFixed(2)}, ${currencySymbol} ${paidAmount.toFixed(2)} paid) is ${dueLabel} (${dueDate}).
 
 Kindly clear it at your earliest convenience. We value your trust.
 
@@ -147,8 +156,8 @@ ${pharmacyName}`
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Debt Tracking</h1>
-          <p className="text-sm text-muted-foreground">Total outstanding: <strong>{total.toFixed(2)} Rs.</strong></p>
+          <h1 className="text-2xl font-bold text-foreground">Debt Tracking</h1>
+          <p className="text-sm text-muted-foreground">Total outstanding: <strong>{currencySymbol} {total.toFixed(2)}</strong></p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />New Debt</Button>
@@ -179,6 +188,28 @@ ${pharmacyName}`
                       onChange={e => {
                         setMedicineName(e.target.value);
                         setSelectedMedicinePrice(null);
+                        setHighlightedIndex(-1);
+                      }}
+                      onKeyDown={e => {
+                        if (medicineResults.length === 0) return;
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setHighlightedIndex(prev => (prev < medicineResults.length - 1 ? prev + 1 : 0));
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setHighlightedIndex(prev => (prev > 0 ? prev - 1 : medicineResults.length - 1));
+                        } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+                          e.preventDefault();
+                          const medicine = medicineResults[highlightedIndex];
+                          setMedicineName(medicine.name);
+                          setSelectedMedicinePrice(medicine.retail_price);
+                          setMedAmount(Number((medicine.retail_price * medQty).toFixed(2)));
+                          setMedicineResults([]);
+                          setHighlightedIndex(-1);
+                        } else if (e.key === 'Escape') {
+                          setMedicineResults([]);
+                          setHighlightedIndex(-1);
+                        }
                       }}
                       placeholder="Search medicine"
                       size={1}
@@ -190,16 +221,19 @@ ${pharmacyName}`
                         ) : medicineResults.length === 0 ? (
                           <div className="p-2 text-xs text-muted-foreground">No medicines found</div>
                         ) : (
-                          medicineResults.map((medicine) => (
+                          medicineResults.map((medicine, index) => (
                             <button
                               key={medicine.id}
                               type="button"
-                              className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-sm hover:bg-accent"
+                              className={`flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-sm ${
+                                index === highlightedIndex ? 'bg-accent' : 'hover:bg-accent'
+                              }`}
                               onClick={() => {
                                 setMedicineName(medicine.name);
                                 setSelectedMedicinePrice(medicine.retail_price);
                                 setMedAmount(Number((medicine.retail_price * medQty).toFixed(2)));
                                 setMedicineResults([]);
+                                setHighlightedIndex(-1);
                               }}
                             >
                               <span>{medicine.name}</span>

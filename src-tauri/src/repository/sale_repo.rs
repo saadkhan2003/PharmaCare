@@ -175,7 +175,9 @@ pub fn find_recent(
     };
 
     let data_sql = format!(
-        "SELECT s.id, s.total, s.payment_method, s.customer_name, COUNT(si.id) AS item_count, s.created_at \
+        "SELECT s.id, s.total, s.payment_method, s.customer_name, COUNT(si.id) AS item_count, s.created_at,
+            COALESCE((SELECT SUM(r.quantity) FROM returns r WHERE r.return_type = 'customer' AND r.reference_id = s.id), 0) as total_returned_qty,
+            COALESCE((SELECT SUM(r.refund_amount) FROM returns r WHERE r.return_type = 'customer' AND r.reference_id = s.id), 0) as total_refund_amount
          FROM sales s \
          LEFT JOIN sale_items si ON si.sale_id = s.id \
          LEFT JOIN medicines m ON m.id = si.medicine_id \
@@ -197,6 +199,8 @@ pub fn find_recent(
             customer_name: row.get(3)?,
             item_count: row.get(4)?,
             created_at: row.get(5)?,
+            total_returned_qty: row.get(6)?,
+            total_refund_amount: row.get(7)?,
         })
     })?
         .collect::<Result<Vec<_>, _>>()?
@@ -210,6 +214,8 @@ pub fn find_recent(
             customer_name: row.get(3)?,
             item_count: row.get(4)?,
             created_at: row.get(5)?,
+            total_returned_qty: row.get(6)?,
+            total_refund_amount: row.get(7)?,
         })
     })?
         .collect::<Result<Vec<_>, _>>()?
@@ -244,47 +250,64 @@ pub fn find_detail_items(conn: &Connection, sale_id: i64) -> Result<Vec<SaleDeta
     rows.collect()
 }
 
-/// Returns today's total sales revenue. D-41/REPT-01.
+/// Returns today's total sales revenue minus customer returns. D-41/REPT-01.
 pub fn get_today_sales(conn: &Connection) -> Result<f64, rusqlite::Error> {
     conn.query_row(
-        "SELECT COALESCE(ROUND(SUM(total), 2), 0) FROM sales WHERE date(created_at) = date('now')",
+        "SELECT COALESCE(ROUND(SUM(total), 2), 0)
+         - COALESCE((SELECT ROUND(SUM(refund_amount), 2) FROM returns
+             WHERE return_type = 'customer' AND date(return_date) = date('now')), 0)
+         FROM sales WHERE date(created_at) = date('now')",
         [],
         |row| row.get(0),
     )
 }
 
-/// Returns today's profit: Σ(line_total - purchase_cost * quantity). D-41.
+/// Returns today's profit minus customer returns: Σ(line_total - purchase_cost * quantity) - refunds. D-41.
 pub fn get_today_profit(conn: &Connection) -> Result<f64, rusqlite::Error> {
     conn.query_row(
-        "SELECT COALESCE(ROUND(SUM(si.line_total - si.purchase_cost * si.quantity), 2), 0) \
-         FROM sale_items si \
-         JOIN sales s ON s.id = si.sale_id \
+        "SELECT COALESCE(ROUND(SUM(si.line_total - si.purchase_cost * si.quantity), 2), 0)
+         - COALESCE((SELECT ROUND(SUM(r.refund_amount - COALESCE(
+             (SELECT si2.purchase_cost * r.quantity FROM sale_items si2
+              WHERE si2.sale_id = r.reference_id AND si2.medicine_id = r.medicine_id LIMIT 1),
+             0)), 2) FROM returns r
+             WHERE r.return_type = 'customer' AND date(r.return_date) = date('now')), 0)
+         FROM sale_items si
+         JOIN sales s ON s.id = si.sale_id
          WHERE date(s.created_at) = date('now')",
         [],
         |row| row.get(0),
     )
 }
 
-/// Returns current month's total sales. D-41.
+/// Returns current month's total sales minus customer returns. D-41.
 pub fn get_month_sales(conn: &Connection) -> Result<f64, rusqlite::Error> {
     conn.query_row(
-        "SELECT COALESCE(ROUND(SUM(total), 2), 0) FROM sales \
+        "SELECT COALESCE(ROUND(SUM(total), 2), 0)
+         - COALESCE((SELECT ROUND(SUM(refund_amount), 2) FROM returns
+             WHERE return_type = 'customer'
+             AND strftime('%Y-%m', return_date) = strftime('%Y-%m', 'now')), 0)
+         FROM sales
          WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')",
         [],
         |row| row.get(0),
     )
 }
 
-/// Returns top 5 selling medicines (by quantity) in the last 7 days. D-41.
+/// Returns top 5 selling medicines (by quantity) in the last 7 days, minus returns. D-41.
 pub fn get_top_sellers(conn: &Connection) -> Result<Vec<TopSellerDto>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT si.medicine_id, m.name, SUM(si.quantity) as total_qty \
-         FROM sale_items si \
-         JOIN medicines m ON m.id = si.medicine_id \
-         JOIN sales s ON s.id = si.sale_id \
-         WHERE date(s.created_at) >= date('now', '-7 days') \
-         GROUP BY si.medicine_id \
-         ORDER BY total_qty DESC \
+        "SELECT si.medicine_id, m.name,
+            SUM(si.quantity)
+            - COALESCE((SELECT SUM(r.quantity) FROM returns r
+                WHERE r.return_type = 'customer' AND r.medicine_id = si.medicine_id
+                AND date(r.return_date) >= date('now', '-7 days')), 0)
+            as total_qty
+         FROM sale_items si
+         JOIN medicines m ON m.id = si.medicine_id
+         JOIN sales s ON s.id = si.sale_id
+         WHERE date(s.created_at) >= date('now', '-7 days')
+         GROUP BY si.medicine_id
+         ORDER BY total_qty DESC
          LIMIT 5",
     )?;
 

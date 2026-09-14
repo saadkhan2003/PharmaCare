@@ -6,13 +6,6 @@ interface LoginFormProps {
   loading: boolean;
 }
 
-/**
- * Login form with username and password inputs.
- *
- * - Password field has minLength={6} per D-06 (frontend UX hint)
- * - Displays error messages for invalid credentials
- * - Shows loading state during authentication
- */
 export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,12 +19,12 @@ export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">PharmaCare</h1>
-        <p className="text-sm text-gray-500 mt-1">Pharmacy Management System</p>
+        <h1 className="text-2xl font-bold text-foreground">PharmaCare</h1>
+        <p className="text-sm text-muted-foreground mt-1">Pharmacy Management System</p>
       </div>
 
       <div>
-        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">
           Username
         </label>
         <input
@@ -39,7 +32,7 @@ export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-background text-foreground placeholder:text-muted-foreground"
           placeholder="Enter your username"
           required
           autoFocus
@@ -48,7 +41,7 @@ export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
           Password
         </label>
         <input
@@ -56,7 +49,7 @@ export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+          className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-background text-foreground placeholder:text-muted-foreground"
           placeholder="Enter your password"
           required
           minLength={6}
@@ -65,7 +58,7 @@ export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-3 py-2">
+        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-md px-3 py-2">
           {error}
         </div>
       )}
@@ -73,7 +66,7 @@ export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-2 px-4 bg-blue-600 text-white font-medium text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full py-2 px-4 bg-blue-600 text-white font-medium text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? 'Signing in...' : 'Sign In'}
       </button>

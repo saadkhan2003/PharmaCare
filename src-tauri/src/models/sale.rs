@@ -68,6 +68,8 @@ pub struct SaleListDto {
     pub customer_name: Option<String>,
     pub item_count: i64,
     pub created_at: String,
+    pub total_returned_qty: i64,
+    pub total_refund_amount: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

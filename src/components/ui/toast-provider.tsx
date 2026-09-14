@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,18 +48,40 @@ let nextId = 0;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+
+  const removeToast = useCallback((id: number) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const addToast = useCallback((type: ToastType, title: string, description?: string) => {
     const id = nextId++;
     setToasts((prev) => [...prev, { id, type, title, description }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
+    const timer = setTimeout(() => {
+      removeToast(id);
     }, 4000);
+    timersRef.current.set(id, timer);
+  }, [removeToast]);
+
+  const handleMouseEnter = useCallback((id: number) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
   }, []);
 
-  const removeToast = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  const handleMouseLeave = useCallback((id: number) => {
+    const timer = setTimeout(() => {
+      removeToast(id);
+    }, 4000);
+    timersRef.current.set(id, timer);
+  }, [removeToast]);
 
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
@@ -70,6 +92,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={t.id}
+              onMouseEnter={() => handleMouseEnter(t.id)}
+              onMouseLeave={() => handleMouseLeave(t.id)}
               className={cn(
                 'flex items-start gap-3 rounded-md border border-l-4 p-4 shadow-lg animate-scale-in',
                 colors[t.type]

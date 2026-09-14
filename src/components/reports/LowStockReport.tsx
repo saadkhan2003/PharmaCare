@@ -75,18 +75,20 @@ export function LowStockReport({ session }: LowStockReportProps) {
                 rows.map((row) => (
                   <TableRow
                     key={row.medicine_id}
-                    className={row.current_stock === 0 ? 'bg-red-50' : row.current_stock < row.reorder_level ? 'bg-amber-50' : ''}
+                    className={row.current_stock === 0 ? 'bg-red-50 dark:bg-red-950/30' : row.current_stock < row.reorder_level ? 'bg-amber-50 dark:bg-amber-950/30' : ''}
                   >
                     <TableCell className="font-medium">{row.medicine_name}</TableCell>
                     <TableCell>{row.category ?? '—'}</TableCell>
                     <TableCell className="text-right">{row.reorder_level}</TableCell>
-                    <TableCell className={`text-right font-bold ${row.current_stock === 0 ? 'text-red-600' : 'text-amber-600'}`}>
+                    <TableCell className={`text-right font-bold ${row.current_stock === 0 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
                       {row.current_stock}
                     </TableCell>
                     <TableCell>{row.unit}</TableCell>
                     <TableCell className="text-right">{row.deficit}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={row.current_stock === 0 ? 'bg-red-100 text-red-800 border-red-300' : 'bg-amber-100 text-amber-800 border-amber-300'}>
+                      <Badge variant="outline" className={row.current_stock === 0
+                        ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700'
+                        : 'bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700'}>
                         {row.current_stock === 0 ? 'Out of Stock' : 'Below Reorder'}
                       </Badge>
                     </TableCell>

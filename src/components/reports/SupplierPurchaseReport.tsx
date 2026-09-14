@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useTauriCommand } from '../../hooks/useTauriCommand';
 import { useSettings } from '../../hooks/useSettings';
+import { useIsDark } from '../../hooks/useIsDark';
 import { tauri } from '../../lib/tauri';
 import { formatDate } from '@/lib/formatDate';
 import {
@@ -11,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
+import { ChartTooltipContent, useChartColors } from './ChartTooltip';
 import { SupplierPurchasePDF } from '../../lib/pdf/SupplierPurchasePDF';
 import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
@@ -26,6 +28,9 @@ export function SupplierPurchaseReport({ session, startDate, endDate }: Supplier
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+
+  const dark = useIsDark();
+  const colors = useChartColors();
 
   const { data, error, loading, execute } = useTauriCommand<SupplierPurchaseRow[]>();
 
@@ -62,10 +67,10 @@ export function SupplierPurchaseReport({ session, startDate, endDate }: Supplier
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
-                <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} width={90} />
-                <Tooltip formatter={(value: any) => `${currencySymbol}${Number(value).toFixed(2)}`} />
-                <Bar dataKey="total_spent" name="Total Spent" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+                <XAxis type="number" tick={{ fontSize: 10, fill: dark ? '#a1a1aa' : '#6b7280' }} axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }} tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: dark ? '#a1a1aa' : '#6b7280' }} width={90} axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }} tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }} />
+                <Tooltip content={<ChartTooltipContent formatter={(v: any) => `${currencySymbol}${Number(v).toFixed(2)}`} />} />
+                <Bar dataKey="total_spent" name="Total Spent" fill={colors.primary} radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

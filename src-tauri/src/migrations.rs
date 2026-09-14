@@ -10,9 +10,10 @@ pub fn get_migrations() -> Migrations<'static> {
         M::up(include_str!("../migrations/006_debt_tracking/up.sql")),
         M::up(include_str!("../migrations/007_add_batch_code/up.sql")),
         M::up(include_str!("../migrations/008_fix_batch_fk/up.sql")),
+        M::up(include_str!("../migrations/009_supplier_debts/up.sql")),
     ])
 }
 
 pub fn total_migrations() -> i64 {
-    8
+    9
 }

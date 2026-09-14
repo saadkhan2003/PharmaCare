@@ -7,6 +7,7 @@ import { SupplierForm } from '@/components/suppliers/SupplierForm';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToast } from '@/components/ui/toast-provider';
 import { tauri } from '@/lib/tauri';
+import { useAutoRefresh } from '@/lib/eventBus';
 import { playSuccess } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 import type { SupplierDto } from '@/types/supplier';
@@ -24,6 +25,7 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingSupplierId, setEditingSupplierId] = useState<number | undefined>(undefined);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [suppliersRefreshKey] = useAutoRefresh('suppliers-changed');
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -44,7 +46,7 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
 
   useEffect(() => {
     fetchSuppliers();
-  }, [fetchSuppliers, refreshKey]);
+  }, [fetchSuppliers, refreshKey, suppliersRefreshKey]);
 
   const handleEdit = useCallback((id: number) => {
     setEditingSupplierId(id);
@@ -65,9 +67,13 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
 
   const handleDelete = useCallback(
     async (id: number) => {
-      await tauri.suppliers.delete(session.token, id);
-      toast('success', 'Supplier deleted');
-      setRefreshKey((prev) => prev + 1);
+      try {
+        await tauri.suppliers.delete(session.token, id);
+        toast('success', 'Supplier deleted');
+        setRefreshKey((prev) => prev + 1);
+      } catch (err: unknown) {
+        toast('error', 'Failed to delete supplier', err instanceof Error ? err.message : String(err));
+      }
     },
     [session.token, toast]
   );
@@ -95,23 +101,26 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
   }, [formSaved, editingSupplierId, toast]);
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Suppliers</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Suppliers</h1>
+          <p className="text-sm text-muted-foreground">Manage supplier contacts and details.</p>
+        </div>
         <Button onClick={handleAddClick}>
           <Plus className="mr-2 h-4 w-4" />
           Add Supplier
         </Button>
       </div>
 
-      <div className="mb-4">
+      <div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by name or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-10"
           />
         </div>
       </div>
@@ -132,6 +141,7 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
         onSave={handleFormSave}
         sessionToken={session.token}
         supplierId={editingSupplierId}
+        supplier={editingSupplierId ? suppliers.find(s => s.id === editingSupplierId) : undefined}
       />
     </div>
   );

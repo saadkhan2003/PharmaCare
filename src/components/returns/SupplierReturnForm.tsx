@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Search as SearchIcon, RotateCcw } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import { formatDate } from '@/lib/formatDate';
 import type {
   PurchaseForReturnDto, PurchaseItemForReturnDto,
@@ -177,6 +178,8 @@ export function SupplierReturnForm({
       setPurchaseId('');
 
       setSuccess(receipt);
+      dispatchEvent('purchases-changed');
+      dispatchEvent('medicines-changed');
       onReturnComplete();
     } catch (err: unknown) {
       setError(

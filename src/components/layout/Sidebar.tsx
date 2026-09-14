@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, Undo2, RotateCcw, Trash2, BarChart3, Settings, PanelLeftClose, PanelLeft, HandCoins, History, Boxes } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, ScrollText, Building2, Pill, Truck, Package, AlertTriangle, Undo2, RotateCcw, Trash2, BarChart3, Settings, PanelLeftClose, PanelLeft, HandCoins, History, Boxes, CircleDollarSign } from 'lucide-react';
 import { playClick } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 import { cn } from '@/lib/utils';
@@ -21,26 +21,28 @@ interface NavItem {
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: ('owner' | 'pharmacist')[];
+  shortcut?: string;
 }
 
 const navItems: NavItem[] = [
   { title: 'POS', url: '/pos', icon: ShoppingCart, roles: ['owner', 'pharmacist'] },
   { title: 'POS History', url: '/pos/history', icon: History, roles: ['owner', 'pharmacist'] },
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, roles: ['owner', 'pharmacist'] },
-  { title: 'Users', url: '/users', icon: Users, roles: ['owner'] },
-  { title: 'Audit Log', url: '/audit', icon: ScrollText, roles: ['owner'] },
   { title: 'Medicines', url: '/medicines', icon: Pill, roles: ['owner', 'pharmacist'] },
   { title: 'Suppliers', url: '/suppliers', icon: Truck, roles: ['owner'] },
   { title: 'Purchases', url: '/purchases', icon: Package, roles: ['owner'] },
   { title: 'Batches', url: '/batches', icon: Boxes, roles: ['owner'] },
-  { title: 'Expiry Report', url: '/expiry-report', icon: AlertTriangle, roles: ['owner'] },
   { title: 'Reports', url: '/reports', icon: BarChart3, roles: ['owner'] },
+  { title: 'Expiry Report', url: '/expiry-report', icon: AlertTriangle, roles: ['owner'] },
   { title: 'Debts', url: '/debts', icon: HandCoins, roles: ['owner'] },
-  { title: 'Settings', url: '/settings', icon: Settings, roles: ['owner'] },
-  { title: 'Return History', url: '/returns/history', icon: ScrollText, roles: ['owner'] },
+  { title: 'Supplier Debts', url: '/supplier-debts', icon: CircleDollarSign, roles: ['owner'], shortcut: '⌘8' },
+  { title: 'Users', url: '/users', icon: Users, roles: ['owner'] },
+  { title: 'Audit Log', url: '/audit', icon: ScrollText, roles: ['owner'] },
   { title: 'Customer Return', url: '/returns/customer', icon: Undo2, roles: ['owner', 'pharmacist'] },
   { title: 'Supplier Return', url: '/returns/supplier', icon: RotateCcw, roles: ['owner'] },
   { title: 'Write Off', url: '/returns/write-off', icon: Trash2, roles: ['owner'] },
+  { title: 'Return History', url: '/returns/history', icon: ScrollText, roles: ['owner'] },
+  { title: 'Settings', url: '/settings', icon: Settings, roles: ['owner'] },
 ];
 
 interface SidebarProps {
@@ -101,7 +103,12 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
                     )}
                   >
                     <item.icon />
-                    {!isCollapsed && <span>{item.title}</span>}
+                    {!isCollapsed && (
+                      <span className="flex-1">{item.title}</span>
+                    )}
+                    {!isCollapsed && item.shortcut && (
+                      <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted px-1 rounded">{item.shortcut}</kbd>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -124,6 +131,11 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
             >
               {isCollapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
               {!isCollapsed && <span>Collapse</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="sm" className={cn('text-xs text-sidebar-foreground/60', isCollapsed ? 'justify-center px-0' : '')}>
+              <span>v0.1.0</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -174,7 +186,10 @@ function MobileSidebar({ session, onClose }: { session: SessionDto; onClose: () 
                         onClick={() => { navigate(item.url); onClose(); }}
                       >
                         <item.icon />
-                        <span>{item.title}</span>
+                        <span className="flex-1">{item.title}</span>
+                        {item.shortcut && (
+                          <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted px-1 rounded">{item.shortcut}</kbd>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}

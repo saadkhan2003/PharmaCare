@@ -11,10 +11,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { ChartTooltipContent, chartAxisStyle, useChartColors } from './ChartTooltip';
 import { SalesByUserPDF } from '../../lib/pdf/SalesByUserPDF';
 import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { SalesByUserRow } from '../../types/report';
+import { useIsDark } from '../../hooks/useIsDark';
 
 interface SalesByUserReportProps {
   session: SessionDto;
@@ -26,6 +28,8 @@ export function SalesByUserReport({ session, startDate, endDate }: SalesByUserRe
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+  const dark = useIsDark();
+  const colors = useChartColors();
 
   const { data, error, loading, execute } = useTauriCommand<SalesByUserRow[]>();
 
@@ -53,6 +57,7 @@ export function SalesByUserReport({ session, startDate, endDate }: SalesByUserRe
   }
 
   const rows = data ?? [];
+  const axis = chartAxisStyle(dark);
 
   return (
     <div className="space-y-4">
@@ -64,12 +69,12 @@ export function SalesByUserReport({ session, startDate, endDate }: SalesByUserRe
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: any) => `${currencySymbol}${Number(value).toFixed(2)}`} />
-                <Legend />
-                <Bar dataKey="sales" name="Revenue" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="profit" name="Profit" fill="#16a34a" radius={[2, 2, 0, 0]} />
+                <XAxis dataKey="name" {...axis} />
+                <YAxis {...axis} />
+                <Tooltip content={<ChartTooltipContent formatter={(v: any) => `${currencySymbol}${Number(v).toFixed(2)}`} />} />
+                <Legend wrapperStyle={{ fontSize: 11, color: dark ? '#a1a1aa' : '#6b7280' }} />
+                <Bar dataKey="sales" name="Revenue" fill={colors.primary} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="profit" name="Profit" fill={colors.profit} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -115,14 +120,16 @@ export function SalesByUserReport({ session, startDate, endDate }: SalesByUserRe
                   <TableRow key={row.user_id}>
                     <TableCell className="font-medium">{row.full_name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={row.role === 'owner' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-gray-100 text-gray-800 border-gray-300'}>
+                      <Badge variant="outline" className={row.role === 'owner'
+                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-700'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600'}>
                         {row.role}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">{row.sale_count}</TableCell>
                     <TableCell className="text-right">{row.item_count}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.total_sales.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-green-600">{currencySymbol}{row.total_profit.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-green-600 dark:text-green-400">{currencySymbol}{row.total_profit.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.avg_profit_per_sale.toFixed(2)}</TableCell>
                   </TableRow>
                 ))

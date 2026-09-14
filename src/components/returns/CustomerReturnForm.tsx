@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Search as SearchIcon, Undo2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import { formatDate } from '@/lib/formatDate';
 import type {
   SaleForReturnDto, SaleItemForReturnDto,
@@ -186,6 +187,8 @@ export function CustomerReturnForm({
       setSaleId('');
 
       setSuccess(receipt);
+      dispatchEvent('sales-changed');
+      dispatchEvent('medicines-changed');
       onReturnComplete();
     } catch (err: unknown) {
       setError(

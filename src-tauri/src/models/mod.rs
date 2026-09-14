@@ -11,6 +11,7 @@ pub mod r#return;
 pub mod report;
 pub mod debt;
 pub mod pagination;
+pub mod supplier_debt;
 
 // Re-exports — used by services and commands in downstream plans
 #[allow(unused_imports)]
@@ -37,3 +38,5 @@ pub use r#return::*;
 pub use report::*;
 #[allow(unused_imports)]
 pub use pagination::*;
+#[allow(unused_imports)]
+pub use supplier_debt::*;

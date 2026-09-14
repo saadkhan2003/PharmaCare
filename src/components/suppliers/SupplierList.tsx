@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Pencil, Trash2, EyeOff } from 'lucide-react';
+import { Pencil, Trash2, EyeOff, Truck } from 'lucide-react';
 import type { SupplierDto } from '@/types/supplier';
 
 interface SupplierListProps {
@@ -54,6 +54,7 @@ export function SupplierList({
   if (suppliers.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <Truck className="mx-auto h-10 w-10 mb-3 opacity-50" />
         No suppliers found. Add your first supplier to get started.
       </div>
     );
@@ -100,6 +101,7 @@ export function SupplierList({
                     variant="ghost"
                     size="icon"
                     onClick={() => onEdit(supplier.id)}
+                    aria-label="Edit supplier"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -108,7 +110,7 @@ export function SupplierList({
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeactivateTarget(supplier)}
-                      title="Deactivate"
+                      aria-label="Deactivate supplier"
                     >
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
                     </Button>
@@ -118,7 +120,7 @@ export function SupplierList({
                       variant="ghost"
                       size="icon"
                       onClick={() => { setDeleteError(null); setDeleteTarget(supplier); }}
-                      title="Delete permanently"
+                      aria-label="Delete supplier permanently"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>

@@ -31,6 +31,10 @@ import type {
   ReturnListItemDto,
 } from '../types/return';
 import type { DebtorDto, DebtorListItem, DebtDetailDto, CreateDebtDto } from '../types/debt';
+import type {
+  SupplierDebt, SupplierPayment, SupplierDebtDetail, SupplierDebtListItem,
+  CreateSupplierDebtRequest, RecordSupplierPaymentRequest,
+} from '../types/supplier-debt';
 
 export interface SessionInfo {
   user_id: number;
@@ -257,6 +261,26 @@ export const tauri = {
       invoke<number>('get_overdue_count', { sessionToken }),
     getDueSoonCount: (sessionToken: string) =>
       invoke<number>('get_due_soon_count', { sessionToken }),
+  },
+
+  supplierDebts: {
+    create: (sessionToken: string, req: CreateSupplierDebtRequest) =>
+      invoke<SupplierDebt>('create_supplier_debt', { sessionToken, req }),
+    list: (sessionToken: string, supplierId?: number) =>
+      invoke<SupplierDebtListItem[]>('list_supplier_debts', { sessionToken, supplierId: supplierId ?? null }),
+    get: (sessionToken: string, debtId: number) =>
+      invoke<SupplierDebtDetail>('get_supplier_debt', { sessionToken, debtId }),
+    recordPayment: (sessionToken: string, req: RecordSupplierPaymentRequest) =>
+      invoke<SupplierPayment>('record_supplier_payment', { sessionToken, req }),
+    getOverdueCount: (sessionToken: string) =>
+      invoke<number>('get_supplier_overdue_count', { sessionToken }),
+    createFromPurchase: (
+      sessionToken: string, purchaseId: number, supplierId: number,
+      totalCost: number, paidAmount: number, paymentStatus: string, dueDate?: string,
+    ) =>
+      invoke<SupplierDebt>('create_supplier_debt_from_purchase', {
+        sessionToken, purchaseId, supplierId, totalCost, paidAmount, paymentStatus, dueDate: dueDate ?? null,
+      }),
   },
 
   batches: {

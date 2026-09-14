@@ -3,6 +3,7 @@ import { PurchaseForm } from '@/components/purchases/PurchaseForm';
 import { PurchaseList } from '@/components/purchases/PurchaseList';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/components/ui/toast-provider';
+import { useAutoRefresh } from '@/lib/eventBus';
 import { playSuccess } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 
@@ -11,7 +12,10 @@ interface PurchasesPageProps {
 }
 
 export function PurchasesPage({ session }: PurchasesPageProps) {
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [internalRefreshKey, setInternalRefreshKey] = useState(0);
+  const [purchasesRefreshKey] = useAutoRefresh('purchases-changed');
+  const [medicinesRefreshKey] = useAutoRefresh('medicines-changed');
+  const refreshKey = internalRefreshKey + purchasesRefreshKey + medicinesRefreshKey;
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol || 'Rs.';
   const { toast } = useToast();
@@ -19,28 +23,33 @@ export function PurchasesPage({ session }: PurchasesPageProps) {
   const handlePurchaseComplete = useCallback(() => {
     playSuccess();
     toast('success', 'Purchase recorded successfully');
-    setRefreshKey((prev) => prev + 1);
+    setInternalRefreshKey((prev) => prev + 1);
   }, [toast]);
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Purchases</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Purchases</h1>
+          <p className="text-sm text-muted-foreground">Record new purchases and view purchase history.</p>
+        </div>
+      </div>
 
-      <div className="space-y-6">
+      <div>
         <PurchaseForm
           sessionToken={session.token}
           currencySymbol={currencySymbol}
           onPurchaseComplete={handlePurchaseComplete}
         />
+      </div>
 
-        <div>
-          <h2 className="mb-4 text-lg font-semibold">Purchase History</h2>
-          <div className="rounded-lg border bg-card">
-            <PurchaseList
-              sessionToken={session.token}
-              refreshKey={refreshKey}
-            />
-          </div>
+      <div>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Purchase History</h2>
+        <div className="rounded-lg border bg-card">
+          <PurchaseList
+            sessionToken={session.token}
+            refreshKey={refreshKey}
+          />
         </div>
       </div>
     </div>

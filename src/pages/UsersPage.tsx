@@ -16,9 +16,12 @@ export function UsersPage({ session }: UsersPageProps) {
   }, []);
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">User Management</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">User Management</h1>
+          <p className="text-sm text-muted-foreground">Manage user accounts and roles.</p>
+        </div>
         <div className="flex gap-2">
           <ChangePasswordDialog session={session} />
           <AddUserDialog session={session} onUserAdded={handleUserChanged} />

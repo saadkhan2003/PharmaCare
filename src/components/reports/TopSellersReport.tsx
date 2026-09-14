@@ -10,10 +10,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { ChartTooltipContent, chartAxisStyle, useChartColors } from './ChartTooltip';
 import { TopSellersPDF } from '../../lib/pdf/TopSellersPDF';
 import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { TopSellerRow } from '../../types/report';
+import { useIsDark } from '../../hooks/useIsDark';
 
 interface TopSellersReportProps {
   session: SessionDto;
@@ -25,6 +27,8 @@ export function TopSellersReport({ session, startDate, endDate }: TopSellersRepo
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+  const dark = useIsDark();
+  const colors = useChartColors();
 
   const { data, error, loading, execute } = useTauriCommand<TopSellerRow[]>();
 
@@ -49,6 +53,7 @@ export function TopSellersReport({ session, startDate, endDate }: TopSellersRepo
   }
 
   const rows = data ?? [];
+  const axis = chartAxisStyle(dark);
 
   return (
     <div className="space-y-4">
@@ -60,11 +65,11 @@ export function TopSellersReport({ session, startDate, endDate }: TopSellersRepo
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 100 }}>
-                <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} width={90} />
-                <Tooltip formatter={(value: any) => Number(value).toLocaleString('en-IN')} />
-                <Legend />
-                <Bar dataKey="quantity" name="Quantity Sold" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+                <XAxis type="number" {...axis} />
+                <YAxis type="category" dataKey="name" {...axis} width={90} />
+                <Tooltip content={<ChartTooltipContent formatter={(v: any) => Number(v).toLocaleString('en-IN')} />} />
+                <Legend wrapperStyle={{ fontSize: 11, color: dark ? '#a1a1aa' : '#6b7280' }} />
+                <Bar dataKey="quantity" name="Quantity Sold" fill={colors.primary} radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -110,7 +115,7 @@ export function TopSellersReport({ session, startDate, endDate }: TopSellersRepo
                     </TableCell>
                     <TableCell className="text-right">{row.total_qty}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.total_revenue.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-green-600">{currencySymbol}{row.total_profit.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-green-600 dark:text-green-400">{currencySymbol}{row.total_profit.toFixed(2)}</TableCell>
                   </TableRow>
                 ))
               )}

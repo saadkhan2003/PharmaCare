@@ -21,7 +21,7 @@ export function BackupStatusBanner({ session }: BackupStatusBannerProps) {
     checkBackup();
     const interval = setInterval(checkBackup, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [session.token]);
 
   if (!backupStatus) return null;
 

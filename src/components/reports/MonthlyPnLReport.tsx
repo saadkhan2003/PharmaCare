@@ -10,10 +10,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { ChartTooltipContent, chartAxisStyle, useChartColors } from './ChartTooltip';
 import { MonthlyPnLPDF } from '../../lib/pdf/MonthlyPnLPDF';
 import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { MonthlyPnLRow } from '../../types/report';
+import { useIsDark } from '../../hooks/useIsDark';
 
 interface MonthlyPnLReportProps {
   session: SessionDto;
@@ -25,6 +27,8 @@ export function MonthlyPnLReport({ session, startDate, endDate }: MonthlyPnLRepo
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+  const dark = useIsDark();
+  const colors = useChartColors();
 
   const { data, error, loading, execute } = useTauriCommand<MonthlyPnLRow[]>();
 
@@ -52,6 +56,7 @@ export function MonthlyPnLReport({ session, startDate, endDate }: MonthlyPnLRepo
   }
 
   const rows = data ?? [];
+  const axis = chartAxisStyle(dark);
 
   return (
     <div className="space-y-4">
@@ -63,12 +68,12 @@ export function MonthlyPnLReport({ session, startDate, endDate }: MonthlyPnLRepo
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: any) => `${currencySymbol}${Number(value).toFixed(2)}`} />
-                <Legend />
-                <Bar dataKey="revenue" name="Revenue" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="profit" name="Net Profit" fill="#16a34a" radius={[2, 2, 0, 0]} />
+                <XAxis dataKey="month" {...axis} />
+                <YAxis {...axis} />
+                <Tooltip content={<ChartTooltipContent formatter={(v: any) => `${currencySymbol}${Number(v).toFixed(2)}`} />} />
+                <Legend wrapperStyle={{ fontSize: 11, color: dark ? '#a1a1aa' : '#6b7280' }} />
+                <Bar dataKey="revenue" name="Revenue" fill={colors.revenue} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="profit" name="Net Profit" fill={colors.profit} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -117,10 +122,10 @@ export function MonthlyPnLReport({ session, startDate, endDate }: MonthlyPnLRepo
                     <TableCell className="text-right">{row.sale_count}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.total_revenue.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.total_cogs.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-green-600">{currencySymbol}{row.gross_profit.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-red-500">{currencySymbol}{row.total_refunds.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-red-500">{currencySymbol}{row.write_off_losses.toFixed(2)}</TableCell>
-                    <TableCell className={`text-right font-medium ${row.net_profit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    <TableCell className="text-right text-green-600 dark:text-green-400">{currencySymbol}{row.gross_profit.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-red-500 dark:text-red-400">{currencySymbol}{row.total_refunds.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-red-500 dark:text-red-400">{currencySymbol}{row.write_off_losses.toFixed(2)}</TableCell>
+                    <TableCell className={`text-right font-medium ${row.net_profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                       {currencySymbol}{row.net_profit.toFixed(2)}
                     </TableCell>
                   </TableRow>

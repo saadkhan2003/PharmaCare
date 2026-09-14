@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import type { SessionDto } from '@/types/session';
 import type { SettingsMap } from '@/types/settings';
 import { Loader2, Save } from 'lucide-react';
@@ -70,6 +71,7 @@ export function FinancialTab({ settings, session, onSaved }: FinancialTabProps) 
         currency_symbol: currencySymbol || 'Rs.',
       });
       setMessage({ type: 'success', text: 'Financial settings saved successfully' });
+      dispatchEvent('settings-changed');
       onSaved();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save settings';

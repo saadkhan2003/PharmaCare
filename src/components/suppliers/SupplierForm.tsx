@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import type { SupplierDto, CreateSupplierDto, UpdateSupplierDto } from '@/types/supplier';
 
 interface SupplierFormProps {
@@ -20,6 +21,7 @@ interface SupplierFormProps {
   onSave?: () => void;
   sessionToken: string;
   supplierId?: number;
+  supplier?: SupplierDto;
 }
 
 interface FormState {
@@ -50,6 +52,7 @@ export function SupplierForm({
   onSave,
   sessionToken,
   supplierId,
+  supplier,
 }: SupplierFormProps) {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -61,19 +64,29 @@ export function SupplierForm({
 
   useEffect(() => {
     if (open && isEdit && supplierId) {
+      if (supplier) {
+        setForm({
+          company_name: supplier.company_name,
+          contact_person: supplier.contact_person || '',
+          phone: supplier.phone || '',
+          address: supplier.address || '',
+          payment_terms: supplier.payment_terms || '',
+          notes: supplier.notes || '',
+        });
+        return;
+      }
       setLoadingData(true);
-      // We don't have a get_supplier endpoint, so we'll search all and find by ID
       tauri.suppliers.list(sessionToken)
         .then((suppliers: SupplierDto[]) => {
-          const supplier = suppliers.find((s) => s.id === supplierId);
-          if (supplier) {
+          const found = suppliers.find((s) => s.id === supplierId);
+          if (found) {
             setForm({
-              company_name: supplier.company_name,
-              contact_person: supplier.contact_person || '',
-              phone: supplier.phone || '',
-              address: supplier.address || '',
-              payment_terms: supplier.payment_terms || '',
-              notes: supplier.notes || '',
+              company_name: found.company_name,
+              contact_person: found.contact_person || '',
+              phone: found.phone || '',
+              address: found.address || '',
+              payment_terms: found.payment_terms || '',
+              notes: found.notes || '',
             });
           }
         })
@@ -82,7 +95,7 @@ export function SupplierForm({
         })
         .finally(() => setLoadingData(false));
     }
-  }, [open, isEdit, supplierId, sessionToken]);
+  }, [open, isEdit, supplierId, supplier, sessionToken]);
 
   useEffect(() => {
     if (open && !isEdit) {
@@ -130,6 +143,7 @@ export function SupplierForm({
         };
         await tauri.suppliers.create(sessionToken, payload);
       }
+      dispatchEvent('suppliers-changed');
       onSave?.();
       onClose();
     } catch (err: unknown) {

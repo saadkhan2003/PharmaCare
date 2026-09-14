@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { tauri } from '@/lib/tauri';
+import { useAutoRefresh } from '@/lib/eventBus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,24 +12,37 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/toast-provider';
+import { useSettings } from '@/hooks/useSettings';
 import type { BatchListDto } from '@/types/batch';
 import type { SessionDto } from '@/types/session';
 import { formatDate } from '@/lib/formatDate';
 
 export function BatchesPage({ session }: { session: SessionDto }) {
+  const { toast } = useToast();
+  const { settings } = useSettings(session.token);
+  const currencySymbol = settings?.currency_symbol || 'Rs.';
   const [batches, setBatches] = useState<BatchListDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<BatchListDto | null>(null);
   const [batchCode, setBatchCode] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [saving, setSaving] = useState(false);
+  const [medicinesRefreshKey] = useAutoRefresh('medicines-changed');
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    tauri.batches.list(session.token).then(setBatches).finally(() => setLoading(false));
+    try {
+      const result = await tauri.batches.list(session.token);
+      setBatches(result);
+    } catch (err: unknown) {
+      toast('error', 'Failed to load batches', err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(load, [session.token]);
+  useEffect(() => { load(); }, [session.token, medicinesRefreshKey]);
 
   const openEdit = (batch: BatchListDto) => {
     setEditing(batch);
@@ -46,6 +60,8 @@ export function BatchesPage({ session }: { session: SessionDto }) {
       });
       setEditing(null);
       load();
+    } catch (err: unknown) {
+      toast('error', 'Failed to save batch', err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
@@ -53,9 +69,11 @@ export function BatchesPage({ session }: { session: SessionDto }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Batches</h1>
-        <p className="text-sm text-muted-foreground">View stock batches and update batch code or expiry date.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Batches</h1>
+          <p className="text-sm text-muted-foreground">View stock batches and update batch code or expiry date.</p>
+        </div>
       </div>
 
       {loading ? (
@@ -88,7 +106,7 @@ export function BatchesPage({ session }: { session: SessionDto }) {
                   <TableCell>{batch.purchase_id ? `#${batch.purchase_id}` : 'Opening'}</TableCell>
                   <TableCell>{batch.quantity}</TableCell>
                   <TableCell>{batch.remaining_qty}</TableCell>
-                  <TableCell>Rs. {batch.purchase_price.toFixed(2)}</TableCell>
+                  <TableCell>{currencySymbol} {batch.purchase_price.toFixed(2)}</TableCell>
                   <TableCell>{formatDate(batch.expiry_date) || batch.expiry_date}</TableCell>
                   <TableCell>{formatDate(batch.received_date)}</TableCell>
                   <TableCell className="text-right"><Button variant="outline" size="sm" onClick={() => openEdit(batch)}>Edit</Button></TableCell>

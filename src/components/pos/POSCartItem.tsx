@@ -35,6 +35,7 @@ export function POSCartItem({
           size="icon"
           className="h-8 w-8 shrink-0 text-destructive"
           onClick={() => onRemove(item.medicine.id)}
+          aria-label="Remove item from cart"
         >
           <Trash2 className="h-4 w-4" />
         </Button>

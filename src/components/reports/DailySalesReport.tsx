@@ -10,10 +10,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { ChartTooltipContent, chartAxisStyle, useChartColors } from './ChartTooltip';
 import { DailySalesPDF } from '../../lib/pdf/DailySalesPDF';
 import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { DailySalesRow } from '../../types/report';
+import { useIsDark } from '../../hooks/useIsDark';
 
 interface DailySalesReportProps {
   session: SessionDto;
@@ -25,6 +27,8 @@ export function DailySalesReport({ session, startDate, endDate }: DailySalesRepo
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+  const dark = useIsDark();
+  const colors = useChartColors();
 
   const { data, error, loading, execute } = useTauriCommand<DailySalesRow[]>();
 
@@ -52,10 +56,10 @@ export function DailySalesReport({ session, startDate, endDate }: DailySalesRepo
   }
 
   const rows = data ?? [];
+  const axis = chartAxisStyle(dark);
 
   return (
     <div className="space-y-4">
-      {/* Chart */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Daily Sales Trend</CardTitle>
@@ -64,19 +68,18 @@ export function DailySalesReport({ session, startDate, endDate }: DailySalesRepo
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip formatter={(value: any) => `${currencySymbol}${Number(value).toFixed(2)}`} />
-                <Legend />
-                <Bar dataKey="net_sales" name="Net Sales" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="profit" name="Profit" fill="#16a34a" radius={[2, 2, 0, 0]} />
+                <XAxis dataKey="date" {...axis} />
+                <YAxis {...axis} />
+                <Tooltip content={<ChartTooltipContent formatter={(v: any) => `${currencySymbol}${Number(v).toFixed(2)}`} />} />
+                <Legend wrapperStyle={{ fontSize: 11, color: dark ? '#a1a1aa' : '#6b7280' }} />
+                <Bar dataKey="net_sales" name="Net Sales" fill={colors.primary} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="profit" name="Profit" fill={colors.profit} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
@@ -122,7 +125,7 @@ export function DailySalesReport({ session, startDate, endDate }: DailySalesRepo
                     <TableCell className="text-right">{currencySymbol}{row.discounts.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.tax_amount.toFixed(2)}</TableCell>
                     <TableCell className="text-right font-medium">{currencySymbol}{row.net_sales.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-green-600">{currencySymbol}{row.profit.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-green-600 dark:text-green-400">{currencySymbol}{row.profit.toFixed(2)}</TableCell>
                   </TableRow>
                 ))
               )}

@@ -8,6 +8,7 @@ import { useTauriCommand } from '@/hooks/useTauriCommand';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/components/ui/toast-provider';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import type { SessionDto } from '@/types/session';
 import type { CartItem } from '@/pages/POSPage';
 import type { SaleReceiptDto } from '@/types/sale';
@@ -78,6 +79,8 @@ export function POSCartPanel({
 
       if (receipt) {
         toast('success', 'Sale completed successfully');
+        dispatchEvent('sales-changed');
+        dispatchEvent('medicines-changed');
         onConfirm(receipt);
       }
     } catch (err: unknown) {
@@ -154,6 +157,7 @@ export function POSCartPanel({
             customerNameRef={customerNameRef}
             confirmRef={confirmRef}
             loading={confirmLoading}
+            currencySymbol={settings?.currency_symbol || 'Rs.'}
           />
           {confirmError && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive break-words">

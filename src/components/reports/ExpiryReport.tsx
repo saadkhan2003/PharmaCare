@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useTauriCommand } from '../../hooks/useTauriCommand';
 import { useSettings } from '../../hooks/useSettings';
+import { useIsDark } from '../../hooks/useIsDark';
 import { tauri } from '../../lib/tauri';
 import { formatDate } from '@/lib/formatDate';
 import {
@@ -10,8 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { ChartTooltipContent } from './ChartTooltip';
 import { ExpiryPDF } from '../../lib/pdf/ExpiryPDF';
 import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
@@ -28,6 +30,8 @@ export function ExpiryReport({ session }: ExpiryReportProps) {
   const warningDays = settings?.expiry_warning_days ?? 60;
   const criticalDays = settings?.expiry_critical_days ?? 30;
 
+  const dark = useIsDark();
+
   const { data, error, loading, execute } = useTauriCommand<ExpiryReportDetailRow[]>();
 
   const fetchData = useCallback(() => {
@@ -39,13 +43,13 @@ export function ExpiryReport({ session }: ExpiryReportProps) {
   function getStatusBadge(status: string) {
     switch (status) {
       case 'expired':
-        return <Badge variant="outline" className="bg-red-700 text-white border-red-800">Expired</Badge>;
+        return <Badge variant="outline" className="bg-red-700 dark:bg-red-800 text-white border-red-800 dark:border-red-600">Expired</Badge>;
       case 'critical':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Critical</Badge>;
+        return <Badge variant="outline" className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-300 dark:border-red-700">Critical</Badge>;
       case 'warning':
-        return <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Warning</Badge>;
+        return <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700">Warning</Badge>;
       default:
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">OK</Badge>;
+        return <Badge variant="outline" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300 dark:border-green-700">OK</Badge>;
     }
   }
 
@@ -85,12 +89,13 @@ export function ExpiryReport({ session }: ExpiryReportProps) {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={getChartData()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip />
-                <Bar dataKey="critical" name="Critical/Expired" fill="#dc2626" stackId="a" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="warning" name="Warning" fill="#d97706" stackId="a" />
-                <Bar dataKey="ok" name="OK" fill="#16a34a" stackId="a" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: dark ? '#a1a1aa' : '#6b7280' }} axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }} tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }} />
+                <YAxis tick={{ fontSize: 10, fill: dark ? '#a1a1aa' : '#6b7280' }} axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }} tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }} />
+                <Tooltip content={<ChartTooltipContent />} />
+                <Legend wrapperStyle={{ fontSize: 11, color: dark ? '#a1a1aa' : '#6b7280' }} />
+                <Bar dataKey="critical" name="Critical/Expired" fill={dark ? '#f87171' : '#dc2626'} stackId="a" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="warning" name="Warning" fill={dark ? '#fbbf24' : '#d97706'} stackId="a" />
+                <Bar dataKey="ok" name="OK" fill={dark ? '#4ade80' : '#16a34a'} stackId="a" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -145,13 +150,13 @@ export function ExpiryReport({ session }: ExpiryReportProps) {
                     <TableCell className="text-right">{currencySymbol}{row.unit_cost.toFixed(2)}</TableCell>
                     <TableCell>{formatDate(row.expiry_date)}</TableCell>
                     <TableCell className={`text-right font-bold ${
-                      row.days_remaining <= 0 ? 'text-red-600' :
-                      row.days_remaining <= criticalDays ? 'text-red-500' :
-                      row.days_remaining <= warningDays ? 'text-amber-600' : ''
+                      row.days_remaining <= 0 ? 'text-red-600 dark:text-red-400' :
+                      row.days_remaining <= criticalDays ? 'text-red-500 dark:text-red-400' :
+                      row.days_remaining <= warningDays ? 'text-amber-600 dark:text-amber-400' : ''
                     }`}>
                       {row.days_remaining <= 0 ? 'Expired' : `${row.days_remaining}d`}
                     </TableCell>
-                    <TableCell className="text-right text-red-600">
+                    <TableCell className="text-right text-red-600 dark:text-red-400">
                       {currencySymbol}{row.potential_loss.toFixed(2)}
                     </TableCell>
                     <TableCell>{getStatusBadge(row.status)}</TableCell>

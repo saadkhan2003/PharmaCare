@@ -9,6 +9,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToast } from '@/components/ui/toast-provider';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent, useAutoRefresh } from '@/lib/eventBus';
 import { playSuccess, playDelete } from '@/lib/sounds';
 import type { SessionDto } from '@/types/session';
 import type { MedicineListItem, MedicinePharmacistDto } from '@/types/medicine';
@@ -27,7 +28,9 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingMedicineId, setEditingMedicineId] = useState<number | undefined>(undefined);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [internalRefreshKey, setInternalRefreshKey] = useState(0);
+  const [eventRefreshKey] = useAutoRefresh('medicines-changed');
+  const refreshKey = internalRefreshKey + eventRefreshKey;
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [stockFilter, setStockFilter] = useState<string>('All');
   const [activeFilter, setActiveFilter] = useState<string>('All');
@@ -98,7 +101,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
         await tauri.medicines.deactivate(session.token, id);
         playDelete();
         toast('success', 'Medicine deactivated');
-        setRefreshKey((prev) => prev + 1);
+        setInternalRefreshKey((prev) => prev + 1);
       } catch (err: unknown) {
         console.error('Failed to deactivate medicine:', err);
         toast('error', 'Failed to deactivate medicine');
@@ -113,7 +116,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
         await tauri.medicines.delete(session.token, id);
         playDelete();
         toast('success', 'Medicine deleted');
-        setRefreshKey((prev) => prev + 1);
+        setInternalRefreshKey((prev) => prev + 1);
       } catch (err: unknown) {
         console.error('Failed to delete medicine:', err);
         toast('error', 'Failed to delete medicine');
@@ -141,13 +144,16 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
       setFormSaved(false);
     }
     setEditingMedicineId(undefined);
-    setRefreshKey((prev) => prev + 1);
+    setInternalRefreshKey((prev) => prev + 1);
   }, [formSaved, editingMedicineId, toast]);
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Medicines</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Medicines</h1>
+          <p className="text-sm text-muted-foreground">Manage medicine inventory and stock levels.</p>
+        </div>
         {isOwner && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setImportOpen(true)}>
@@ -162,14 +168,14 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
         )}
       </div>
 
-      <div className="mb-4">
+      <div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by name, generic name, brand, or category..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-10"
           />
         </div>
       </div>
@@ -250,7 +256,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
       <ImportMedicinesDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        onImported={() => setRefreshKey((prev) => prev + 1)}
+        onImported={() => { dispatchEvent('medicines-changed'); setInternalRefreshKey((prev) => prev + 1); }}
         sessionToken={session.token}
       />
     </div>

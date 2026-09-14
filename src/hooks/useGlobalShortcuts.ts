@@ -38,6 +38,9 @@ export function useGlobalShortcuts(session: SessionDto | null) {
         case 'l':
           if (!isInput) { e.preventDefault(); navigate('/settings'); }
           break;
+        case '8':
+          if (!isInput) { e.preventDefault(); navigate('/supplier-debts'); }
+          break;
       }
     };
 

@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { EyeOff, Trash2 } from 'lucide-react';
+import { EyeOff, Trash2, KeyRound, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -135,6 +135,7 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
   if (users.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <Users className="mx-auto h-10 w-10 mb-3 opacity-50" />
         No users found
       </div>
     );
@@ -188,7 +189,7 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
                       size="icon"
                       disabled={user.id === session.user_id}
                       onClick={() => setDeactivateTarget(user)}
-                      title="Deactivate"
+                      aria-label="Deactivate user"
                     >
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
                     </Button>
@@ -197,7 +198,7 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
                       size="icon"
                       disabled={user.id === session.user_id}
                       onClick={() => { setDeleteError(null); setDeleteTarget(user); }}
-                      title="Delete permanently"
+                      aria-label="Delete user permanently"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -206,9 +207,9 @@ export function UserList({ session, refreshKey, onUserChanged }: UserListProps) 
                       size="icon"
                       disabled={user.id === session.user_id}
                       onClick={() => { setResetTarget(user); setNewPassword(''); setResetError(null); }}
-                      title="Reset password"
+                      aria-label="Reset password"
                     >
-                      <span className="text-xs font-medium">🔑</span>
+                      <KeyRound className="h-4 w-4" />
                     </Button>
                   </>
                 )}

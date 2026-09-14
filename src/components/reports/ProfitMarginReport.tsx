@@ -10,10 +10,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
+import { ChartTooltipContent, chartAxisStyle, useChartColors } from './ChartTooltip';
 import { ProfitMarginPDF } from '../../lib/pdf/ProfitMarginPDF';
 import { ExportPdfButton } from './ExportPdfButton';
 import type { SessionDto } from '../../types/session';
 import type { ProfitMarginRow } from '../../types/report';
+import { useIsDark } from '../../hooks/useIsDark';
 
 interface ProfitMarginReportProps {
   session: SessionDto;
@@ -25,6 +27,8 @@ export function ProfitMarginReport({ session, startDate, endDate }: ProfitMargin
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
+  const dark = useIsDark();
+  const colors = useChartColors();
 
   const { data, error, loading, execute } = useTauriCommand<ProfitMarginRow[]>();
 
@@ -54,6 +58,7 @@ export function ProfitMarginReport({ session, startDate, endDate }: ProfitMargin
   }
 
   const rows = data ?? [];
+  const axis = chartAxisStyle(dark);
 
   return (
     <div className="space-y-4">
@@ -65,11 +70,11 @@ export function ProfitMarginReport({ session, startDate, endDate }: ProfitMargin
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 40, left: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-25} textAnchor="end" interval={0} height={50} />
-                <YAxis tick={{ fontSize: 10 }} unit="%" />
-                <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
-                <Legend />
-                <Bar dataKey="margin_pct" name="Margin %" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
+                <XAxis dataKey="name" {...axis} angle={-25} textAnchor="end" interval={0} height={50} />
+                <YAxis {...axis} unit="%" />
+                <Tooltip content={<ChartTooltipContent formatter={(v: any) => `${Number(v).toFixed(1)}%`} />} />
+                <Legend wrapperStyle={{ fontSize: 11, color: dark ? '#a1a1aa' : '#6b7280' }} />
+                <Bar dataKey="margin_pct" name="Margin %" fill={colors.primary} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -120,10 +125,10 @@ export function ProfitMarginReport({ session, startDate, endDate }: ProfitMargin
                     <TableCell className="text-right">{currencySymbol}{row.avg_sell_price.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.avg_cost.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{currencySymbol}{row.avg_margin_per_unit.toFixed(2)}</TableCell>
-                    <TableCell className={`text-right font-bold ${row.margin_pct >= 20 ? 'text-green-600' : row.margin_pct >= 10 ? 'text-amber-600' : 'text-red-500'}`}>
+                    <TableCell className={`text-right font-bold ${row.margin_pct >= 20 ? 'text-green-600 dark:text-green-400' : row.margin_pct >= 10 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400'}`}>
                       {row.margin_pct.toFixed(1)}%
                     </TableCell>
-                    <TableCell className="text-right text-green-600">{currencySymbol}{row.total_profit.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-green-600 dark:text-green-400">{currencySymbol}{row.total_profit.toFixed(2)}</TableCell>
                   </TableRow>
                 ))
               )}

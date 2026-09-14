@@ -22,6 +22,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2, Search as SearchIcon } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import { PAYMENT_STATUSES } from '@/types/purchase';
 import type { SupplierDto } from '@/types/supplier';
 import type { MedicineListItem } from '@/types/medicine';
@@ -226,6 +227,23 @@ export function PurchaseForm({
 
       const receipt = await tauri.purchases.record(sessionToken, payload);
 
+      // Create supplier debt if payment is not fully paid
+      if (paymentStatus !== 'Paid' && selectedSupplierId) {
+        try {
+          const paidAmount = paymentStatus === 'Partial' ? totalCost * 0.5 : 0;
+          await tauri.supplierDebts.createFromPurchase(
+            sessionToken,
+            receipt.purchase_id,
+            parseInt(selectedSupplierId),
+            receipt.total_cost,
+            paidAmount,
+            paymentStatus,
+          );
+        } catch (debtErr) {
+          console.error('[PurchaseForm] Failed to create supplier debt:', debtErr);
+        }
+      }
+
       // Reset form
       setSelectedSupplierId('');
       setInvoiceNumber('');
@@ -241,6 +259,8 @@ export function PurchaseForm({
         totalCost: receipt.total_cost,
         itemCount: receipt.item_count,
       });
+      dispatchEvent('purchases-changed');
+      dispatchEvent('medicines-changed');
       onPurchaseComplete();
     } catch (err: unknown) {
       let message = 'Failed to record purchase';
@@ -428,7 +448,6 @@ export function PurchaseForm({
                               if (!item.medicineId) {
                                 updateItem(item.id, { medicineName: val });
                               } else {
-                                // Clear selection if user types
                                 updateItem(item.id, {
                                   medicineId: null,
                                   medicineName: val,
@@ -443,7 +462,7 @@ export function PurchaseForm({
                             className="pl-7 text-sm"
                           />
                           {showResults && (
-                            <div className="absolute left-0 right-0 top-full z-[9999] mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-lg">
+                            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-lg">
                               {searchingMedicines[item.id] ? (
                                 <div className="p-2 text-xs text-muted-foreground">
                                   Searching...

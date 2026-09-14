@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination } from '@/components/ui/pagination';
 import { tauri } from '@/lib/tauri';
 import { formatDateTime } from '@/lib/formatDate';
 import type { LoginAttemptDto } from '@/types/user';
@@ -91,8 +92,9 @@ export function LoginAuditView({ sessionToken }: LoginAuditViewProps) {
     setAppliedFilters(empty);
   };
 
-  const canPrev = page > 0;
   const canNext = attempts.length === PAGE_SIZE;
+  const displayPage = page + 1;
+  const totalPages = canNext ? page + 2 : page + 1;
 
   if (loading) {
     return (
@@ -229,29 +231,11 @@ export function LoginAuditView({ sessionToken }: LoginAuditViewProps) {
             </TableBody>
           </Table>
 
-          <div className="flex items-center justify-between border-t p-4">
-            <span className="text-xs text-muted-foreground">
-              Page {page + 1} · Showing {attempts.length} results
-            </span>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!canPrev}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={!canNext}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            page={displayPage}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p - 1)}
+          />
         </>
       )}
     </div>

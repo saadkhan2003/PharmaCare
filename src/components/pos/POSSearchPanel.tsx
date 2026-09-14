@@ -16,6 +16,7 @@ interface POSSearchPanelProps {
   onKeyDown: (e: React.KeyboardEvent) => void;
   debouncedQuery: string;
   setQuery: (q: string) => void;
+  onResultsCountChange?: (count: number) => void;
 }
 
 export function POSSearchPanel({
@@ -27,6 +28,7 @@ export function POSSearchPanel({
   onKeyDown,
   debouncedQuery,
   setQuery,
+  onResultsCountChange,
 }: POSSearchPanelProps) {
   const [query, setLocalQuery] = useState(debouncedQuery);
   const debouncedLocal = useDebounce(query, 200);
@@ -43,6 +45,10 @@ export function POSSearchPanel({
   useEffect(() => {
     setQuery(query);
   }, [query, setQuery]);
+
+  useEffect(() => {
+    onResultsCountChange?.(results.length);
+  }, [results.length, onResultsCountChange]);
 
   // Fetch results when debounced local query changes
   useEffect(() => {

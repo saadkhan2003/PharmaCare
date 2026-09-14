@@ -33,10 +33,35 @@ export function SettingsPage({ session }: SettingsPageProps) {
       return true;
     }
   });
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
+    try {
+      return (localStorage.getItem('pharmacare-theme') as 'light' | 'dark' | 'system') || 'system';
+    } catch {
+      return 'system';
+    }
+  });
 
   useEffect(() => {
     setSoundEnabled(soundEnabled);
   }, [soundEnabled]);
+
+  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+    setTheme(newTheme);
+    localStorage.setItem('pharmacare-theme', newTheme);
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    if (newTheme === 'dark') {
+      root.classList.add('dark');
+    } else if (newTheme === 'light') {
+      root.classList.add('light');
+    } else {
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        root.classList.add('dark');
+      } else {
+        root.classList.add('light');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -61,7 +86,7 @@ export function SettingsPage({ session }: SettingsPageProps) {
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
       {/* Preferences */}
-      <div className="mb-6 rounded-lg border bg-card p-4">
+      <div className="mb-6 rounded-lg border bg-card p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium">Sound Effects</h3>
@@ -81,6 +106,27 @@ export function SettingsPage({ session }: SettingsPageProps) {
               }`}
             />
           </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium">Theme</h3>
+            <p className="text-xs text-muted-foreground">Choose your preferred color scheme</p>
+          </div>
+          <div className="flex gap-1 rounded-lg border bg-muted p-1">
+            {(['light', 'dark', 'system'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => handleThemeChange(t)}
+                className={`px-3 py-1 text-xs font-medium rounded-md capitalize transition-colors ${
+                  theme === t
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

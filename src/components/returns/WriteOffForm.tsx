@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search as SearchIcon, Trash2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import { formatDate } from '@/lib/formatDate';
 import type { MedicineListItem } from '@/types/medicine';
 import type { ReturnReceiptDto, WriteOffItemDto } from '@/types/return';
@@ -226,6 +227,7 @@ export function WriteOffForm({
       setMedicineSearchTerm('');
 
       setSuccess(receipt);
+      dispatchEvent('medicines-changed');
       onComplete();
     } catch (err: unknown) {
       setError(

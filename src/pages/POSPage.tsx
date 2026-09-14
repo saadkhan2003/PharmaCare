@@ -28,6 +28,7 @@ export function POSPage({ session }: POSPageProps) {
   // Search state
   const [query, setQuery] = useState('');
   const [selectedResultIndex, setSelectedResultIndex] = useState(-1);
+  const [resultsCount, setResultsCount] = useState(0);
 
   // Keyboard handlers
   const handleSelectMedicine = useCallback(
@@ -98,14 +99,15 @@ export function POSPage({ session }: POSPageProps) {
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        // M-10 fix: clamp index to results bounds — passed from POSSearchPanel via results.length
-        setSelectedResultIndex((prev) => prev + 1);
+        setSelectedResultIndex((prev) =>
+          prev < resultsCount - 1 ? prev + 1 : prev
+        );
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedResultIndex((prev) => Math.max(-1, prev - 1));
+        setSelectedResultIndex((prev) => prev > 0 ? prev - 1 : 0);
       }
     },
-    []
+    [resultsCount]
   );
 
   return (
@@ -121,11 +123,12 @@ export function POSPage({ session }: POSPageProps) {
           onKeyDown={handleSearchKeyDown}
           debouncedQuery={query}
           setQuery={setQuery}
+          onResultsCountChange={setResultsCount}
         />
       </div>
 
       {/* Right panel: Cart */}
-      <div className="w-[480px] shrink-0 flex flex-col">
+      <div className="w-full md:w-[420px] shrink-0 flex flex-col">
         <POSCartPanel
           cart={cart}
           onUpdateQuantity={handleUpdateQuantity}

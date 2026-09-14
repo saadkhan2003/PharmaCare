@@ -31,6 +31,7 @@ interface POSPaymentFormProps {
   customerNameRef: React.RefObject<HTMLInputElement>;
   confirmRef: React.RefObject<HTMLButtonElement>;
   loading: boolean;
+  currencySymbol?: string;
 }
 
 export function POSPaymentForm({
@@ -51,6 +52,7 @@ export function POSPaymentForm({
   customerNameRef,
   confirmRef,
   loading,
+  currencySymbol = 'Rs.',
 }: POSPaymentFormProps) {
   // Display-only calculations — server recomputes actual totals (D-35)
   const subtotal = cartItems.reduce(
@@ -70,7 +72,7 @@ export function POSPaymentForm({
       {/* Bill discount */}
       <div>
         <Label htmlFor="bill-discount" className="text-sm font-medium">
-          Bill Discount (Rs.)
+          Bill Discount ({currencySymbol})
         </Label>
         <Input
           ref={billDiscountRef}
@@ -158,18 +160,18 @@ export function POSPaymentForm({
       <div className="border-t border-border pt-3 space-y-1.5">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Subtotal</span>
-          <span>Rs. {subtotal.toFixed(2)}</span>
+          <span>{currencySymbol} {subtotal.toFixed(2)}</span>
         </div>
         {totalItemDiscount > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Item Discounts</span>
-            <span className="text-destructive">-Rs. {totalItemDiscount.toFixed(2)}</span>
+            <span className="text-destructive">-{currencySymbol} {totalItemDiscount.toFixed(2)}</span>
           </div>
         )}
         {billDiscount > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Bill Discount</span>
-            <span className="text-destructive">-Rs. {billDiscount.toFixed(2)}</span>
+            <span className="text-destructive">-{currencySymbol} {billDiscount.toFixed(2)}</span>
           </div>
         )}
         {taxEnabled && (
@@ -177,12 +179,12 @@ export function POSPaymentForm({
             <span className="text-muted-foreground">
               Tax ({taxRatePercent.toFixed(0)}%)
             </span>
-            <span>Rs. {taxAmount.toFixed(2)}</span>
+            <span>{currencySymbol} {taxAmount.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between text-2xl font-bold pt-2 border-t border-border">
           <span>Total</span>
-          <span>Rs. {estimatedTotal.toFixed(2)}</span>
+          <span>{currencySymbol} {estimatedTotal.toFixed(2)}</span>
         </div>
       </div>
 

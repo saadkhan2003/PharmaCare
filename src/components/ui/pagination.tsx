@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface PaginationProps {
   page: number;
@@ -19,6 +19,14 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         <Button
           variant="outline"
           size="sm"
+          onClick={() => onPageChange(1)}
+          disabled={page <= 1}
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
         >
@@ -33,6 +41,14 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         >
           Next
           <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(totalPages)}
+          disabled={page >= totalPages}
+        >
+          <ChevronsRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

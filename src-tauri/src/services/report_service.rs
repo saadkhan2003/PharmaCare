@@ -14,11 +14,26 @@ pub fn get_daily_sales(
             date(s.created_at) as sale_date,
             COUNT(DISTINCT s.id) as sale_count,
             COUNT(si.id) as item_count,
-            COALESCE(SUM(si.line_total + si.item_discount), 0) as gross_sales,
+            COALESCE(SUM(si.line_total + si.item_discount), 0)
+                - COALESCE((SELECT SUM(r.refund_amount) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.reference_id = s.id
+                    AND date(s.created_at) >= ?1 AND date(s.created_at) <= ?2), 0)
+                as gross_sales,
             COALESCE(SUM(si.item_discount), 0) + COALESCE(MAX(s.bill_discount), 0) as total_discounts,
             COALESCE(MAX(s.tax_amount), 0) as tax_amount,
-            COALESCE(SUM(si.line_total), 0) as net_sales,
-            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as profit
+            COALESCE(SUM(si.line_total), 0)
+                - COALESCE((SELECT SUM(r.refund_amount) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.reference_id = s.id
+                    AND date(s.created_at) >= ?1 AND date(s.created_at) <= ?2), 0)
+                as net_sales,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                - COALESCE((SELECT SUM(r.refund_amount - COALESCE(
+                    (SELECT si2.purchase_cost * r.quantity FROM sale_items si2
+                     WHERE si2.sale_id = r.reference_id AND si2.medicine_id = r.medicine_id LIMIT 1),
+                    0)) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.reference_id = s.id
+                    AND date(s.created_at) >= ?1 AND date(s.created_at) <= ?2), 0)
+                as profit
         FROM sales s
         JOIN sale_items si ON si.sale_id = s.id
         WHERE date(s.created_at) >= ?1 AND date(s.created_at) <= ?2
@@ -54,13 +69,20 @@ pub fn get_monthly_pnl(
             COUNT(DISTINCT s.id) as sale_count,
             COALESCE(SUM(si.line_total), 0) as total_revenue,
             COALESCE(SUM(si.purchase_cost * si.quantity), 0) as total_cogs,
-            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as gross_profit,
-            COALESCE((SELECT SUM(refund_amount) FROM returns
-                WHERE return_type = 'customer'
-                AND strftime('%Y-%m', return_date) = strftime('%Y-%m', s.created_at)), 0) as total_refunds,
-            COALESCE((SELECT SUM(ABS(refund_amount)) FROM returns
-                WHERE return_type = 'write_off'
-                AND strftime('%Y-%m', return_date) = strftime('%Y-%m', s.created_at)), 0) as write_off_losses
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                - COALESCE((SELECT SUM(r.refund_amount) FROM returns r
+                    WHERE r.return_type = 'customer'
+                    AND strftime('%Y-%m', r.return_date) = strftime('%Y-%m', s.created_at)), 0)
+                - COALESCE((SELECT SUM(ABS(r.refund_amount)) FROM returns r
+                    WHERE r.return_type = 'write_off'
+                    AND strftime('%Y-%m', r.return_date) = strftime('%Y-%m', s.created_at)), 0)
+                as gross_profit,
+            COALESCE((SELECT SUM(r.refund_amount) FROM returns r
+                WHERE r.return_type = 'customer'
+                AND strftime('%Y-%m', r.return_date) = strftime('%Y-%m', s.created_at)), 0) as total_refunds,
+            COALESCE((SELECT SUM(ABS(r.refund_amount)) FROM returns r
+                WHERE r.return_type = 'write_off'
+                AND strftime('%Y-%m', r.return_date) = strftime('%Y-%m', s.created_at)), 0) as write_off_losses
         FROM sales s
         JOIN sale_items si ON si.sale_id = s.id
         WHERE strftime('%Y-%m', s.created_at) >= ?1 AND strftime('%Y-%m', s.created_at) <= ?2
@@ -95,9 +117,24 @@ pub fn get_top_sellers(
             m.id as medicine_id,
             m.name as medicine_name,
             m.generic_name,
-            COALESCE(SUM(si.quantity), 0) as total_qty,
-            COALESCE(SUM(si.line_total), 0) as total_revenue,
-            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as total_profit
+            COALESCE(SUM(si.quantity), 0)
+                - COALESCE((SELECT SUM(r.quantity) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.medicine_id = m.id
+                    AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                as total_qty,
+            COALESCE(SUM(si.line_total), 0)
+                - COALESCE((SELECT SUM(r.refund_amount) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.medicine_id = m.id
+                    AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                as total_revenue,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                - COALESCE((SELECT SUM(r.refund_amount - COALESCE(
+                    (SELECT si2.purchase_cost * r.quantity FROM sale_items si2
+                     WHERE si2.sale_id = r.reference_id AND si2.medicine_id = r.medicine_id LIMIT 1),
+                    0)) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.medicine_id = m.id
+                    AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                as total_profit
         FROM sale_items si
         JOIN medicines m ON m.id = si.medicine_id
         JOIN sales s ON s.id = si.sale_id
@@ -297,10 +334,29 @@ pub fn get_sales_by_user(
             u.role,
             COUNT(DISTINCT s.id) as sale_count,
             COUNT(si.id) as item_count,
-            COALESCE(SUM(si.line_total), 0) as total_sales,
-            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as total_profit,
+            COALESCE(SUM(si.line_total), 0)
+                - COALESCE((SELECT SUM(r.refund_amount) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.processed_by = u.id
+                    AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                as total_sales,
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                - COALESCE((SELECT SUM(r.refund_amount - COALESCE(
+                    (SELECT si2.purchase_cost * r.quantity FROM sale_items si2
+                     WHERE si2.sale_id = r.reference_id AND si2.medicine_id = r.medicine_id LIMIT 1),
+                    0)) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.processed_by = u.id
+                    AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                as total_profit,
             CASE WHEN COUNT(DISTINCT s.id) > 0
-                THEN COALESCE(AVG(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                THEN (
+                    COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                    - COALESCE((SELECT SUM(r.refund_amount - COALESCE(
+                        (SELECT si2.purchase_cost * r.quantity FROM sale_items si2
+                         WHERE si2.sale_id = r.reference_id AND si2.medicine_id = r.medicine_id LIMIT 1),
+                        0)) FROM returns r
+                        WHERE r.return_type = 'customer' AND r.processed_by = u.id
+                        AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                ) / COUNT(DISTINCT s.id)
                 ELSE 0
             END as avg_profit_per_sale
         FROM users u
@@ -340,7 +396,11 @@ pub fn get_profit_margin(
             m.name as medicine_name,
             m.category,
             COUNT(si.id) as times_sold,
-            COALESCE(SUM(si.quantity), 0) as total_qty,
+            COALESCE(SUM(si.quantity), 0)
+                - COALESCE((SELECT SUM(r.quantity) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.medicine_id = m.id
+                    AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                as total_qty,
             COALESCE(AVG(si.unit_price), 0) as avg_sell_price,
             COALESCE(AVG(si.purchase_cost), 0) as avg_cost,
             COALESCE(AVG(si.unit_price - si.purchase_cost), 0) as avg_margin_per_unit,
@@ -348,7 +408,14 @@ pub fn get_profit_margin(
                 THEN ROUND(((AVG(si.unit_price) - AVG(si.purchase_cost)) / AVG(si.purchase_cost)) * 100, 1)
                 ELSE 0
             END as margin_pct,
-            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0) as total_profit
+            COALESCE(SUM(si.line_total - (si.purchase_cost * si.quantity)), 0)
+                - COALESCE((SELECT SUM(r.refund_amount - COALESCE(
+                    (SELECT si2.purchase_cost * r.quantity FROM sale_items si2
+                     WHERE si2.sale_id = r.reference_id AND si2.medicine_id = r.medicine_id LIMIT 1),
+                    0)) FROM returns r
+                    WHERE r.return_type = 'customer' AND r.medicine_id = m.id
+                    AND strftime('%Y-%m', r.return_date) >= ?1 AND strftime('%Y-%m', r.return_date) <= ?2), 0)
+                as total_profit
         FROM sale_items si
         JOIN medicines m ON m.id = si.medicine_id
         JOIN sales s ON s.id = si.sale_id

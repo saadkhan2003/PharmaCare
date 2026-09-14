@@ -51,6 +51,8 @@ export interface SaleListDto {
   customer_name: string | null;
   item_count: number;
   created_at: string;
+  total_returned_qty: number;
+  total_refund_amount: number;
 }
 
 export interface SaleDetailDto {

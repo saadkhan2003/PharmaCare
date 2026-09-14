@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
+import { dispatchEvent } from '@/lib/eventBus';
 import { MEDICINE_CATEGORIES, MEDICINE_UNITS } from '@/types/medicine';
 import type { MedicineDto, CreateMedicineDto, UpdateMedicineDto } from '@/types/medicine';
 
@@ -192,6 +193,7 @@ export function MedicineForm({
         };
       await tauri.medicines.create(sessionToken, payload);
       }
+      dispatchEvent('medicines-changed');
       onSave?.();
       onClose();
     } catch (err: unknown) {
@@ -235,6 +237,7 @@ export function MedicineForm({
                 id="name"
                 placeholder="Paracetamol 500mg"
                 value={form.name}
+                maxLength={200}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, name: e.target.value }))
                 }
@@ -251,6 +254,7 @@ export function MedicineForm({
                 id="generic_name"
                 placeholder="Paracetamol"
                 value={form.generic_name}
+                maxLength={200}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, generic_name: e.target.value }))
                 }
@@ -264,6 +268,7 @@ export function MedicineForm({
                 id="brand_name"
                 placeholder="Panadol"
                 value={form.brand_name}
+                maxLength={200}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, brand_name: e.target.value }))
                 }
@@ -447,6 +452,7 @@ export function MedicineForm({
                 id="notes"
                 placeholder="Any additional notes..."
                 value={form.notes}
+                maxLength={500}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, notes: e.target.value }))
                 }

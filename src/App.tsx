@@ -29,6 +29,7 @@ const ReturnHistoryPage = React.lazy(() => import('./pages/ReturnHistoryPage').t
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const DebtsPage = React.lazy(() => import('./pages/DebtsPage').then(m => ({ default: m.DebtsPage })));
+const SupplierDebtsPage = React.lazy(() => import('./pages/SupplierDebtsPage').then(m => ({ default: m.SupplierDebtsPage })));
 const BatchesPage = React.lazy(() => import('./pages/BatchesPage').then(m => ({ default: m.BatchesPage })));
 
 function AuthenticatedShell({ session, onLogout }: { session: import('./types/session').SessionDto; onLogout: () => void }) {
@@ -59,6 +60,7 @@ function AuthenticatedShell({ session, onLogout }: { session: import('./types/se
                 <Route path="/reports" element={<div className="animate-in"><ReportsPage session={session} /></div>} />
                 <Route path="/settings" element={<div className="animate-in"><SettingsPage session={session} /></div>} />
                 <Route path="/debts" element={<div className="animate-in"><DebtsPage session={session} /></div>} />
+                <Route path="/supplier-debts" element={<div className="animate-in"><SupplierDebtsPage session={session} /></div>} />
               </>
             )}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

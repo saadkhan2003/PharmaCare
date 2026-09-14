@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { tauri } from '@/lib/tauri';
+import { useAutoRefresh } from '@/lib/eventBus';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,11 +12,14 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Loader2, Search } from 'lucide-react';
+import { useSettings } from '@/hooks/useSettings';
 import type { SessionDto } from '@/types/session';
 import type { SaleDetailDto, SaleListDto } from '@/types/sale';
 import { formatDateTime } from '@/lib/formatDate';
 
 export function SalesHistoryPage({ session }: { session: SessionDto }) {
+  const { settings } = useSettings(session.token);
+  const currencySymbol = settings?.currency_symbol || 'Rs.';
   const [sales, setSales] = useState<SaleListDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<SaleDetailDto | null>(null);
@@ -26,6 +30,7 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const perPage = 50;
+  const [salesRefreshKey] = useAutoRefresh('sales-changed');
 
   useEffect(() => {
     setPage(1);
@@ -40,7 +45,7 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
       }).finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(timer);
-  }, [session.token, searchTerm, startDate, endDate, page, perPage]);
+  }, [session.token, searchTerm, startDate, endDate, page, perPage, salesRefreshKey]);
 
   const openDetail = async (saleId: number) => {
     setDetailLoading(true);
@@ -53,9 +58,11 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">POS Sales History</h1>
-        <p className="text-sm text-muted-foreground">Recent POS sales and receipt details.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">POS Sales History</h1>
+          <p className="text-sm text-muted-foreground">Recent POS sales and receipt details.</p>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -65,7 +72,7 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
             placeholder="Search by ID, customer, payment method, or medicine..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-10"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -112,6 +119,7 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
                 <TableHead>Payment</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">Returns</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -123,7 +131,16 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
                   <TableCell>{sale.item_count}</TableCell>
                   <TableCell>{sale.payment_method}</TableCell>
                   <TableCell>{sale.customer_name || '-'}</TableCell>
-                  <TableCell className="text-right font-medium">Rs. {sale.total.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-medium">{currencySymbol} {sale.total.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    {sale.total_returned_qty > 0 ? (
+                      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                        {sale.total_returned_qty} returned ({currencySymbol}{sale.total_refund_amount.toFixed(2)})
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" onClick={() => openDetail(sale.id)} disabled={detailLoading}>View</Button>
                   </TableCell>
@@ -145,7 +162,7 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
                 <div className="min-w-0 break-words">Payment: <strong>{selected.sale.payment_method}</strong></div>
                 <div className="min-w-0 break-words">Date: <strong>{formatDateTime(selected.sale.created_at)}</strong></div>
                 <div className="min-w-0 break-words">Customer: <strong>{selected.sale.customer_name || '-'}</strong></div>
-                <div className="min-w-0 break-words">Total: <strong>Rs. {selected.sale.total.toFixed(2)}</strong></div>
+                <div className="min-w-0 break-words">Total: <strong>{currencySymbol} {selected.sale.total.toFixed(2)}</strong></div>
               </div>
               <Table className="min-w-max">
                   <TableHeader>
@@ -164,9 +181,9 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
                         <TableCell>{item.medicine_name}</TableCell>
                         <TableCell>#{item.batch_id}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
-                        <TableCell>Rs. {item.unit_price.toFixed(2)}</TableCell>
-                        <TableCell>Rs. {item.item_discount.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">Rs. {item.line_total.toFixed(2)}</TableCell>
+                        <TableCell>{currencySymbol} {item.unit_price.toFixed(2)}</TableCell>
+                        <TableCell>{currencySymbol} {item.item_discount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{currencySymbol} {item.line_total.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -10,3 +10,4 @@ pub mod purchase_repo;
 pub mod sale_repo;
 pub mod returns_repo;
 pub mod debt_repo;
+pub mod supplier_debt_repo;

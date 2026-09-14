@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ShoppingCart, CreditCard } from 'lucide-react';
 import { tauri } from '@/lib/tauri';
 import { formatDate } from '@/lib/formatDate';
 import type { PurchaseListDto } from '@/types/purchase';
@@ -21,14 +22,17 @@ interface PurchaseListProps {
 export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
   const [purchases, setPurchases] = useState<PurchaseListDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPurchases = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const result = await tauri.purchases.list(sessionToken);
       setPurchases(result);
-    } catch {
-      // Error handled silently
+    } catch (err: unknown) {
+      console.error('Failed to load purchases:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load purchases');
     } finally {
       setLoading(false);
     }
@@ -48,9 +52,18 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+        {error}
+      </div>
+    );
+  }
+
   if (purchases.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <ShoppingCart className="mx-auto h-10 w-10 mb-3 opacity-50" />
         No purchases recorded yet.
       </div>
     );
@@ -67,6 +80,7 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
           <TableHead className="text-right">Total Cost</TableHead>
           <TableHead>Payment Status</TableHead>
           <TableHead>Created At</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -101,6 +115,18 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
             </TableCell>
             <TableCell className="text-sm text-muted-foreground">
               {formatDate(purchase.created_at)}
+            </TableCell>
+            <TableCell className="text-right">
+              {purchase.payment_status !== 'Paid' && (
+                <a
+                  href="/supplier-debts"
+                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                  title="Manage supplier debt"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Debt
+                </a>
+              )}
             </TableCell>
           </TableRow>
         ))}

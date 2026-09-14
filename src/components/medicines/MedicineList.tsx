@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Pencil, Trash2, EyeOff } from 'lucide-react';
+import { Pencil, Trash2, EyeOff, Package } from 'lucide-react';
 import type { MedicineListItem, MedicinePharmacistDto } from '@/types/medicine';
 
 interface MedicineListProps {
@@ -62,6 +62,7 @@ export function MedicineList({
   if (medicines.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+        <Package className="mx-auto h-10 w-10 mb-3 opacity-50" />
         No medicines found. Add your first medicine to get started.
       </div>
     );
@@ -146,6 +147,7 @@ export function MedicineList({
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(medicine.id)}
+                        aria-label="Edit medicine"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -154,7 +156,7 @@ export function MedicineList({
                           variant="ghost"
                           size="icon"
                           onClick={() => setDeactivateTarget(medicine.id)}
-                          title="Deactivate"
+                          aria-label="Deactivate medicine"
                         >
                           <EyeOff className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -164,7 +166,7 @@ export function MedicineList({
                           variant="ghost"
                           size="icon"
                           onClick={() => { setDeleteError(null); setDeleteTarget(medicine.id); }}
-                          title="Delete permanently"
+                          aria-label="Delete medicine permanently"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

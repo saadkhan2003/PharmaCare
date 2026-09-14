@@ -7,9 +7,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Pagination } from '@/components/ui/pagination';
 import { tauri } from '@/lib/tauri';
+import { useSettings } from '@/hooks/useSettings';
 import type { ReturnListItemDto } from '@/types/return';
 import type { SessionDto } from '@/types/session';
 import { formatDate } from '@/lib/formatDate';
@@ -45,6 +46,8 @@ function getConditionBadge(condition: string | null): string {
 }
 
 export function ReturnHistoryPage({ session }: Props) {
+  const { settings } = useSettings(session.token);
+  const currencySymbol = settings?.currency_symbol || 'Rs.';
   const [returns, setReturns] = useState<ReturnListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,11 +76,15 @@ export function ReturnHistoryPage({ session }: Props) {
   }, [loadReturns]);
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Return History</h1>
+          <p className="text-sm text-muted-foreground">View all customer returns, supplier returns, and write-offs.</p>
+        </div>
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Return History</CardTitle>
-        </CardHeader>
         <CardContent>
           {/* Error message */}
           {error && (
@@ -156,7 +163,7 @@ export function ReturnHistoryPage({ session }: Props) {
                       <TableCell className="text-right font-mono text-sm">
                         {ret.return_type === 'write_off'
                           ? '—'
-                          : `Rs. ${ret.refund_amount.toFixed(2)}`}
+                          : `${currencySymbol} ${ret.refund_amount.toFixed(2)}`}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -2,12 +2,15 @@ import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTauriCommand } from '../hooks/useTauriCommand';
 import { useSettings } from '../hooks/useSettings';
+import { useIsDark } from '../hooks/useIsDark';
+import { useAutoRefresh } from '../lib/eventBus';
 import { tauri } from '../lib/tauri';
 import type { BackupStatus } from '../types/report';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDateTime } from '@/lib/formatDate';
+import { ChartTooltipContent, useChartColors } from '../components/reports/ChartTooltip';
 import {
   BarChart,
   Bar,
@@ -47,7 +50,17 @@ export function DashboardPage({ session }: DashboardPageProps) {
   const isOwner = session.role === 'owner';
   const navigate = useNavigate();
   const { settings } = useSettings(session.token);
+  const dark = useIsDark();
+  const colors = useChartColors();
   const currencySymbol = settings?.currency_symbol ?? 'Rs.';
+
+  // Listen to all data change events for cross-page refresh
+  const [medicinesKey] = useAutoRefresh('medicines-changed');
+  const [salesKey] = useAutoRefresh('sales-changed');
+  const [purchasesKey] = useAutoRefresh('purchases-changed');
+  const [debtsKey] = useAutoRefresh('debts-changed');
+  const [settingsKey] = useAutoRefresh('settings-changed');
+  const refreshKey = medicinesKey + salesKey + purchasesKey + debtsKey + settingsKey;
 
   const {
     data: ownerData,
@@ -93,7 +106,7 @@ export function DashboardPage({ session }: DashboardPageProps) {
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+  }, [fetchDashboard, refreshKey]);
 
   const error = isOwner ? ownerError : pharmacistError;
   const loading = isOwner ? ownerLoading : pharmacistLoading;
@@ -119,7 +132,7 @@ export function DashboardPage({ session }: DashboardPageProps) {
             ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200'
             : 'transition-all duration-200 hover:shadow-sm'
         }
-        onClick={count > 0 ? onClick : undefined}
+        onClick={count > 0 && onClick ? onClick : undefined}
       >
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -204,6 +217,21 @@ export function DashboardPage({ session }: DashboardPageProps) {
       );
     }
 
+    if (loading) {
+      return (
+        <Card className="col-span-full">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Top 5 Selling Medicines (This Week)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[300px] w-full" />
+          </CardContent>
+        </Card>
+      );
+    }
+
     const chartData = data.map((s) => ({
       name: s.medicine_name.length > 18
         ? s.medicine_name.slice(0, 16) + '…'
@@ -227,19 +255,23 @@ export function DashboardPage({ session }: DashboardPageProps) {
               >
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: dark ? '#a1a1aa' : '#6b7280' }}
+                  axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
+                  tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
                   angle={-20}
                   textAnchor="end"
                   interval={0}
                 />
                 <YAxis
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: dark ? '#a1a1aa' : '#6b7280' }}
+                  axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
+                  tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
                   allowDecimals={false}
                 />
-                <Tooltip />
+                <Tooltip content={<ChartTooltipContent />} />
                 <Bar
                   dataKey="quantity"
-                  fill="hsl(var(--primary))"
+                  fill={colors.primary}
                   radius={[4, 4, 0, 0]}
                   name="Quantity Sold"
                 />

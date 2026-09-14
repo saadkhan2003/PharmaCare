@@ -56,7 +56,7 @@ interface ReportSelectorProps {
 
 export function ReportSelector({ selected, onSelect }: ReportSelectorProps) {
   return (
-    <div className="w-56 shrink-0 border-r pr-4 space-y-4">
+    <div className="w-full md:w-56 shrink-0 border-r pr-4 space-y-4">
       {CATEGORIES.map((cat) => (
         <div key={cat.name}>
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
