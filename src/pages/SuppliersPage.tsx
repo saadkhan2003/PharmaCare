@@ -57,12 +57,13 @@ export function SuppliersPage({ session }: SuppliersPageProps) {
     async (id: number) => {
       try {
         await tauri.suppliers.deactivate(session.token, id);
+        toast('success', 'Supplier deactivated successfully');
         setRefreshKey((prev) => prev + 1);
       } catch (err: unknown) {
-        console.error('Failed to deactivate supplier:', err);
+        toast('error', 'Failed to deactivate supplier', err instanceof Error ? err.message : String(err));
       }
     },
-    [session.token]
+    [session.token, toast]
   );
 
   const handleDelete = useCallback(

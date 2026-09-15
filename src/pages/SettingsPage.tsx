@@ -7,6 +7,7 @@ import { InventoryTab } from '@/components/settings/InventoryTab';
 import { BackupTab } from '@/components/settings/BackupTab';
 import { DatabaseStatusPanel } from '@/components/settings/DatabaseStatusPanel';
 import { setEnabled as setSoundEnabled } from '@/lib/sounds';
+import { setTheme as applyTheme } from '@/hooks/useIsDark';
 import type { SessionDto } from '@/types/session';
 
 interface SettingsPageProps {
@@ -47,20 +48,7 @@ export function SettingsPage({ session }: SettingsPageProps) {
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
-    localStorage.setItem('pharmacare-theme', newTheme);
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    if (newTheme === 'dark') {
-      root.classList.add('dark');
-    } else if (newTheme === 'light') {
-      root.classList.add('light');
-    } else {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        root.classList.add('dark');
-      } else {
-        root.classList.add('light');
-      }
-    }
+    applyTheme(newTheme);
   };
 
   if (loading) {

@@ -46,11 +46,16 @@ fn main() {
             conn.execute_batch(
                 "PRAGMA journal_mode=WAL;
                  PRAGMA foreign_keys=ON;
-                 PRAGMA busy_timeout=5000;",
+                 PRAGMA busy_timeout=5000;
+                 PRAGMA cache_size=-64000;
+                 PRAGMA mmap_size=268435456;
+                 PRAGMA temp_store=MEMORY;
+                 PRAGMA synchronous=NORMAL;",
             )?;
 
             // 4. Run schema migrations via rusqlite_migration
             migration_defs.to_latest(&mut conn)?;
+            conn.execute("PRAGMA optimize;", [])?;
 
             // 5. Clear stale sessions on startup (H-3 fix: sessions should not survive restarts)
             //    Old sessions from crashed processes are cleared to prevent token reuse.
@@ -158,6 +163,7 @@ fn main() {
             commands::batch_commands::update_batch,
             commands::pdf_commands::save_pdf,
             commands::db_commands::get_db_status,
+            commands::db_commands::optimize_database,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PharmaCare");

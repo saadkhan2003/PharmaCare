@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { open } from '@tauri-apps/plugin-shell';
 import { tauri } from '@/lib/tauri';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Loader2, Plus, Phone, MessageCircle } from 'lucide-react';
+import { Loader2, Plus, MessageCircle, Search, Download, CircleDollarSign, AlertCircle } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/components/ui/toast-provider';
 import { dispatchEvent, useAutoRefresh } from '@/lib/eventBus';
@@ -31,6 +31,8 @@ export function DebtsPage({ session }: { session: SessionDto }) {
   const pharmacyName = settings?.pharmacy_name ?? 'PharmaCare';
   const [debts, setDebts] = useState<DebtorListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'due_soon' | 'paid'>('all');
   const [internalRefreshKey, setInternalRefreshKey] = useState(0);
   const [debtsEventKey] = useAutoRefresh('debts-changed');
   const refreshKey = internalRefreshKey + debtsEventKey;
@@ -144,23 +146,56 @@ ${pharmacyName}`
   };
 
   const statusBadge = (status: string, days: number) => {
-    if (status === 'paid') return <Badge variant="outline" className="border-green-300 text-green-700">Paid</Badge>;
+    if (status === 'paid') return <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-300">Paid</Badge>;
     if (status === 'overdue' || days < 0) return <Badge variant="destructive">Overdue</Badge>;
-    if (days <= 3) return <Badge className="bg-amber-500">Due in {days}d</Badge>;
+    if (days <= 3) return <Badge className="bg-amber-500 text-white">Due in {days}d</Badge>;
     return <Badge variant="secondary">{days}d left</Badge>;
+  };
+
+  const filteredDebts = useMemo(() => {
+    return debts.filter((d) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchName = d.customer_name.toLowerCase().includes(q);
+        const matchPhone = (d.phone || '').toLowerCase().includes(q);
+        if (!matchName && !matchPhone) return false;
+      }
+      if (statusFilter === 'overdue' && d.status !== 'overdue' && d.days_remaining >= 0) return false;
+      if (statusFilter === 'due_soon' && (d.days_remaining < 0 || d.days_remaining > 3 || d.status === 'paid')) return false;
+      if (statusFilter === 'paid' && d.status !== 'paid') return false;
+      return true;
+    });
+  }, [debts, searchQuery, statusFilter]);
+
+  const exportCsv = () => {
+    const headers = ['Customer,Phone,Total Amount,Paid Amount,Remaining,Due Date,Status'];
+    const rows = filteredDebts.map(d => 
+      `"${d.customer_name}","${d.phone || ''}",${d.total_amount},${d.paid_amount},${d.remaining},"${d.due_date}","${d.status}"`
+    );
+    const blob = new Blob([[...headers, ...rows].join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customer_debts_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const total = debts.reduce((s, d) => s + d.remaining, 0);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Debt Tracking</h1>
-          <p className="text-sm text-muted-foreground">Total outstanding: <strong>{currencySymbol} {total.toFixed(2)}</strong></p>
+          <h1 className="text-2xl font-bold text-foreground">Customer Debt Tracking</h1>
+          <p className="text-sm text-muted-foreground">Total outstanding: <strong>{currencySymbol} {total.toFixed(2)}</strong> ({debts.filter(d => d.remaining > 0).length} active accounts)</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />New Debt</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={filteredDebts.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />Export CSV
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />New Debt</Button>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Record New Debt</DialogTitle>
@@ -263,46 +298,90 @@ ${pharmacyName}`
           </DialogContent>
         </Dialog>
       </div>
+    </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by customer name or phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
+
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto bg-muted/60 p-1 rounded-lg border border-border">
+          {(
+            [
+              { id: 'all', label: 'All' },
+              { id: 'overdue', label: 'Overdue' },
+              { id: 'due_soon', label: 'Due Soon (≤3d)' },
+              { id: 'paid', label: 'Paid' },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                statusFilter === tab.id
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" />Loading...</div>
-      ) : debts.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">No debts recorded. Use "New Debt" to add one.</CardContent></Card>
-      ) : (
+      ) : filteredDebts.length === 0 ? (
         <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <AlertCircle className="size-8 mx-auto mb-2 text-muted-foreground/60" />
+            <p className="font-semibold text-foreground">No matching debts found</p>
+            <p className="text-xs mt-1">Try adjusting your search query or status filter.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden border border-border shadow-sm">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead>Customer</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Paid</TableHead>
-                <TableHead>Remaining</TableHead>
+                <TableHead className="text-right">Total ({currencySymbol})</TableHead>
+                <TableHead className="text-right">Paid ({currencySymbol})</TableHead>
+                <TableHead className="text-right">Remaining ({currencySymbol})</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {debts.map((d) => (
-                <TableRow key={d.id} className={d.status === 'overdue' ? 'bg-red-50/50' : ''}>
-                  <TableCell className="font-medium">{d.customer_name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{d.phone || '-'}</TableCell>
-                  <TableCell>{d.total_amount.toFixed(2)}</TableCell>
-                  <TableCell>{d.paid_amount.toFixed(2)}</TableCell>
-                  <TableCell className="font-semibold">{d.remaining.toFixed(2)}</TableCell>
+              {filteredDebts.map((d) => (
+                <TableRow key={d.id} className={d.status === 'overdue' ? 'bg-red-50/60 dark:bg-red-950/30' : ''}>
+                  <TableCell className="font-semibold text-foreground">{d.customer_name}</TableCell>
+                  <TableCell className="text-sm font-mono text-muted-foreground">{d.phone || '-'}</TableCell>
+                  <TableCell className="text-right font-mono text-sm">{d.total_amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-mono text-sm text-muted-foreground">{d.paid_amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-mono text-sm font-bold text-foreground">{d.remaining.toFixed(2)}</TableCell>
                   <TableCell className="text-sm">{formatDate(d.due_date)}</TableCell>
                   <TableCell>{statusBadge(d.status, d.days_remaining)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {d.phone && d.remaining > 0 && (
-                        <Button variant="ghost" size="icon" onClick={() => openWhatsApp(d.phone!, d.customer_name, d.remaining, d.due_date, d.total_amount, d.paid_amount, d.days_remaining)} title="Send WhatsApp reminder">
-                          <MessageCircle className="h-4 w-4 text-green-600" />
+                        <Button variant="ghost" size="icon-sm" onClick={() => openWhatsApp(d.phone!, d.customer_name, d.remaining, d.due_date, d.total_amount, d.paid_amount, d.days_remaining)} title="Send WhatsApp reminder">
+                          <MessageCircle className="size-4 text-emerald-600" />
                         </Button>
                       )}
                       {d.remaining > 0 && (
-                        <Button variant="ghost" size="icon" onClick={() => { setPayDebtId(d.id); setPayAmount(d.remaining); }} title="Record payment">
-                          <Phone className="h-4 w-4" />
+                        <Button variant="ghost" size="icon-sm" onClick={() => { setPayDebtId(d.id); setPayAmount(d.remaining); }} title="Record payment">
+                          <CircleDollarSign className="size-4 text-primary" />
                         </Button>
                       )}
                     </div>

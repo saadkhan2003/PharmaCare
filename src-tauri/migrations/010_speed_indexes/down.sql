@@ -1,0 +1,10 @@
+DROP INDEX IF EXISTS idx_stock_movements_med_created;
+DROP INDEX IF EXISTS idx_stock_movements_batch;
+DROP INDEX IF EXISTS idx_batches_med_rem;
+DROP INDEX IF EXISTS idx_batches_expiry;
+DROP INDEX IF EXISTS idx_medicines_active;
+DROP INDEX IF EXISTS idx_medicines_name_nocase;
+DROP INDEX IF EXISTS idx_debtors_customer;
+DROP INDEX IF EXISTS idx_debtors_status_due;
+DROP INDEX IF EXISTS idx_supplier_debts_status;
+DROP INDEX IF EXISTS idx_suppliers_active;

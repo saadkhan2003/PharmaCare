@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { tauri } from '@/lib/tauri';
 import type { SessionDto } from '@/types/session';
 import type { DbStatus } from '@/types/report';
-import { Loader2, RefreshCw, Database, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, RefreshCw, Database, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { useToast } from '@/components/ui/toast-provider';
 
 interface DatabaseStatusPanelProps {
   session: SessionDto;
@@ -27,8 +28,10 @@ function truncatePath(path: string, maxLen = 40): string {
 }
 
 export function DatabaseStatusPanel({ session }: DatabaseStatusPanelProps) {
+  const { toast } = useToast();
   const [status, setStatus] = useState<DbStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [optimizing, setOptimizing] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -43,6 +46,19 @@ export function DatabaseStatusPanel({ session }: DatabaseStatusPanelProps) {
       setLoading(false);
     }
   }, [session.token]);
+
+  const handleOptimize = async () => {
+    setOptimizing(true);
+    try {
+      await tauri.db.optimize(session.token);
+      toast('success', 'Database optimized successfully', 'Defragmented tables and optimized query plans');
+      fetchStatus();
+    } catch (err: unknown) {
+      toast('error', 'Optimization failed', err instanceof Error ? err.message : String(err));
+    } finally {
+      setOptimizing(false);
+    }
+  };
 
   useEffect(() => {
     fetchStatus();
@@ -112,23 +128,40 @@ export function DatabaseStatusPanel({ session }: DatabaseStatusPanelProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 border-t">
+            <div className="flex items-center justify-between pt-2 border-t flex-wrap gap-2">
               <span className="text-xs text-muted-foreground">
                 Last checked: {lastChecked ? lastChecked.toLocaleTimeString() : 'Never'}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchStatus}
-                disabled={loading}
-              >
-                {loading ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOptimize}
+                  disabled={optimizing || loading}
+                  className="gap-1.5"
+                  title="Run VACUUM and SQLite query optimizer to reclaim space and accelerate queries"
+                >
+                  {optimizing ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5 text-amber-500" />
+                  )}
+                  Optimize DB
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchStatus}
+                  disabled={loading || optimizing}
+                >
+                  {loading ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  )}
+                  Refresh
+                </Button>
+              </div>
             </div>
           </div>
         ) : (

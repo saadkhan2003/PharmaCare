@@ -39,6 +39,9 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
   const perPage = 50;
   const [importOpen, setImportOpen] = useState(false);
 
+  const isFilterActive = categoryFilter !== 'All' || stockFilter !== 'All' || activeFilter !== 'All';
+  const effectivePerPage = isFilterActive ? 200 : perPage;
+
   const filteredMedicines = useMemo(() => {
     return medicines.filter((m) => {
       if (categoryFilter !== 'All' && m.category !== categoryFilter) return false;
@@ -50,26 +53,36 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
     });
   }, [medicines, categoryFilter, stockFilter, activeFilter]);
 
+  const paginatedMedicines = useMemo(() => {
+    if (!isFilterActive) return filteredMedicines;
+    const start = (page - 1) * perPage;
+    return filteredMedicines.slice(start, start + perPage);
+  }, [isFilterActive, filteredMedicines, page, perPage]);
+
+  const displayTotalPages = isFilterActive
+    ? Math.max(1, Math.ceil(filteredMedicines.length / perPage))
+    : totalPages;
+
   const fetchMedicines = useCallback(async () => {
     setLoading(true);
     try {
       if (debouncedSearch.trim()) {
         if (isOwner) {
-          const result = await tauri.medicines.search(session.token, debouncedSearch, page, perPage);
+          const result = await tauri.medicines.search(session.token, debouncedSearch, page, effectivePerPage);
           setMedicines(result.items);
           setTotalPages(result.total_pages);
         } else {
-          const result = await tauri.medicines.searchPharmacist(session.token, debouncedSearch, page, perPage);
+          const result = await tauri.medicines.searchPharmacist(session.token, debouncedSearch, page, effectivePerPage);
           setMedicines(result.items);
           setTotalPages(result.total_pages);
         }
       } else {
         if (isOwner) {
-          const result = await tauri.medicines.list(session.token, page, perPage);
+          const result = await tauri.medicines.list(session.token, isFilterActive ? 1 : page, effectivePerPage);
           setMedicines(result.items);
           setTotalPages(result.total_pages);
         } else {
-          const result = await tauri.medicines.searchPharmacist(session.token, '', page, perPage);
+          const result = await tauri.medicines.searchPharmacist(session.token, '', isFilterActive ? 1 : page, effectivePerPage);
           setMedicines(result.items);
           setTotalPages(result.total_pages);
         }
@@ -80,7 +93,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, isOwner, session.token, page, perPage]);
+  }, [debouncedSearch, isOwner, session.token, page, effectivePerPage, isFilterActive]);
 
   useEffect(() => {
     fetchMedicines();
@@ -88,7 +101,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, categoryFilter, stockFilter, activeFilter]);
 
   const handleEdit = useCallback((id: number) => {
     setEditingMedicineId(id);
@@ -233,7 +246,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
 
       <div className="rounded-lg border bg-card">
         <MedicineList
-          medicines={filteredMedicines}
+          medicines={paginatedMedicines}
           loading={loading}
           role={session.role}
           onEdit={handleEdit}
@@ -242,7 +255,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
         />
       </div>
 
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <Pagination page={page} totalPages={displayTotalPages} onPageChange={setPage} />
 
       <MedicineForm
         open={formOpen}

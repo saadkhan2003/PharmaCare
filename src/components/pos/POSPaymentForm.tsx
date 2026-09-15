@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Coins, CheckCircle2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -54,6 +55,8 @@ export function POSPaymentForm({
   loading,
   currencySymbol = 'Rs.',
 }: POSPaymentFormProps) {
+  const [cashTendered, setCashTendered] = useState<string>('');
+
   // Display-only calculations — server recomputes actual totals (D-35)
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.quantity * item.medicine.retail_price,
@@ -66,6 +69,10 @@ export function POSPaymentForm({
   // taxRatePercent is in percent (e.g. 18 means 18%).
   const taxAmount = taxEnabled ? (afterBillDiscount * taxRatePercent) / 100 : 0;
   const estimatedTotal = afterBillDiscount + taxAmount;
+
+  const tenderedNum = parseFloat(cashTendered) || 0;
+  const changeDue = tenderedNum > 0 && tenderedNum >= estimatedTotal ? tenderedNum - estimatedTotal : 0;
+  const shortfall = tenderedNum > 0 && tenderedNum < estimatedTotal ? estimatedTotal - tenderedNum : 0;
 
   return (
     <div className="space-y-4">
@@ -138,6 +145,77 @@ export function POSPaymentForm({
         </Select>
       </div>
 
+      {/* Cash Tendered & Change Due Calculator */}
+      {paymentMethod === 'Cash' && (
+        <div className="space-y-2 rounded-lg bg-muted/40 p-3 border border-border">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="cash-tendered" className="text-xs font-semibold flex items-center gap-1.5">
+              <Coins className="size-3.5 text-primary" /> Cash Tendered ({currencySymbol})
+            </Label>
+            {tenderedNum >= estimatedTotal && tenderedNum > 0 && (
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <CheckCircle2 className="size-3" /> Change: {currencySymbol} {changeDue.toFixed(2)}
+              </span>
+            )}
+          </div>
+          <Input
+            id="cash-tendered"
+            type="number"
+            min={0}
+            step="any"
+            value={cashTendered}
+            placeholder={`Enter amount e.g. ${Math.ceil(estimatedTotal / 100) * 100 || estimatedTotal.toFixed(0)}`}
+            onChange={(e) => setCashTendered(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onConfirm();
+              }
+            }}
+            className="h-10 text-base"
+          />
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={() => setCashTendered(estimatedTotal.toFixed(0))}
+              className="text-[11px]"
+            >
+              Exact ({currencySymbol}{estimatedTotal.toFixed(0)})
+            </Button>
+            {[50, 100, 500, 1000].map((inc) => (
+              <Button
+                key={inc}
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => setCashTendered(String(Math.ceil((tenderedNum || estimatedTotal) / inc) * inc || inc))}
+                className="text-[11px]"
+              >
+                +{inc}
+              </Button>
+            ))}
+            {cashTendered && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={() => setCashTendered('')}
+                className="text-[11px] ml-auto text-muted-foreground"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          {shortfall > 0 && (
+            <p className="text-xs text-destructive">
+              Short by {currencySymbol} {shortfall.toFixed(2)}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Customer name (only for Credit) */}
       {paymentMethod === 'Credit' && (
         <div>
@@ -186,6 +264,12 @@ export function POSPaymentForm({
           <span>Total</span>
           <span>{currencySymbol} {estimatedTotal.toFixed(2)}</span>
         </div>
+        {paymentMethod === 'Cash' && tenderedNum >= estimatedTotal && tenderedNum > 0 && (
+          <div className="flex justify-between text-base font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+            <span>Change Due</span>
+            <span>{currencySymbol} {changeDue.toFixed(2)}</span>
+          </div>
+        )}
       </div>
 
       {/* Confirm button */}

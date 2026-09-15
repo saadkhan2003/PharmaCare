@@ -298,5 +298,7 @@ export const tauri = {
   db: {
     getStatus: (sessionToken: string) =>
       invoke<DbStatus>('get_db_status', { sessionToken }),
+    optimize: (sessionToken: string) =>
+      invoke<void>('optimize_database', { sessionToken }),
   },
 };

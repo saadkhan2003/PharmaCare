@@ -48,7 +48,7 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
-    --font-sans: Inter, Avenir, Helvetica, Arial, sans-serif;
+    --font-sans: 'Geist Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   .dark {
@@ -154,6 +154,29 @@ input:focus, select:focus, textarea:focus {
   @apply ring-2 ring-ring ring-offset-1;
 }
 
-
-
-
+/* Print Receipt Styles (80mm standard thermal format) */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 8mm 6mm;
+    font-family: monospace, -apple-system, sans-serif;
+    color: #000;
+    background: #fff;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}

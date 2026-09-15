@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { ReportSelector } from '../components/reports/ReportSelector';
 import { DateRangePicker } from '../components/reports/DateRangePicker';
 import { DailySalesReport } from '../components/reports/DailySalesReport';
@@ -10,7 +10,6 @@ import { ExpiryReport } from '../components/reports/ExpiryReport';
 import { SupplierPurchaseReport } from '../components/reports/SupplierPurchaseReport';
 import { SalesByUserReport } from '../components/reports/SalesByUserReport';
 import { ProfitMarginReport } from '../components/reports/ProfitMarginReport';
-import { Skeleton } from '../components/ui/skeleton';
 import type { SessionDto } from '../types/session';
 
 interface ReportsPageProps {
@@ -55,13 +54,6 @@ export function ReportsPage({ session }: ReportsPageProps) {
   const [selectedReport, setSelectedReport] = useState('daily-sales');
   const [startDate, setStartDate] = useState(getDefaultStartDate);
   const [endDate, setEndDate] = useState(getTodayString);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => setLoading(false), 300);
-    return () => clearTimeout(timer);
-  }, [selectedReport, startDate, endDate]);
 
   const handleDateChange = useCallback((start: string, end: string) => {
     setStartDate(start);
@@ -80,7 +72,7 @@ export function ReportsPage({ session }: ReportsPageProps) {
         </p>
       </div>
 
-      <div className="flex gap-6 h-[calc(100%-4rem)]">
+      <div className="flex flex-col md:flex-row gap-6 min-h-0">
         {/* Left: Report selector */}
         <ReportSelector selected={selectedReport} onSelect={setSelectedReport} />
 
@@ -96,42 +88,32 @@ export function ReportsPage({ session }: ReportsPageProps) {
 
           {/* Report detail — render the selected report component */}
           <div className="min-h-0">
-            {loading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-48 w-full" />
-              </div>
-            ) : (
-              <>
-                {selectedReport === 'daily-sales' && (
-                  <DailySalesReport session={session} startDate={startDate} endDate={endDate} />
-                )}
-                {selectedReport === 'monthly-pnl' && (
-                  <MonthlyPnLReport session={session} startDate={startDate} endDate={endDate} />
-                )}
-                {selectedReport === 'top-sellers' && (
-                  <TopSellersReport session={session} startDate={startDate} endDate={endDate} />
-                )}
-                {selectedReport === 'slow-moving' && (
-                  <SlowMovingReport session={session} startDate={startDate} endDate={endDate} />
-                )}
-                {selectedReport === 'low-stock' && (
-                  <LowStockReport session={session} />
-                )}
-                {selectedReport === 'expiry' && (
-                  <ExpiryReport session={session} />
-                )}
-                {selectedReport === 'supplier-purchases' && (
-                  <SupplierPurchaseReport session={session} startDate={startDate} endDate={endDate} />
-                )}
-                {selectedReport === 'sales-by-user' && (
-                  <SalesByUserReport session={session} startDate={startDate} endDate={endDate} />
-                )}
-                {selectedReport === 'profit-margin' && (
-                  <ProfitMarginReport session={session} startDate={startDate} endDate={endDate} />
-                )}
-              </>
+            {selectedReport === 'daily-sales' && (
+              <DailySalesReport session={session} startDate={startDate} endDate={endDate} />
+            )}
+            {selectedReport === 'monthly-pnl' && (
+              <MonthlyPnLReport session={session} startDate={startDate} endDate={endDate} />
+            )}
+            {selectedReport === 'top-sellers' && (
+              <TopSellersReport session={session} startDate={startDate} endDate={endDate} />
+            )}
+            {selectedReport === 'slow-moving' && (
+              <SlowMovingReport session={session} startDate={startDate} endDate={endDate} />
+            )}
+            {selectedReport === 'low-stock' && (
+              <LowStockReport session={session} />
+            )}
+            {selectedReport === 'expiry' && (
+              <ExpiryReport session={session} />
+            )}
+            {selectedReport === 'supplier-purchases' && (
+              <SupplierPurchaseReport session={session} startDate={startDate} endDate={endDate} />
+            )}
+            {selectedReport === 'sales-by-user' && (
+              <SalesByUserReport session={session} startDate={startDate} endDate={endDate} />
+            )}
+            {selectedReport === 'profit-margin' && (
+              <ProfitMarginReport session={session} startDate={startDate} endDate={endDate} />
             )}
           </div>
         </div>

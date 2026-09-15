@@ -55,3 +55,16 @@ pub fn get_db_status(
         foreign_keys,
     })
 }
+
+#[tauri::command]
+pub fn optimize_database(
+    state: State<'_, AppState>,
+    session_token: String,
+) -> Result<(), CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    db.execute_batch("PRAGMA optimize; VACUUM;")
+        .map_err(|e| CommandError::internal(&format!("Failed to optimize database: {}", e)))?;
+    Ok(())
+}
+

@@ -28,19 +28,19 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Point of Sale
 
-- [ ] **POS-01**: User can search medicines by name with live results (<200ms)
-- [ ] **POS-02**: User can add items to sale with quantity
-- [ ] **POS-03**: System checks stock — cannot sell more than available
-- [ ] **POS-04**: System blocks sale of zero-stock and expired medicines
-- [ ] **POS-05**: User can apply item-level discount (optional)
-- [ ] **POS-06**: User can apply bill-level discount (optional)
-- [ ] **POS-07**: Tax toggle per sale; calculated on post-discount subtotal
-- [ ] **POS-08**: Payment method selection: Cash, Card, Credit
-- [ ] **POS-09**: Credit sale prompts for customer name
-- [ ] **POS-10**: On confirm, stock deducted FIFO from oldest batch first
-- [ ] **POS-11**: Sale recorded with immutable line-item snapshots (price, cost, discount, tax)
-- [ ] **POS-12**: Entire sale completable with keyboard only
-- [ ] **POS-13**: Sale completable in under 30 seconds
+- [x] **POS-01**: User can search medicines by name with live results (<200ms) *(Plan 03: live debounced search via search_medicines_pos)*
+- [x] **POS-02**: User can add items to sale with quantity *(Plan 03: POSPage cart item management)*
+- [x] **POS-03**: System checks stock — cannot sell more than available *(Plan 03: frontend validation + backend FIFO stock limit check)*
+- [x] **POS-04**: System blocks sale of zero-stock and expired medicines *(Plan 03: zero-stock and expired checks in backend & frontend)*
+- [x] **POS-05**: User can apply item-level discount (optional) *(Plan 03: item discount input per row)*
+- [x] **POS-06**: User can apply bill-level discount (optional) *(Plan 03: bill-level discount with owner permission check)*
+- [x] **POS-07**: Tax toggle per sale; calculated on post-discount subtotal *(Plan 03: configurable tax toggle & tax computation)*
+- [x] **POS-08**: Payment method selection: Cash, Card, Credit *(Plan 03: payment method dropdown with cash tendered/change due calculation)*
+- [x] **POS-09**: Credit sale prompts for customer name *(Plan 03: customer name input and credit validation)*
+- [x] **POS-10**: On confirm, stock deducted FIFO from oldest batch first *(Plan 03: stock_ledger_service FIFO deduction)*
+- [x] **POS-11**: Sale recorded with immutable line-item snapshots (price, cost, discount, tax) *(Plan 03: sale_items snapshots)*
+- [x] **POS-12**: Entire sale completable with keyboard only *(Plan 03: Arrow keys + Enter selection, shortcut keys F2/F4/F8/F9)*
+- [x] **POS-13**: Sale completable in under 30 seconds *(Plan 03: optimized unified POS workstation with 80mm thermal receipt printing)*
 
 ### Suppliers & Purchases
 
@@ -53,9 +53,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Batch & Expiry Tracking
 
 - [x] **BATC-01**: Stock tracked at batch level with expiry date per batch *(Plan 02-01: batches table; Plan 02-02: purchase creates batches with remaining_qty=quantity)*
-- [ ] **BATC-02**: Dashboard shows expiry warnings — yellow at 60 days, red at 30 days, dark red (blocked) past expiry *(deferred to Phase 3)*
-- [ ] **BATC-03**: Expired medicines automatically blocked from sale *(deferred to Phase 3 POS)*
-- [x] **BATC-04**: Owner can view expiry report sorted by days remaining *(Plan 02-01: batch_commands::get_expiry_report with julianday)*
+- [x] **BATC-02**: Dashboard shows expiry warnings — yellow at 60 days, red at 30 days, dark red (blocked) past expiry *(Phase 3 & BatchesPage: 3-tier color badges & alerts)*
+- [x] **BATC-03**: Expired medicines automatically blocked from sale *(Phase 3: POS checks expiry and prevents adding expired items)*
+- [x] **BATC-04**: Owner can view expiry report sorted by days remaining *(Plan 02-01: batch_commands::get_expiry_report with julianday; Phase 5: ExpiryReportPage)*
 - [x] **BATC-05**: Owner can mark batch as returned to supplier or written off *(Plan 04-01/02: return_service + return_commands for supplier_return and write_off)*
 - [x] **BATC-06**: Written-off stock deducted from inventory and logged as loss *(Plan 04-01/02: write_off logic decrements batch + logs stock_movement)*
 
@@ -68,12 +68,12 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **RETN-05**: Owner can process supplier return with credit note *(Plan 04-01/02: require_owner guarded supplier_return command)*
 - [x] **RETN-06**: Returns cannot exceed original quantity sold *(Plan 04-01/02: server-side validation in return_service)*
 - [x] **RETN-07**: All returns logged with reason, date, processing user *(Plan 04-01/02: returns table with reason, return_date, processed_by)*
-- [ ] **RETN-08**: Financial reports reflect refunds accurately (not double-counted) *(deferred to Phase 5 reports)*
+- [x] **RETN-08**: Financial reports reflect refunds accurately (not double-counted) *(Phase 5: MonthlyPnL and DailySales account for refunds)*
 
 ### Analytics & Reports
 
-- [ ] **REPT-01**: Owner dashboard shows today's sales, today's profit, monthly sales, low stock count, expiry count, top 5 selling medicines
-- [ ] **REPT-02**: Pharmacist dashboard shows today's sales total and low stock alerts
+- [x] **REPT-01**: Owner dashboard shows today's sales, today's profit, monthly sales, low stock count, expiry count, top 5 selling medicines *(Phase 3 & 5: OwnerDashboardDto + DashboardPage)*
+- [x] **REPT-02**: Pharmacist dashboard shows today's sales total and low stock alerts *(Phase 3 & 5: PharmacistDashboardDto + DashboardPage)*
 - [x] **REPT-03**: Owner can view Daily Sales Summary report (date-filterable, PDF export) *(Plan 05-01: backend — report_service + command with require_owner; Plan 05-02: frontend with BarChart + PDF export)*
 - [x] **REPT-04**: Owner can view Monthly P&L report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with BarChart + PDF)*
 - [x] **REPT-05**: Owner can view Top Selling Medicines report (PDF export) *(Plan 05-01: backend; Plan 05-02: frontend with horizontal BarChart + PDF)*
@@ -95,26 +95,26 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Backup & Recovery
 
-- [ ] **BAKP-01**: Nightly auto-backup at 11 PM (if internet available) *(Plan 05-01: is_backup_due + start_backup_timer; auto-trigger on schedule)*
-- [ ] **BAKP-02**: Owner can trigger manual backup anytime *(Plan 05-01: trigger_backup command with require_owner)*
-- [ ] **BAKP-03**: Backups named pharmaCare_backup_YYYY-MM-DD.db; last 30 kept *(Plan 05-01: naming convention + cleanup_old_backups)*
-- [ ] **BAKP-04**: Dashboard shows last backup status *(deferred to Plan 05-03 frontend backup widget)*
-- [ ] **BAKP-05**: Missed-backup warning after 3 days without backup *(deferred to Plan 05-03 frontend)*
-- [ ] **BAKP-06**: Owner can restore from backup with confirmation warning *(Plan 05-01: restore_backup command with require_owner; frontend deferred)*
-- [ ] **BAKP-07**: Optional local-folder/USB backup alongside Drive upload *(Plan 05-01: copy_to_local + run_backup with local_path param)*
-- [ ] **BAKP-08**: Pre-restore backup created before any restore *(Plan 05-01: VACUUM INTO pre-restore in restore_from_local/restore_from_drive)*
-- [ ] **BAKP-09**: Backup uses SQLite-safe snapshot (VACUUM INTO) *(Plan 05-01: create_snapshot uses VACUUM INTO for atomic snapshot)*
+- [x] **BAKP-01**: Nightly auto-backup at 11 PM (if internet available) *(Plan 05-01: is_backup_due + start_backup_timer; auto-trigger on schedule)*
+- [x] **BAKP-02**: Owner can trigger manual backup anytime *(Plan 05-01: trigger_backup command with require_owner; SettingsPage)*
+- [x] **BAKP-03**: Backups named pharmaCare_backup_YYYY-MM-DD.db; last 30 kept *(Plan 05-01: naming convention + cleanup_old_backups)*
+- [x] **BAKP-04**: Dashboard shows last backup status *(SettingsPage & Dashboard backup status widget)*
+- [x] **BAKP-05**: Missed-backup warning after 3 days without backup *(SettingsPage & Dashboard health banner)*
+- [x] **BAKP-06**: Owner can restore from backup with confirmation warning *(Plan 05-01: restore_backup command with require_owner; SettingsPage dialog)*
+- [x] **BAKP-07**: Optional local-folder/USB backup alongside Drive upload *(Plan 05-01: copy_to_local + run_backup with local_path param)*
+- [x] **BAKP-08**: Pre-restore backup created before any restore *(Plan 05-01: VACUUM INTO pre-restore in restore_from_local/restore_from_drive)*
+- [x] **BAKP-09**: Backup uses SQLite-safe snapshot (VACUUM INTO) *(Plan 05-01: create_snapshot uses VACUUM INTO for atomic snapshot)*
 
 ### Settings
 
-- [ ] **SETT-01**: Owner configures pharmacy info (name, owner name, phone, address, logo) *(backend reads from settings table; full UI deferred to Phase 5)*
-- [x] **SETT-02**: Owner configures default tax rate and tax-enabled default *(Plan 02-01: backend key-value read from settings table)*
-- [x] **SETT-03**: Owner configures cashier discount permission (toggle) *(Plan 02-01: backend key-value read)*
-- [x] **SETT-04**: Owner configures expiry warning/critical thresholds (default 60/30 days) *(Plan 02-01: backend key-value read)*
-- [x] **SETT-05**: Owner configures default reorder level for new medicines *(Plan 02-01: backend key-value read)*
-- [x] **SETT-06**: Owner configures currency symbol (default Rs.) *(Plan 02-01: backend key-value read)*
-- [ ] **SETT-07**: Owner connects/disconnects Google Drive for backup *(Plan 05-01: connect_drive/disconnect_drive commands with require_owner + OAuth flow; frontend deferred to Plan 05-03)*
-- [ ] **SETT-08**: Owner configures auto-backup time *(Plan 05-01: auto_backup_time in update_settings payload; frontend deferred to Plan 05-03)*
+- [x] **SETT-01**: Owner configures pharmacy info (name, owner name, phone, address, logo) *(SettingsPage: General settings card)*
+- [x] **SETT-02**: Owner configures default tax rate and tax-enabled default *(Plan 02-01: backend key-value read from settings table; SettingsPage)*
+- [x] **SETT-03**: Owner configures cashier discount permission (toggle) *(Plan 02-01: backend key-value read; SettingsPage)*
+- [x] **SETT-04**: Owner configures expiry warning/critical thresholds (default 60/30 days) *(Plan 02-01: backend key-value read; SettingsPage)*
+- [x] **SETT-05**: Owner configures default reorder level for new medicines *(Plan 02-01: backend key-value read; SettingsPage)*
+- [x] **SETT-06**: Owner configures currency symbol (default Rs.) *(Plan 02-01: backend key-value read; SettingsPage)*
+- [x] **SETT-07**: Owner connects/disconnects Google Drive for backup *(Plan 05-01: connect_drive/disconnect_drive commands with require_owner + OAuth flow; SettingsPage)*
+- [x] **SETT-08**: Owner configures auto-backup time *(Plan 05-01: auto_backup_time in update_settings payload; SettingsPage)*
 
 ## v2 Requirements
 
@@ -164,28 +164,28 @@ Explicitly excluded. Documented to prevent scope creep.
 | INVT-06 | Phase 2 | Complete (Plan 02-01) |
 | INVT-07 | Phase 2 | Complete (Plan 02-01) |
 | INVT-08 | Phase 2 | Complete (Plan 02-01) |
-| POS-01 | Phase 3 | Pending |
-| POS-02 | Phase 3 | Pending |
-| POS-03 | Phase 3 | Pending |
-| POS-04 | Phase 3 | Pending |
-| POS-05 | Phase 3 | Pending |
-| POS-06 | Phase 3 | Pending |
-| POS-07 | Phase 3 | Pending |
-| POS-08 | Phase 3 | Pending |
-| POS-09 | Phase 3 | Pending |
-| POS-10 | Phase 3 | Pending |
-| POS-11 | Phase 3 | Pending |
-| POS-12 | Phase 3 | Pending |
-| POS-13 | Phase 3 | Pending |
+| POS-01 | Phase 3 | Complete (Plan 03) |
+| POS-02 | Phase 3 | Complete (Plan 03) |
+| POS-03 | Phase 3 | Complete (Plan 03) |
+| POS-04 | Phase 3 | Complete (Plan 03) |
+| POS-05 | Phase 3 | Complete (Plan 03) |
+| POS-06 | Phase 3 | Complete (Plan 03) |
+| POS-07 | Phase 3 | Complete (Plan 03) |
+| POS-08 | Phase 3 | Complete (Plan 03) |
+| POS-09 | Phase 3 | Complete (Plan 03) |
+| POS-10 | Phase 3 | Complete (Plan 03) |
+| POS-11 | Phase 3 | Complete (Plan 03) |
+| POS-12 | Phase 3 | Complete (Plan 03) |
+| POS-13 | Phase 3 | Complete (Plan 03) |
 | SUPP-01 | Phase 2 | Complete (Plan 02-01) |
 | SUPP-02 | Phase 2 | Complete (Plan 02-02) |
 | SUPP-03 | Phase 2 | Complete (Plan 02-02) |
 | SUPP-04 | Phase 2 | Complete (Plan 02-02) |
 | SUPP-05 | Phase 2 | Complete (Plan 02-02) |
 | BATC-01 | Phase 2 | Complete (Plan 02-02) |
-| BATC-02 | Phase 3 | Pending |
-| BATC-03 | Phase 3 | Pending |
-| BATC-04 | Phase 2 | Pending |
+| BATC-02 | Phase 3 | Complete (Phase 3 & BatchesPage) |
+| BATC-03 | Phase 3 | Complete (Phase 3 POS) |
+| BATC-04 | Phase 2 | Complete (Plan 02-01 & Phase 5) |
 | BATC-05 | Phase 4 | Complete (Plan 04-02) |
 | BATC-06 | Phase 4 | Complete (Plan 04-02) |
 | RETN-01 | Phase 4 | Complete (Plan 04-02) |
@@ -195,9 +195,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | RETN-05 | Phase 4 | Complete (Plan 04-02) |
 | RETN-06 | Phase 4 | Complete (Plan 04-02) |
 | RETN-07 | Phase 4 | Complete (Plan 04-02) |
-| RETN-08 | Phase 4 | Pending (Phase 5) |
-| REPT-01 | Phase 3 | Pending |
-| REPT-02 | Phase 3 | Pending |
+| RETN-08 | Phase 4 | Complete (Phase 5) |
+| REPT-01 | Phase 3 | Complete (Phase 3 & 5) |
+| REPT-02 | Phase 3 | Complete (Phase 3 & 5) |
 | REPT-03 | Phase 5 | Complete (Plan 05-02) |
 | REPT-04 | Phase 5 | Complete (Plan 05-02) |
 | REPT-05 | Phase 5 | Complete (Plan 05-02) |
@@ -213,23 +213,23 @@ Explicitly excluded. Documented to prevent scope creep.
 | USER-02 | Phase 1 | Complete (Plan 02) |
 | USER-03 | Phase 1 | Complete (Plan 02) |
 | USER-04 | Phase 1 | Complete (Plan 02) |
-| BAKP-01 | Phase 5 | Backend done (Plan 05-01) |
-| BAKP-02 | Phase 5 | Backend done (Plan 05-01) |
-| BAKP-03 | Phase 5 | Backend done (Plan 05-01) |
-| BAKP-04 | Phase 5 | Pending (Plan 05-03 frontend) |
-| BAKP-05 | Phase 5 | Pending (Plan 05-03 frontend) |
-| BAKP-06 | Phase 5 | Backend done (Plan 05-01) |
-| BAKP-07 | Phase 5 | Backend done (Plan 05-01) |
-| BAKP-08 | Phase 5 | Backend done (Plan 05-01) |
-| BAKP-09 | Phase 5 | Backend done (Plan 05-01) |
-| SETT-01 | Phase 2 | Pending (UI deferred to Phase 5) |
-| SETT-02 | Phase 2 | Complete (Plan 02-01) |
-| SETT-03 | Phase 2 | Complete (Plan 02-01) |
-| SETT-04 | Phase 2 | Complete (Plan 02-01) |
-| SETT-05 | Phase 2 | Complete (Plan 02-01) |
-| SETT-06 | Phase 2 | Complete (Plan 02-01) |
-| SETT-07 | Phase 5 | Backend done (Plan 05-01) |
-| SETT-08 | Phase 5 | Backend done (Plan 05-01) |
+| BAKP-01 | Phase 5 | Complete (Plan 05-01/03) |
+| BAKP-02 | Phase 5 | Complete (Plan 05-01/03) |
+| BAKP-03 | Phase 5 | Complete (Plan 05-01/03) |
+| BAKP-04 | Phase 5 | Complete (Plan 05-03) |
+| BAKP-05 | Phase 5 | Complete (Plan 05-03) |
+| BAKP-06 | Phase 5 | Complete (Plan 05-01/03) |
+| BAKP-07 | Phase 5 | Complete (Plan 05-01/03) |
+| BAKP-08 | Phase 5 | Complete (Plan 05-01/03) |
+| BAKP-09 | Phase 5 | Complete (Plan 05-01/03) |
+| SETT-01 | Phase 2 | Complete (Phase 5) |
+| SETT-02 | Phase 2 | Complete (Plan 02-01/05) |
+| SETT-03 | Phase 2 | Complete (Plan 02-01/05) |
+| SETT-04 | Phase 2 | Complete (Plan 02-01/05) |
+| SETT-05 | Phase 2 | Complete (Plan 02-01/05) |
+| SETT-06 | Phase 2 | Complete (Plan 02-01/05) |
+| SETT-07 | Phase 5 | Complete (Plan 05-01/03) |
+| SETT-08 | Phase 5 | Complete (Plan 05-01/03) |
 
 **Coverage:**
 - v1 requirements: 79 total

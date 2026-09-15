@@ -41,7 +41,7 @@ describe('Sidebar', () => {
 
   it('shows the user role', () => {
     renderSidebar();
-    expect(screen.getByText('owner')).toBeInTheDocument();
+    expect(screen.getByText(/owner/i)).toBeInTheDocument();
   });
 
   it('renders navigation items for owner role', () => {

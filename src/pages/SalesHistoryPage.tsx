@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { tauri } from '@/lib/tauri';
 import { useAutoRefresh } from '@/lib/eventBus';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Printer, Receipt } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import type { SessionDto } from '@/types/session';
 import type { SaleDetailDto, SaleListDto } from '@/types/sale';
@@ -20,11 +22,14 @@ import { formatDateTime } from '@/lib/formatDate';
 export function SalesHistoryPage({ session }: { session: SessionDto }) {
   const { settings } = useSettings(session.token);
   const currencySymbol = settings?.currency_symbol || 'Rs.';
+  const pharmacyName = settings?.pharmacy_name || 'PharmaCare';
+  const pharmacyPhone = settings?.phone || '';
   const [sales, setSales] = useState<SaleListDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<SaleDetailDto | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 250);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
@@ -34,18 +39,24 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
 
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, startDate, endDate]);
+  }, [debouncedSearch, startDate, endDate]);
+
+  const loadSales = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await tauri.sales.list(session.token, debouncedSearch, startDate, endDate, page, perPage);
+      setSales(result.items);
+      setTotalPages(result.total_pages);
+    } catch (err) {
+      console.error('Failed to load sales:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [session.token, debouncedSearch, startDate, endDate, page, perPage]);
 
   useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      tauri.sales.list(session.token, searchTerm, startDate, endDate, page, perPage).then((result) => {
-        setSales(result.items);
-        setTotalPages(result.total_pages);
-      }).finally(() => setLoading(false));
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [session.token, searchTerm, startDate, endDate, page, perPage, salesRefreshKey]);
+    loadSales();
+  }, [loadSales, salesRefreshKey]);
 
   const openDetail = async (saleId: number) => {
     setDetailLoading(true);
@@ -134,9 +145,9 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
                   <TableCell className="text-right font-medium">{currencySymbol} {sale.total.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     {sale.total_returned_qty > 0 ? (
-                      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                      <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300 border-red-200 dark:border-red-900 text-xs font-semibold">
                         {sale.total_returned_qty} returned ({currencySymbol}{sale.total_refund_amount.toFixed(2)})
-                      </span>
+                      </Badge>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
@@ -155,41 +166,101 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
 
       <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null); }}>
         <DialogContent className="sm:max-w-3xl">
-          <DialogHeader><DialogTitle>Sale #{selected?.sale.id}</DialogTitle></DialogHeader>
+          <DialogHeader className="flex flex-row items-center justify-between pr-6">
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="size-5 text-primary" />
+              Sale #{selected?.sale.id}
+            </DialogTitle>
+          </DialogHeader>
           {selected && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <div className="min-w-0 break-words">Payment: <strong>{selected.sale.payment_method}</strong></div>
-                <div className="min-w-0 break-words">Date: <strong>{formatDateTime(selected.sale.created_at)}</strong></div>
-                <div className="min-w-0 break-words">Customer: <strong>{selected.sale.customer_name || '-'}</strong></div>
-                <div className="min-w-0 break-words">Total: <strong>{currencySymbol} {selected.sale.total.toFixed(2)}</strong></div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm bg-muted/40 p-3 rounded-lg border border-border">
+                <div className="min-w-0 break-words">Payment: <strong className="text-foreground">{selected.sale.payment_method}</strong></div>
+                <div className="min-w-0 break-words">Date: <strong className="text-foreground">{formatDateTime(selected.sale.created_at)}</strong></div>
+                <div className="min-w-0 break-words">Customer: <strong className="text-foreground">{selected.sale.customer_name || 'Walk-in'}</strong></div>
+                <div className="min-w-0 break-words">Total: <strong className="text-foreground">{currencySymbol} {selected.sale.total.toFixed(2)}</strong></div>
               </div>
               <Table className="min-w-max">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Medicine</TableHead>
-                      <TableHead>Batch</TableHead>
-                      <TableHead>Qty</TableHead>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Discount</TableHead>
-                      <TableHead className="text-right">Line Total</TableHead>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Medicine</TableHead>
+                    <TableHead>Batch</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Unit Price</TableHead>
+                    <TableHead className="text-right">Discount</TableHead>
+                    <TableHead className="text-right">Line Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selected.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.medicine_name}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">#{item.batch_id}</TableCell>
+                      <TableCell className="text-right font-mono">{item.quantity}</TableCell>
+                      <TableCell className="text-right font-mono">{currencySymbol} {item.unit_price.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{currencySymbol} {item.item_discount.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold">{currencySymbol} {item.line_total.toFixed(2)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selected.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.medicine_name}</TableCell>
-                        <TableCell>#{item.batch_id}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>{currencySymbol} {item.unit_price.toFixed(2)}</TableCell>
-                        <TableCell>{currencySymbol} {item.item_discount.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">{currencySymbol} {item.line_total.toFixed(2)}</TableCell>
-                      </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Thermal Receipt Print Container for window.print() */}
+              <div id="printable-receipt" className="hidden">
+                <div className="text-center pb-2 border-b border-black">
+                  <h2 className="text-base font-bold uppercase">{pharmacyName}</h2>
+                  {pharmacyPhone && <p className="text-xs">Tel: {pharmacyPhone}</p>}
+                  <p className="text-[11px] mt-1">*** DUPLICATE RECEIPT ***</p>
+                </div>
+                <div className="text-xs py-2 border-b border-black space-y-0.5">
+                  <div className="flex justify-between"><span>Sale #:</span><span>{selected.sale.id}</span></div>
+                  <div className="flex justify-between"><span>Date:</span><span>{formatDateTime(selected.sale.created_at)}</span></div>
+                  <div className="flex justify-between"><span>Payment:</span><span>{selected.sale.payment_method}</span></div>
+                  {selected.sale.customer_name && (
+                    <div className="flex justify-between"><span>Customer:</span><span>{selected.sale.customer_name}</span></div>
+                  )}
+                </div>
+                <table className="w-full text-xs my-2">
+                  <thead>
+                    <tr className="border-b border-black">
+                      <th className="text-left">Item</th>
+                      <th className="text-center">Qty</th>
+                      <th className="text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selected.items.map((it, idx) => (
+                      <tr key={idx} className="border-b border-dotted border-gray-300">
+                        <td className="py-0.5">{it.medicine_name}</td>
+                        <td className="text-center py-0.5">{it.quantity}</td>
+                        <td className="text-right py-0.5">{currencySymbol} {it.line_total.toFixed(2)}</td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
+                <div className="text-xs pt-1 border-t border-black space-y-1">
+                  <div className="flex justify-between font-bold text-sm">
+                    <span>TOTAL:</span>
+                    <span>{currencySymbol} {selected.sale.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
+          <DialogFooter className="flex sm:justify-between items-center gap-2 pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => window.print()}
+              className="gap-2"
+            >
+              <Printer className="size-4" />
+              Reprint Thermal Slip
+            </Button>
+            <Button variant="secondary" onClick={() => setSelected(null)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

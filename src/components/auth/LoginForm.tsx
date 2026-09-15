@@ -1,4 +1,8 @@
 import { useState, type FormEvent } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Eye, EyeOff, Lock, User, Loader2, Building2 } from 'lucide-react';
 
 interface LoginFormProps {
   onLogin: (username: string, password: string) => Promise<unknown>;
@@ -9,6 +13,7 @@ interface LoginFormProps {
 export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -17,59 +22,79 @@ export function LoginForm({ onLogin, error, loading }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+    <form onSubmit={handleSubmit} className="w-full space-y-5">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">PharmaCare</h1>
-        <p className="text-sm text-muted-foreground mt-1">Pharmacy Management System</p>
+        <div className="mx-auto flex aspect-square size-12 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md mb-3">
+          <Building2 className="size-6" />
+        </div>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">PharmaCare</h1>
+        <p className="text-xs text-muted-foreground mt-1">Pharmacy Management System</p>
       </div>
 
-      <div>
-        <label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">
+      <div className="space-y-1.5">
+        <Label htmlFor="username" className="text-xs font-semibold">
           Username
-        </label>
-        <input
-          id="username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-background text-foreground placeholder:text-muted-foreground"
-          placeholder="Enter your username"
-          required
-          autoFocus
-          disabled={loading}
-        />
+        </Label>
+        <div className="relative">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="pl-9 h-10"
+            placeholder="Enter your username"
+            required
+            autoFocus
+            disabled={loading}
+          />
+        </div>
       </div>
 
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
+      <div className="space-y-1.5">
+        <Label htmlFor="password" className="text-xs font-semibold">
           Password
-        </label>
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-background text-foreground placeholder:text-muted-foreground"
-          placeholder="Enter your password"
-          required
-          minLength={6}
-          disabled={loading}
-        />
+        </Label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pl-9 pr-10 h-10"
+            placeholder="Enter your password"
+            required
+            minLength={6}
+            disabled={loading}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-md px-3 py-2">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg p-3 font-medium">
           {error}
         </div>
       )}
 
-      <button
+      <Button
         type="submit"
         disabled={loading}
-        className="w-full py-2 px-4 bg-blue-600 text-white font-medium text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full h-11 text-sm font-semibold gap-2 shadow-sm"
       >
+        {loading ? <Loader2 className="size-4 animate-spin" /> : null}
         {loading ? 'Signing in...' : 'Sign In'}
-      </button>
+      </Button>
     </form>
   );
 }
+

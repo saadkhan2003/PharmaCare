@@ -16,9 +16,10 @@ import { Loader2, KeyRound } from 'lucide-react';
 
 interface ChangePasswordDialogProps {
   session: SessionDto;
+  trigger?: React.ReactElement;
 }
 
-export function ChangePasswordDialog({ session }: ChangePasswordDialogProps) {
+export function ChangePasswordDialog({ session, trigger }: ChangePasswordDialogProps) {
   const [open, setOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -58,9 +59,6 @@ export function ChangePasswordDialog({ session }: ChangePasswordDialogProps) {
     try {
       await tauri.users.changePassword(session.token, currentPassword, newPassword);
       setSuccess(true);
-      resetForm();
-      // Close after short delay
-      setTimeout(() => setOpen(false), 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to change password';
       setError(msg);
@@ -71,10 +69,14 @@ export function ChangePasswordDialog({ session }: ChangePasswordDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-      <DialogTrigger render={<Button variant="outline" size="sm" />}>
-        <KeyRound className="h-4 w-4 mr-2" />
-        Change Password
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger render={trigger} />
+      ) : (
+        <DialogTrigger render={<Button variant="outline" size="sm" />}>
+          <KeyRound className="h-4 w-4 mr-2" />
+          Change Password
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Change Password</DialogTitle>

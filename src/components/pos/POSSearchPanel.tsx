@@ -36,6 +36,9 @@ export function POSSearchPanel({
   const [loading, setLoading] = useState(false);
   const resultsContainerRef = useRef<HTMLDivElement>(null);
 
+  const emptyQuery = !query.trim();
+  const noResults = query.trim().length > 0 && !loading && results.length === 0;
+
   // Sync debouncedQuery prop into local state when it changes externally
   useEffect(() => {
     setLocalQuery(debouncedQuery);
@@ -106,8 +109,24 @@ export function POSSearchPanel({
     return `Stock: ${stock}`;
   };
 
-  const emptyQuery = !query.trim();
-  const noResults = !emptyQuery && !loading && results.length === 0;
+  const handleKeyDownInternal = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedResultIndex(
+        selectedResultIndex < results.length - 1 ? selectedResultIndex + 1 : selectedResultIndex
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedResultIndex(selectedResultIndex > 0 ? selectedResultIndex - 1 : 0);
+    } else if (e.key === 'Enter') {
+      const targetIndex = selectedResultIndex >= 0 ? selectedResultIndex : (results.length === 1 ? 0 : -1);
+      if (targetIndex >= 0 && targetIndex < results.length) {
+        e.preventDefault();
+        onSelectMedicine(results[targetIndex]);
+      }
+    }
+    onKeyDown?.(e);
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -116,10 +135,10 @@ export function POSSearchPanel({
         <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           ref={searchRef}
-          placeholder="Search medicines by name, generic name, or brand..."
+          placeholder="Search medicines by name, generic name, or brand (Enter to add)..."
           value={query}
           onChange={handleInputChange}
-          onKeyDown={onKeyDown}
+          onKeyDown={handleKeyDownInternal}
           className="h-14 py-6 pl-14 pr-4 text-xl"
         />
       </div>

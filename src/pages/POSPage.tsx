@@ -111,9 +111,9 @@ export function POSPage({ session }: POSPageProps) {
   );
 
   return (
-    <div className="flex flex-row h-[calc(100vh-4rem)] p-4 gap-4">
+    <div className="flex flex-col lg:flex-row h-full w-full gap-4 min-h-0">
       {/* Left panel: Search */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col h-full">
         <POSSearchPanel
           session={session}
           onSelectMedicine={handleSelectMedicine}
@@ -128,7 +128,7 @@ export function POSPage({ session }: POSPageProps) {
       </div>
 
       {/* Right panel: Cart */}
-      <div className="w-full md:w-[420px] shrink-0 flex flex-col">
+      <div className="w-full lg:w-[440px] shrink-0 flex flex-col h-full">
         <POSCartPanel
           cart={cart}
           onUpdateQuantity={handleUpdateQuantity}
@@ -151,6 +151,7 @@ export function POSPage({ session }: POSPageProps) {
         receipt={receipt}
         open={receiptOpen}
         onClose={handleReceiptClose}
+        session={session}
       />
     </div>
   );

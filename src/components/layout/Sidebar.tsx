@@ -24,25 +24,50 @@ interface NavItem {
   shortcut?: string;
 }
 
-const navItems: NavItem[] = [
-  { title: 'POS', url: '/pos', icon: ShoppingCart, roles: ['owner', 'pharmacist'] },
-  { title: 'POS History', url: '/pos/history', icon: History, roles: ['owner', 'pharmacist'] },
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, roles: ['owner', 'pharmacist'] },
-  { title: 'Medicines', url: '/medicines', icon: Pill, roles: ['owner', 'pharmacist'] },
-  { title: 'Suppliers', url: '/suppliers', icon: Truck, roles: ['owner'] },
-  { title: 'Purchases', url: '/purchases', icon: Package, roles: ['owner'] },
-  { title: 'Batches', url: '/batches', icon: Boxes, roles: ['owner'] },
-  { title: 'Reports', url: '/reports', icon: BarChart3, roles: ['owner'] },
-  { title: 'Expiry Report', url: '/expiry-report', icon: AlertTriangle, roles: ['owner'] },
-  { title: 'Debts', url: '/debts', icon: HandCoins, roles: ['owner'] },
-  { title: 'Supplier Debts', url: '/supplier-debts', icon: CircleDollarSign, roles: ['owner'], shortcut: '⌘8' },
-  { title: 'Users', url: '/users', icon: Users, roles: ['owner'] },
-  { title: 'Audit Log', url: '/audit', icon: ScrollText, roles: ['owner'] },
-  { title: 'Customer Return', url: '/returns/customer', icon: Undo2, roles: ['owner', 'pharmacist'] },
-  { title: 'Supplier Return', url: '/returns/supplier', icon: RotateCcw, roles: ['owner'] },
-  { title: 'Write Off', url: '/returns/write-off', icon: Trash2, roles: ['owner'] },
-  { title: 'Return History', url: '/returns/history', icon: ScrollText, roles: ['owner'] },
-  { title: 'Settings', url: '/settings', icon: Settings, roles: ['owner'] },
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
+  {
+    title: 'Sales & Checkout',
+    items: [
+      { title: 'POS', url: '/pos', icon: ShoppingCart, roles: ['owner', 'pharmacist'], shortcut: '⌘1' },
+      { title: 'POS History', url: '/pos/history', icon: History, roles: ['owner', 'pharmacist'] },
+      { title: 'Customer Return', url: '/returns/customer', icon: Undo2, roles: ['owner', 'pharmacist'] },
+    ],
+  },
+  {
+    title: 'Inventory & Stock',
+    items: [
+      { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard, roles: ['owner', 'pharmacist'], shortcut: '⌘2' },
+      { title: 'Medicines', url: '/medicines', icon: Pill, roles: ['owner', 'pharmacist'], shortcut: '⌘3' },
+      { title: 'Purchases', url: '/purchases', icon: Package, roles: ['owner'] },
+      { title: 'Batches', url: '/batches', icon: Boxes, roles: ['owner'] },
+      { title: 'Suppliers', url: '/suppliers', icon: Truck, roles: ['owner'] },
+      { title: 'Supplier Return', url: '/returns/supplier', icon: RotateCcw, roles: ['owner'] },
+      { title: 'Write Off', url: '/returns/write-off', icon: Trash2, roles: ['owner'] },
+    ],
+  },
+  {
+    title: 'Finance & Reports',
+    items: [
+      { title: 'Reports', url: '/reports', icon: BarChart3, roles: ['owner'], shortcut: '⌘R' },
+      { title: 'Expiry Report', url: '/expiry-report', icon: AlertTriangle, roles: ['owner'] },
+      { title: 'Debts', url: '/debts', icon: HandCoins, roles: ['owner'] },
+      { title: 'Supplier Debts', url: '/supplier-debts', icon: CircleDollarSign, roles: ['owner'], shortcut: '⌘8' },
+      { title: 'Return History', url: '/returns/history', icon: ScrollText, roles: ['owner'] },
+    ],
+  },
+  {
+    title: 'Administration',
+    items: [
+      { title: 'Users', url: '/users', icon: Users, roles: ['owner'] },
+      { title: 'Audit Log', url: '/audit', icon: ScrollText, roles: ['owner'] },
+      { title: 'Settings', url: '/settings', icon: Settings, roles: ['owner'], shortcut: '⌘L' },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -57,10 +82,6 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === 'collapsed';
 
-  const visibleItems = navItems.filter((item) =>
-    item.roles.includes(session.role)
-  );
-
   return (
     <div
       className={cn(
@@ -72,13 +93,13 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className={isCollapsed ? 'justify-center px-0' : ''}>
-              <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
                 <Building2 className="size-4" />
               </div>
               {!isCollapsed && (
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">PharmaCare</span>
-                  <span className="truncate text-xs capitalize">{session.role}</span>
+                  <span className="truncate font-bold tracking-tight text-foreground">PharmaCare</span>
+                  <span className="truncate text-[11px] capitalize text-muted-foreground">{session.role} Portal</span>
                 </div>
               )}
             </SidebarMenuButton>
@@ -86,38 +107,50 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {visibleItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    isActive={location.pathname === item.url}
-                    onClick={() => { playClick(); navigate(item.url); }}
-                    tooltip={isCollapsed ? item.title : undefined}
-                    className={cn(
-                      'transition-all duration-150',
-                      isCollapsed ? 'justify-center px-0' : '',
-                      location.pathname === item.url && !isCollapsed && 'border-l-2 border-l-sidebar-primary rounded-l-none'
-                    )}
-                  >
-                    <item.icon />
-                    {!isCollapsed && (
-                      <span className="flex-1">{item.title}</span>
-                    )}
-                    {!isCollapsed && item.shortcut && (
-                      <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted px-1 rounded">{item.shortcut}</kbd>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="space-y-2 py-1">
+        {navSections.map((section) => {
+          const visibleItems = section.items.filter((item) => item.roles.includes(session.role));
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <SidebarGroup key={section.title} className="py-1">
+              {!isCollapsed && (
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                  {section.title}
+                </div>
+              )}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {visibleItems.map((item) => (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton
+                        isActive={location.pathname === item.url}
+                        onClick={() => { playClick(); navigate(item.url); }}
+                        tooltip={isCollapsed ? item.title : undefined}
+                        className={cn(
+                          'transition-all duration-150',
+                          isCollapsed ? 'justify-center px-0' : '',
+                          location.pathname === item.url && !isCollapsed && 'border-l-2 border-l-emerald-600 font-semibold bg-sidebar-accent text-sidebar-accent-foreground'
+                        )}
+                      >
+                        <item.icon className={cn("size-4", location.pathname === item.url && "text-emerald-600 dark:text-emerald-400")} />
+                        {!isCollapsed && (
+                          <span className="flex-1 text-xs">{item.title}</span>
+                        )}
+                        {!isCollapsed && item.shortcut && (
+                          <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted/60 px-1 py-0.5 rounded font-mono">{item.shortcut}</kbd>
+                        )}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
-      <SidebarFooter className="mt-auto">
+      <SidebarFooter className="mt-auto border-t border-border/40 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -125,17 +158,12 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
               onClick={toggleSidebar}
               tooltip={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               className={cn(
-                'text-sidebar-foreground/60 hover:text-sidebar-foreground',
+                'text-sidebar-foreground/70 hover:text-sidebar-foreground',
                 isCollapsed ? 'justify-center px-0' : ''
               )}
             >
               {isCollapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
-              {!isCollapsed && <span>Collapse</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="sm" className={cn('text-xs text-sidebar-foreground/60', isCollapsed ? 'justify-center px-0' : '')}>
-              <span>v0.1.0</span>
+              {!isCollapsed && <span className="text-xs">Collapse</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -147,10 +175,6 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
 function MobileSidebar({ session, onClose }: { session: SessionDto; onClose: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const visibleItems = navItems.filter((item) =>
-    item.roles.includes(session.role)
-  );
 
   return (
     <Sheet open={true} onOpenChange={(open) => !open && onClose()}>
@@ -164,45 +188,59 @@ function MobileSidebar({ session, onClose }: { session: SessionDto; onClose: () 
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton size="lg">
-                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
                     <Building2 className="size-4" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">PharmaCare</span>
-                    <span className="truncate text-xs capitalize">{session.role}</span>
+                    <span className="truncate font-bold text-foreground">PharmaCare</span>
+                    <span className="truncate text-[11px] capitalize text-muted-foreground">{session.role} Portal</span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {visibleItems.map((item) => (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton
-                        isActive={location.pathname === item.url}
-                        onClick={() => { navigate(item.url); onClose(); }}
-                      >
-                        <item.icon />
-                        <span className="flex-1">{item.title}</span>
-                        {item.shortcut && (
-                          <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted px-1 rounded">{item.shortcut}</kbd>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+          <SidebarContent className="space-y-2 py-1">
+            {navSections.map((section) => {
+              const visibleItems = section.items.filter((item) => item.roles.includes(session.role));
+              if (visibleItems.length === 0) return null;
+
+              return (
+                <SidebarGroup key={section.title} className="py-1">
+                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                    {section.title}
+                  </div>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {visibleItems.map((item) => (
+                        <SidebarMenuItem key={item.url}>
+                          <SidebarMenuButton
+                            isActive={location.pathname === item.url}
+                            onClick={() => { navigate(item.url); onClose(); }}
+                            className={cn(
+                              'transition-all duration-150',
+                              location.pathname === item.url && 'border-l-2 border-l-emerald-600 font-semibold bg-sidebar-accent text-sidebar-accent-foreground'
+                            )}
+                          >
+                            <item.icon className={cn("size-4", location.pathname === item.url && "text-emerald-600 dark:text-emerald-400")} />
+                            <span className="flex-1 text-xs">{item.title}</span>
+                            {item.shortcut && (
+                              <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted/60 px-1 py-0.5 rounded font-mono">{item.shortcut}</kbd>
+                            )}
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              );
+            })}
           </SidebarContent>
-          <SidebarFooter className="mt-auto">
+          <SidebarFooter className="mt-auto border-t border-border/40 p-2">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton size="sm" className="text-xs text-sidebar-foreground/60">
-                  <span>v0.1.0</span>
-                </SidebarMenuButton>
+                <div className="px-3 py-1.5 text-xs text-muted-foreground">
+                  PharmaCare v0.1.0
+                </div>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>

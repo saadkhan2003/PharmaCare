@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,7 @@ interface CustomerReturnFormProps {
   sessionToken: string;
   currencySymbol: string;
   onReturnComplete: () => void;
+  initialSaleId?: number | null;
 }
 
 interface ReturnItemEntry {
@@ -48,8 +49,9 @@ export function CustomerReturnForm({
   sessionToken,
   currencySymbol,
   onReturnComplete,
+  initialSaleId,
 }: CustomerReturnFormProps) {
-  const [saleId, setSaleId] = useState('');
+  const [saleId, setSaleId] = useState(initialSaleId ? String(initialSaleId) : '');
   const [sale, setSale] = useState<SaleForReturnDto | null>(null);
   const [loadingSale, setLoadingSale] = useState(false);
   const [returnItems, setReturnItems] = useState<Record<string, ReturnItemEntry>>({});
@@ -57,6 +59,27 @@ export function CustomerReturnForm({
   const [success, setSuccess] = useState<ReturnReceiptDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialSaleId) {
+      setSaleId(String(initialSaleId));
+      (async () => {
+        setLoadingSale(true);
+        setError(null);
+        setSale(null);
+        setReturnItems({});
+        setSuccess(null);
+        try {
+          const result = await tauri.returns.searchSaleForReturn(sessionToken, initialSaleId);
+          setSale(result);
+        } catch (err: unknown) {
+          setError(err instanceof Error ? err.message : 'Failed to load sale');
+        } finally {
+          setLoadingSale(false);
+        }
+      })();
+    }
+  }, [initialSaleId, sessionToken]);
 
   const handleSearchSale = useCallback(async () => {
     const id = parseInt(saleId);

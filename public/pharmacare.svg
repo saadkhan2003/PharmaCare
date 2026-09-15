@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="primaryGrad" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="crossGrad" x1="38" y1="38" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#ecfdf5" />
+    </linearGradient>
+    <filter id="shadow" x="0" y="4" width="128" height="124" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#059669" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect x="14" y="14" width="100" height="100" rx="26" fill="url(#primaryGrad)" filter="url(#shadow)" />
+  <!-- Medical Plus / Cross with rounded corners -->
+  <path d="M64 36C67.3137 36 70 38.6863 70 42V58H86C89.3137 58 92 60.6863 92 64C92 67.3137 89.3137 70 86 70H70V86C70 89.3137 67.3137 92 64 92C60.6863 92 58 89.3137 58 86V70H42C38.6863 70 36 67.3137 36 64C36 60.6863 38.6863 58 42 58H58V42C58 38.6863 60.6863 36 64 36Z" fill="url(#crossGrad)"/>
+</svg>

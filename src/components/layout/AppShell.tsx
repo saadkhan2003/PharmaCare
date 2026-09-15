@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { cn } from '@/lib/utils';
 import type { SessionDto } from '@/types/session';
 
 interface AppShellProps {
@@ -13,6 +15,8 @@ interface AppShellProps {
 export function AppShell({ session, onLogout, children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const location = useLocation();
+  const isPos = location.pathname === '/pos';
 
   return (
     <SidebarProvider
@@ -33,7 +37,7 @@ export function AppShell({ session, onLogout, children }: AppShellProps) {
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             onOpenMobile={() => setMobileSidebarOpen(true)}
           />
-          <main className="flex-1 overflow-auto p-4 md:p-6">
+          <main className={cn("flex-1 overflow-auto", isPos ? "p-3 h-[calc(100svh-3.5rem)] overflow-hidden" : "p-4 md:p-6")}>
             {children}
           </main>
         </div>

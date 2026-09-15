@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, CreditCard, Eye, CircleDollarSign } from 'lucide-react';
+import { Loader2, Plus, CreditCard, Eye, CircleDollarSign, Download } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/components/ui/toast-provider';
 import { dispatchEvent, useAutoRefresh } from '@/lib/eventBus';
@@ -166,18 +166,32 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
 
   const total = debts.reduce((s, d) => s + d.remaining_amount, 0);
 
+  const exportCsv = () => {
+    const headers = ['Supplier,Total Amount,Paid Amount,Remaining,Due Date,Status'];
+    const rows = debts.map(d => 
+      `"${d.supplier_name}",${d.total_amount},${d.paid_amount},${d.remaining_amount},"${d.due_date || ''}","${d.status}"`
+    );
+    const blob = new Blob([[...headers, ...rows].join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `supplier_debts_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Supplier Debts</h1>
           <p className="text-sm text-muted-foreground">
-            Total outstanding: <strong>{currencySymbol} {total.toFixed(2)}</strong>
+            Total outstanding: <strong>{currencySymbol} {total.toFixed(2)}</strong> ({debts.filter(d => d.remaining_amount > 0).length} active liabilities)
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={filterSupplierId} onValueChange={(v) => setFilterSupplierId(v || 'all')}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All suppliers" />
             </SelectTrigger>
             <SelectContent>
@@ -189,6 +203,9 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={debts.length === 0}>
+            <Download className="h-4 w-4 mr-1.5" />Export CSV
+          </Button>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />New Debt
           </Button>
@@ -224,7 +241,7 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
               {debts.map((d) => (
                 <TableRow
                   key={d.id}
-                  className={d.status !== 'Paid' && d.due_date && new Date(d.due_date) < new Date() ? 'bg-red-50/50' : ''}
+                  className={d.status !== 'Paid' && d.due_date && new Date(d.due_date) < new Date() ? 'bg-red-50/60 dark:bg-red-950/30' : ''}
                 >
                   <TableCell className="font-medium">{d.supplier_name}</TableCell>
                   <TableCell className="text-right">{currencySymbol}{d.total_amount.toFixed(2)}</TableCell>
