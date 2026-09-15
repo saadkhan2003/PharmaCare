@@ -90,14 +90,14 @@ export function POSCartPanel({
   }, [cart, billDiscount, taxEnabled, paymentMethod, customerName, confirmSale, session.token, onConfirm, toast]);
 
   return (
-    <div className="flex flex-col h-full border rounded-lg bg-card">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
+    <div className="flex flex-col h-full border rounded-lg bg-card overflow-y-auto min-h-0">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-card flex items-center justify-between p-4 border-b border-border shrink-0 shadow-xs">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="h-5 w-5" />
+          <ShoppingCart className="h-5 w-5 text-emerald-600" />
           <h2 className="text-xl font-bold">Cart</h2>
           {cart.length > 0 && (
-            <Badge variant="secondary" className="ml-1">
+            <Badge variant="secondary" className="ml-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
               {cart.length}
             </Badge>
           )}
@@ -114,11 +114,11 @@ export function POSCartPanel({
         </Button>
       </div>
 
-      {/* Cart items — scrollable */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 min-h-0">
+      {/* Cart items */}
+      <div className="px-4 py-2 space-y-2 shrink-0">
         {cart.length === 0 ? (
-          <div className="flex items-center justify-center h-full py-12">
-            <p className="text-muted-foreground text-lg text-center">
+          <div className="flex items-center justify-center py-16">
+            <p className="text-muted-foreground text-sm text-center">
               No items in cart. Search and add medicines from the left panel.
             </p>
           </div>
@@ -136,9 +136,9 @@ export function POSCartPanel({
         )}
       </div>
 
-      {/* Payment form — at bottom */}
+      {/* Payment form — at bottom with proper padding */}
       {cart.length > 0 && (
-        <div className="border-t border-border p-4 space-y-4">
+        <div className="border-t border-border p-4 space-y-4 mt-auto shrink-0 bg-card pb-8">
           <POSPaymentForm
             cartItems={cart}
             billDiscount={billDiscount}

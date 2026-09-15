@@ -37,7 +37,7 @@ export function AppShell({ session, onLogout, children }: AppShellProps) {
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             onOpenMobile={() => setMobileSidebarOpen(true)}
           />
-          <main className={cn("flex-1 overflow-auto", isPos ? "p-3 h-[calc(100svh-3.5rem)] overflow-hidden" : "p-4 md:p-6")}>
+          <main className={cn("flex-1", isPos ? "p-3 overflow-y-auto" : "p-4 md:p-6 overflow-auto")}>
             {children}
           </main>
         </div>

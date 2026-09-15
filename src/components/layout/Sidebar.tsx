@@ -85,42 +85,38 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
   return (
     <div
       className={cn(
-        "flex flex-col bg-sidebar text-sidebar-foreground border-r overflow-hidden transition-[width] duration-200 ease-linear h-full",
+        "flex flex-col bg-sidebar text-sidebar-foreground border-r overflow-hidden transition-all duration-200 ease-in-out h-full select-none",
         isCollapsed ? 'w-16' : 'w-64'
       )}
     >
-      <SidebarHeader>
+      <SidebarHeader className="p-2 border-b border-border/30">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" className={isCollapsed ? 'justify-center px-0' : ''}>
+            <div className="flex items-center gap-3 p-1.5 rounded-lg">
               <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
                 <Building2 className="size-4" />
               </div>
-              {!isCollapsed && (
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-bold tracking-tight text-foreground">PharmaCare</span>
-                  <span className="truncate text-[11px] capitalize text-muted-foreground">{session.role} Portal</span>
-                </div>
-              )}
-            </SidebarMenuButton>
+              <div className={cn("grid flex-1 text-left text-sm leading-tight overflow-hidden whitespace-nowrap transition-all duration-200", isCollapsed ? "opacity-0 max-w-0 pointer-events-none" : "opacity-100 max-w-full")}>
+                <span className="truncate font-bold tracking-tight text-foreground">PharmaCare</span>
+                <span className="truncate text-[11px] capitalize text-muted-foreground">{session.role} Portal</span>
+              </div>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="space-y-2 py-1">
+      <SidebarContent className="space-y-2 py-1 px-1.5">
         {navSections.map((section) => {
           const visibleItems = section.items.filter((item) => item.roles.includes(session.role));
           if (visibleItems.length === 0) return null;
 
           return (
             <SidebarGroup key={section.title} className="py-1">
-              {!isCollapsed && (
-                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                  {section.title}
-                </div>
-              )}
+              <div className={cn("px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 overflow-hidden whitespace-nowrap transition-all duration-200", isCollapsed ? "opacity-0 h-0 py-0" : "opacity-100 h-auto")}>
+                {section.title}
+              </div>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-0.5">
                   {visibleItems.map((item) => (
                     <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton
@@ -128,17 +124,17 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
                         onClick={() => { playClick(); navigate(item.url); }}
                         tooltip={isCollapsed ? item.title : undefined}
                         className={cn(
-                          'transition-all duration-150',
-                          isCollapsed ? 'justify-center px-0' : '',
-                          location.pathname === item.url && !isCollapsed && 'border-l-2 border-l-emerald-600 font-semibold bg-sidebar-accent text-sidebar-accent-foreground'
+                          'flex items-center gap-3 px-2.5 h-9 rounded-md transition-colors duration-150',
+                          location.pathname === item.url && !isCollapsed && 'border-l-2 border-l-emerald-600 font-semibold bg-sidebar-accent text-sidebar-accent-foreground',
+                          location.pathname === item.url && isCollapsed && 'bg-sidebar-accent text-emerald-600 dark:text-emerald-400 font-semibold'
                         )}
                       >
-                        <item.icon className={cn("size-4", location.pathname === item.url && "text-emerald-600 dark:text-emerald-400")} />
-                        {!isCollapsed && (
-                          <span className="flex-1 text-xs">{item.title}</span>
-                        )}
-                        {!isCollapsed && item.shortcut && (
-                          <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted/60 px-1 py-0.5 rounded font-mono">{item.shortcut}</kbd>
+                        <item.icon className={cn("size-4 shrink-0 transition-colors", location.pathname === item.url ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground group-hover:text-foreground")} />
+                        <span className={cn("flex-1 text-xs truncate overflow-hidden whitespace-nowrap transition-all duration-200 text-left", isCollapsed ? "opacity-0 max-w-0 pointer-events-none" : "opacity-100 max-w-full")}>
+                          {item.title}
+                        </span>
+                        {item.shortcut && !isCollapsed && (
+                          <kbd className="ml-auto text-[10px] text-muted-foreground bg-muted/60 px-1 py-0.5 rounded font-mono shrink-0">{item.shortcut}</kbd>
                         )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -157,13 +153,12 @@ function DesktopSidebar({ session }: { session: SessionDto }) {
               size="sm"
               onClick={toggleSidebar}
               tooltip={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className={cn(
-                'text-sidebar-foreground/70 hover:text-sidebar-foreground',
-                isCollapsed ? 'justify-center px-0' : ''
-              )}
+              className="flex items-center gap-3 px-2.5 h-8 text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors w-full"
             >
-              {isCollapsed ? <PanelLeft className="size-4" /> : <PanelLeftClose className="size-4" />}
-              {!isCollapsed && <span className="text-xs">Collapse</span>}
+              {isCollapsed ? <PanelLeft className="size-4 shrink-0" /> : <PanelLeftClose className="size-4 shrink-0" />}
+              <span className={cn("text-xs truncate overflow-hidden whitespace-nowrap transition-all duration-200 text-left", isCollapsed ? "opacity-0 max-w-0 pointer-events-none" : "opacity-100 flex-1")}>
+                Collapse
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -163,15 +163,15 @@ export function ImportMedicinesDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-h-[85vh] sm:max-w-2xl overflow-hidden flex flex-col p-0 gap-0 border rounded-xl shadow-2xl">
+        <DialogHeader className="p-5 pb-4 border-b border-border shrink-0 bg-card">
+          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
             <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
             Import Medicines (CSV or Excel)
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
           <div className="flex flex-wrap gap-2 justify-between items-center text-xs bg-muted/40 p-2.5 rounded-lg border border-border/60">
             <span className="text-muted-foreground font-medium">Need a starting template?</span>
             <div className="flex gap-2">
@@ -232,7 +232,7 @@ export function ImportMedicinesDialog({
               <p className="text-xs font-medium text-foreground mb-1">
                 Data Preview (First {preview.length - 1} rows detected):
               </p>
-              <div className="overflow-x-auto rounded-md border max-h-48">
+              <div className="overflow-x-auto rounded-md border max-h-44">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b bg-muted/60 sticky top-0">
@@ -290,7 +290,7 @@ export function ImportMedicinesDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="p-4 px-6 border-t border-border bg-muted/20 shrink-0 flex items-center justify-end gap-2">
           <Button variant="outline" onClick={handleClose}>
             {result ? 'Close' : 'Cancel'}
           </Button>

@@ -158,14 +158,21 @@ export function DashboardPage({ session }: DashboardPageProps) {
     value,
     icon: Icon,
     colorClass,
+    subtitle,
   }: {
     title: string;
     value: number;
     icon: React.ComponentType<{ className?: string }>;
     colorClass?: string;
+    subtitle?: string;
   }) {
-    const formatted =
-      Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2);
+    const isNegative = value < 0;
+    const absVal = Math.abs(value);
+    const formatted = Number.isInteger(absVal) ? absVal.toLocaleString() : absVal.toFixed(2);
+    const displayVal = isNegative ? `-${currencySymbol}${formatted}` : `${currencySymbol}${formatted}`;
+    const computedColor = isNegative
+      ? 'text-rose-600 dark:text-rose-400'
+      : colorClass ?? 'text-foreground';
 
     return (
       <Card className="transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
@@ -174,9 +181,19 @@ export function DashboardPage({ session }: DashboardPageProps) {
           <Icon className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className={`text-3xl font-bold ${colorClass ?? ''}`}>
-            {currencySymbol}{formatted}
+          <div className={`text-3xl font-bold tracking-tight ${computedColor}`}>
+            {displayVal}
           </div>
+          {isNegative && (
+            <p className="mt-1.5 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+              Loss (discounts exceeded margin)
+            </p>
+          )}
+          {!isNegative && subtitle && (
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              {subtitle}
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -251,28 +268,30 @@ export function DashboardPage({ session }: DashboardPageProps) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}
-                margin={{ top: 5, right: 20, bottom: 40, left: 0 }}
+                margin={{ top: 10, right: 20, bottom: 25, left: 0 }}
               >
                 <XAxis
                   dataKey="name"
                   tick={{ fontSize: 11, fill: dark ? '#a1a1aa' : '#6b7280' }}
                   axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
-                  tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
-                  angle={-20}
-                  textAnchor="end"
+                  tickLine={false}
                   interval={0}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: dark ? '#a1a1aa' : '#6b7280' }}
                   axisLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
-                  tickLine={{ stroke: dark ? '#333' : '#e5e7eb' }}
+                  tickLine={false}
                   allowDecimals={false}
                 />
-                <Tooltip content={<ChartTooltipContent />} />
+                <Tooltip
+                  content={<ChartTooltipContent />}
+                  cursor={{ fill: dark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', radius: 6 }}
+                />
                 <Bar
                   dataKey="quantity"
                   fill={colors.primary}
-                  radius={[4, 4, 0, 0]}
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={56}
                   name="Quantity Sold"
                 />
               </BarChart>
@@ -339,17 +358,20 @@ export function DashboardPage({ session }: DashboardPageProps) {
               title="Today's Sales"
               value={ownerData.today_sales}
               icon={DollarSign}
+              subtitle="Gross counter sales"
             />
             <KpiCard
               title="Today's Profit"
               value={ownerData.today_profit}
               icon={TrendingUp}
-              colorClass="text-green-600"
+              colorClass={ownerData.today_profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}
+              subtitle="Net markup above wholesale cost"
             />
             <KpiCard
               title="Monthly Sales"
               value={ownerData.month_sales}
               icon={Calendar}
+              subtitle="Cumulative this month"
             />
 
             {/* Alert Cards */}
@@ -454,6 +476,7 @@ export function DashboardPage({ session }: DashboardPageProps) {
               title="Today's Sales"
               value={pharmacistData.today_sales}
               icon={DollarSign}
+              subtitle="Gross counter sales"
             />
 
             {/* Alert Cards */}

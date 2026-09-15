@@ -155,28 +155,50 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Print Receipt Styles (80mm standard thermal format) */
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #printable-receipt, #printable-receipt * {
-    visibility: visible;
-  }
-  #printable-receipt {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    margin: 0;
-    padding: 8mm 6mm;
-    font-family: monospace, -apple-system, sans-serif;
-    color: #000;
-    background: #fff;
-    font-size: 11px;
-    line-height: 1.35;
-  }
   @page {
     size: 80mm auto;
     margin: 0;
+  }
+  html, body {
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body > * {
+    visibility: hidden !important;
+  }
+  #printable-receipt,
+  #printable-receipt *,
+  .print-only,
+  .print-only * {
+    visibility: visible !important;
+  }
+  #printable-receipt,
+  .print-only {
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 80mm !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 4mm 4mm 8mm 4mm !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    z-index: 99999999 !important;
   }
 }

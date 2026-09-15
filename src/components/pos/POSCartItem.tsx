@@ -19,7 +19,8 @@ export function POSCartItem({
   onRemove,
   quantityRef,
 }: POSCartItemProps) {
-  const lineTotal = item.quantity * item.medicine.retail_price - item.item_discount;
+  const itemGross = item.quantity * item.medicine.retail_price;
+  const lineTotal = Math.max(0, itemGross - (item.item_discount || 0));
 
   return (
     <div className="border-b border-border py-3 last:border-b-0">
@@ -65,11 +66,13 @@ export function POSCartItem({
           <Input
             type="number"
             min={0}
+            max={itemGross}
             value={item.item_discount || ''}
             placeholder="0"
             onChange={(e) => {
               const val = parseFloat(e.target.value);
-              onUpdateDiscount(item.medicine.id, isNaN(val) ? 0 : val);
+              const clamped = isNaN(val) ? 0 : Math.min(itemGross, Math.max(0, val));
+              onUpdateDiscount(item.medicine.id, clamped);
             }}
             className="h-9 text-base"
           />

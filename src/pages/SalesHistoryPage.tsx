@@ -18,6 +18,7 @@ import { useSettings } from '@/hooks/useSettings';
 import type { SessionDto } from '@/types/session';
 import type { SaleDetailDto, SaleListDto } from '@/types/sale';
 import { formatDateTime } from '@/lib/formatDate';
+import { printThermalReceipt } from '@/lib/thermalPrint';
 
 export function SalesHistoryPage({ session }: { session: SessionDto }) {
   const { settings } = useSettings(session.token);
@@ -205,8 +206,8 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
                 </TableBody>
               </Table>
 
-              {/* Thermal Receipt Print Container for window.print() */}
-              <div id="printable-receipt" className="hidden">
+              {/* Thermal Receipt Print Container for printThermalReceipt */}
+              <div id="printable-receipt" className="print-only">
                 <div className="text-center pb-2 border-b border-black">
                   <h2 className="text-base font-bold uppercase">{pharmacyName}</h2>
                   {pharmacyPhone && <p className="text-xs">Tel: {pharmacyPhone}</p>}
@@ -251,7 +252,7 @@ export function SalesHistoryPage({ session }: { session: SessionDto }) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => window.print()}
+              onClick={() => printThermalReceipt('printable-receipt')}
               className="gap-2"
             >
               <Printer className="size-4" />

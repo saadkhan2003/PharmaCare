@@ -14,6 +14,8 @@ import { formatDateTime } from '@/lib/formatDate';
 import type { SaleReceiptDto } from '@/types/sale';
 import type { SessionDto } from '@/types/session';
 
+import { printThermalReceipt } from '@/lib/thermalPrint';
+
 interface POSReceiptDialogProps {
   receipt: SaleReceiptDto | null;
   open: boolean;
@@ -31,7 +33,7 @@ export function POSReceiptDialog({ receipt, open, onClose, session }: POSReceipt
   if (!receipt) return null;
 
   const handlePrint = () => {
-    window.print();
+    printThermalReceipt('printable-receipt');
   };
 
   return (
@@ -129,7 +131,7 @@ export function POSReceiptDialog({ receipt, open, onClose, session }: POSReceipt
         </div>
 
         {/* Hidden thermal print slip container — visible only via @media print */}
-        <div id="printable-receipt" className="hidden">
+        <div id="printable-receipt" className="print-only">
           <div style={{ textAlign: 'center', marginBottom: '8px' }}>
             <div style={{ fontSize: '15px', fontWeight: 'bold' }}>{pharmacyName}</div>
             {address && <div style={{ fontSize: '10px' }}>{address}</div>}

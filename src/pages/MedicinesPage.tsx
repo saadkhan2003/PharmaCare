@@ -171,7 +171,7 @@ export function MedicinesPage({ session }: MedicinesPageProps) {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" />
-              Import CSV
+              Import Excel / CSV
             </Button>
             <Button onClick={handleAddClick}>
               <Plus className="mr-2 h-4 w-4" />

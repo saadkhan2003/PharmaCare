@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { tauri } from '@/lib/tauri';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, CreditCard, Eye, CircleDollarSign, Download } from 'lucide-react';
+import { Loader2, Plus, CreditCard, Eye, CircleDollarSign, Download, Search, AlertCircle } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useToast } from '@/components/ui/toast-provider';
 import { dispatchEvent, useAutoRefresh } from '@/lib/eventBus';
@@ -36,6 +36,8 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
   const [supplierDebtsEventKey] = useAutoRefresh('supplier-debts-changed');
   const refreshKey = internalRefreshKey + supplierDebtsEventKey;
   const [filterSupplierId, setFilterSupplierId] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'partial' | 'paid'>('all');
 
   // Create dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -164,11 +166,32 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
     return <Badge variant="secondary">{status}</Badge>;
   };
 
+  const filteredDebts = useMemo(() => {
+    return debts.filter((d) => {
+      if (statusFilter === 'overdue') {
+        const isOverdue = d.status !== 'Paid' && d.due_date && new Date(d.due_date) < new Date();
+        if (!isOverdue) return false;
+      } else if (statusFilter === 'partial') {
+        if (d.status !== 'Partial') return false;
+      } else if (statusFilter === 'paid') {
+        if (d.status !== 'Paid') return false;
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesSupplier = d.supplier_name.toLowerCase().includes(q);
+        if (!matchesSupplier) return false;
+      }
+
+      return true;
+    });
+  }, [debts, statusFilter, searchQuery]);
+
   const total = debts.reduce((s, d) => s + d.remaining_amount, 0);
 
   const exportCsv = () => {
     const headers = ['Supplier,Total Amount,Paid Amount,Remaining,Due Date,Status'];
-    const rows = debts.map(d => 
+    const rows = filteredDebts.map(d => 
       `"${d.supplier_name}",${d.total_amount},${d.paid_amount},${d.remaining_amount},"${d.due_date || ''}","${d.status}"`
     );
     const blob = new Blob([[...headers, ...rows].join('\n')], { type: 'text/csv' });
@@ -203,12 +226,49 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={debts.length === 0}>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={filteredDebts.length === 0}>
             <Download className="h-4 w-4 mr-1.5" />Export CSV
           </Button>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />New Debt
           </Button>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by supplier name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
+
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto bg-muted/60 p-1 rounded-lg border border-border">
+          {(
+            [
+              { id: 'all', label: 'All' },
+              { id: 'overdue', label: 'Overdue' },
+              { id: 'partial', label: 'Partial' },
+              { id: 'paid', label: 'Paid' },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setStatusFilter(tab.id)}
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+                statusFilter === tab.id
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -221,6 +281,14 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
           <CardContent className="py-12 text-center text-muted-foreground">
             <CircleDollarSign className="mx-auto h-10 w-10 mb-3 opacity-50" />
             No supplier debts recorded.
+          </CardContent>
+        </Card>
+      ) : filteredDebts.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <AlertCircle className="size-8 mx-auto mb-2 text-muted-foreground/60" />
+            <p className="font-semibold text-foreground">No matching supplier debts found</p>
+            <p className="text-xs mt-1">Try adjusting your search query or status filter.</p>
           </CardContent>
         </Card>
       ) : (
@@ -238,7 +306,7 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {debts.map((d) => (
+              {filteredDebts.map((d) => (
                 <TableRow
                   key={d.id}
                   className={d.status !== 'Paid' && d.due_date && new Date(d.due_date) < new Date() ? 'bg-red-50/60 dark:bg-red-950/30' : ''}

@@ -86,11 +86,13 @@ export function POSPaymentForm({
           id="bill-discount"
           type="number"
           min={0}
+          max={afterItemDiscount}
           value={billDiscount || ''}
           placeholder="0"
           onChange={(e) => {
             const val = parseFloat(e.target.value);
-            onBillDiscountChange(isNaN(val) ? 0 : val);
+            const clamped = isNaN(val) ? 0 : Math.min(afterItemDiscount, Math.max(0, val));
+            onBillDiscountChange(clamped);
           }}
           className="h-10 text-lg mt-1"
         />
