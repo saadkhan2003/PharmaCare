@@ -10,6 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShoppingCart, CreditCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { tauri } from '@/lib/tauri';
 import { formatDate } from '@/lib/formatDate';
 import type { PurchaseListDto } from '@/types/purchase';
@@ -118,14 +119,14 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
             </TableCell>
             <TableCell className="text-right">
               {purchase.payment_status !== 'Paid' && (
-                <a
-                  href="/supplier-debts"
-                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                <Link
+                  to="/supplier-debts"
+                  className="inline-flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
                   title="Manage supplier debt"
                 >
                   <CreditCard className="h-4 w-4" />
                   Debt
-                </a>
+                </Link>
               )}
             </TableCell>
           </TableRow>

@@ -57,6 +57,40 @@ pub fn find_by_id(db: &Connection, id: i64) -> Result<Option<Medicine>, rusqlite
     }
 }
 
+/// Finds a medicine by exact name (case-insensitive).
+pub fn find_by_name(db: &Connection, name: &str) -> Result<Option<Medicine>, rusqlite::Error> {
+    let mut stmt = db.prepare(
+        "SELECT id, name, generic_name, brand_name, category, unit, \
+                retail_price, purchase_price, reorder_level, shelf_location, \
+                notes, is_active, created_at \
+         FROM medicines WHERE LOWER(TRIM(name)) = LOWER(TRIM(?1))",
+    )?;
+
+    let mut rows = stmt.query_map(rusqlite::params![name], |row| {
+        Ok(Medicine {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            generic_name: row.get(2)?,
+            brand_name: row.get(3)?,
+            category: row.get(4)?,
+            unit: row.get(5)?,
+            retail_price: row.get(6)?,
+            purchase_price: row.get(7)?,
+            reorder_level: row.get(8)?,
+            shelf_location: row.get(9)?,
+            notes: row.get(10)?,
+            is_active: row.get::<_, i32>(11)? != 0,
+            created_at: row.get(12)?,
+        })
+    })?;
+
+    match rows.next() {
+        Some(Ok(medicine)) => Ok(Some(medicine)),
+        Some(Err(e)) => Err(e),
+        None => Ok(None),
+    }
+}
+
 pub fn find_all(db: &Connection, offset: i64, limit: i64) -> Result<(Vec<Medicine>, i64), rusqlite::Error> {
     let total: i64 = db.query_row(
         "SELECT COUNT(*) FROM medicines",

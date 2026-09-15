@@ -80,37 +80,82 @@ pub fn import_medicines_csv(
     csv_data: &str,
     user_id: i64,
 ) -> Result<CsvImportResult, CommandError> {
-    let mut rdr = csv::Reader::from_reader(csv_data.as_bytes());
-    let headers: Vec<String> = rdr
-        .headers()?
+    let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .flexible(true)
+        .trim(csv::Trim::All)
+        .from_reader(csv_data.as_bytes());
+
+    let raw_headers = match rdr.headers() {
+        Ok(h) => h.clone(),
+        Err(e) => return Err(CommandError::validation(&format!("Invalid CSV headers: {}", e))),
+    };
+
+    let headers: Vec<String> = raw_headers
         .iter()
-        .map(|h| h.trim().to_lowercase())
+        .map(|h| h.trim().replace(['_', ' ', '-'], "").to_lowercase())
         .collect();
 
-    let expected = [
-        "name",
-        "generic_name",
-        "brand_name",
-        "category",
-        "unit",
-        "purchase_price",
-        "retail_price",
-        "reorder_level",
-        "shelf_location",
-        "notes",
-    ];
-    for col in &expected {
-        if !headers.iter().any(|h| h == col) {
-            return Err(CommandError::validation(&format!(
-                "Missing required column: {}",
-                col
-            )));
+    let find_col_idx = |aliases: &[&str]| -> Option<usize> {
+        for alias in aliases {
+            let norm = alias.replace(['_', ' ', '-'], "").to_lowercase();
+            if let Some(pos) = headers.iter().position(|h| h == &norm) {
+                return Some(pos);
+            }
         }
-    }
+        None
+    };
 
-    let get_col = |row: &csv::StringRecord, name: &str| -> String {
-        let idx = headers.iter().position(|h| h == name).unwrap_or(999);
-        row.get(idx).unwrap_or("").trim().to_string()
+    let name_idx = find_col_idx(&["name", "medicinename", "medicine", "drugname", "itemname", "item"]);
+    if name_idx.is_none() {
+        return Err(CommandError::validation(
+            "Missing required column: 'name' or 'medicine_name'"
+        ));
+    }
+    let name_col = name_idx.unwrap();
+
+    let generic_col = find_col_idx(&["genericname", "generic", "formula"]);
+    let brand_col = find_col_idx(&["brandname", "brand", "manufacturer", "company"]);
+    let category_col = find_col_idx(&["category", "type"]);
+    let unit_col = find_col_idx(&["unit", "dosageunit", "packaging", "pack"]);
+    let purchase_price_col = find_col_idx(&["purchaseprice", "costprice", "buyprice", "cost", "buyingprice"]);
+    let retail_price_col = find_col_idx(&["retailprice", "saleprice", "sellingprice", "price", "mrp"]);
+    let reorder_col = find_col_idx(&["reorderlevel", "minstock", "minimumstock", "alertlevel"]);
+    let shelf_col = find_col_idx(&["shelflocation", "shelf", "rack", "location"]);
+    let notes_col = find_col_idx(&["notes", "note", "description"]);
+
+    let get_field = |row: &csv::StringRecord, col_opt: Option<usize>| -> String {
+        col_opt.and_then(|idx| row.get(idx)).unwrap_or("").trim().to_string()
+    };
+
+    let clean_numeric = |val: &str| -> Option<f64> {
+        let filtered: String = val.chars().filter(|c| c.is_ascii_digit() || *c == '.' || *c == ',').collect();
+        let normalized = filtered.replace(',', ".");
+        normalized.parse::<f64>().ok()
+    };
+
+    let normalize_category = |cat: &str| -> String {
+        let lower = cat.trim().to_lowercase();
+        match lower.as_str() {
+            "tablet" | "tablets" | "tab" | "tabs" | "cap" | "capsule" | "capsules" => "Tablet".to_string(),
+            "syrup" | "syrups" | "suspension" | "solution" | "liquid" | "drop" | "drops" => "Syrup".to_string(),
+            "injection" | "injections" | "inj" | "infusion" | "iv" => "Injection".to_string(),
+            "otc" | "overthecounter" => "OTC".to_string(),
+            "prescription" | "rx" => "Prescription".to_string(),
+            _ => "Tablet".to_string(),
+        }
+    };
+
+    let normalize_unit = |unit: &str| -> String {
+        let lower = unit.trim().to_lowercase();
+        match lower.as_str() {
+            "strip" | "strips" => "Strip".to_string(),
+            "bottle" | "bottles" => "Bottle".to_string(),
+            "vial" | "vials" | "ampoule" | "ampoules" => "Vial".to_string(),
+            "box" | "boxes" | "pack" | "packet" => "Box".to_string(),
+            "sachet" | "sachets" => "Sachet".to_string(),
+            _ => "Strip".to_string(),
+        }
     };
 
     let mut imported: i64 = 0;
@@ -127,83 +172,64 @@ pub fn import_medicines_csv(
             }
         };
 
-        let name = get_col(&row, "name");
+        // Skip completely empty lines
+        if row.iter().all(|f| f.trim().is_empty()) {
+            continue;
+        }
+
+        let name = row.get(name_col).unwrap_or("").trim().to_string();
         if name.is_empty() {
-            skipped += 1;
-            errors.push("Skipped row: name is empty".into());
             continue;
         }
 
-        let category = get_col(&row, "category");
-        let unit = get_col(&row, "unit");
-        let purchase_price_str = get_col(&row, "purchase_price");
-        let retail_price_str = get_col(&row, "retail_price");
-
-        if category.is_empty() || unit.is_empty() {
+        // Check if medicine already exists in database
+        if let Ok(Some(existing)) = medicine_repo::find_by_name(db, &name) {
             skipped += 1;
-            errors.push(format!(
-                "Skipped '{}': category and unit are required",
-                name
-            ));
+            errors.push(format!("Skipped '{}': already exists in catalog (ID #{})", name, existing.id));
             continue;
         }
 
-        let purchase_price: f64 = match purchase_price_str.parse() {
-            Ok(v) => v,
-            Err(_) => {
-                skipped += 1;
-                errors.push(format!("Skipped '{}': invalid purchase_price", name));
-                continue;
-            }
-        };
-        let retail_price: f64 = match retail_price_str.parse() {
-            Ok(v) => v,
-            Err(_) => {
-                skipped += 1;
-                errors.push(format!("Skipped '{}': invalid retail_price", name));
-                continue;
-            }
-        };
+        let raw_category = get_field(&row, category_col);
+        let category = if raw_category.is_empty() { "Tablet".to_string() } else { normalize_category(&raw_category) };
 
-        let reorder_level_str = get_col(&row, "reorder_level");
-        let reorder_level: Option<i64> = if reorder_level_str.is_empty() {
-            None
-        } else {
-            reorder_level_str.parse().ok()
-        };
+        let raw_unit = get_field(&row, unit_col);
+        let unit = if raw_unit.is_empty() { "Strip".to_string() } else { normalize_unit(&raw_unit) };
 
-        let generic_name = get_col(&row, "generic_name");
-        let brand_name = get_col(&row, "brand_name");
-        let shelf_location = get_col(&row, "shelf_location");
-        let notes = get_col(&row, "notes");
+        let raw_purchase = get_field(&row, purchase_price_col);
+        let raw_retail = get_field(&row, retail_price_col);
+
+        let mut purchase_price = clean_numeric(&raw_purchase).unwrap_or(0.0);
+        let mut retail_price = clean_numeric(&raw_retail).unwrap_or(0.0);
+
+        if retail_price <= 0.0 && purchase_price > 0.0 {
+            retail_price = (purchase_price * 1.20).round();
+        } else if purchase_price <= 0.0 && retail_price > 0.0 {
+            purchase_price = (retail_price * 0.80).round();
+        }
+
+        if retail_price < purchase_price {
+            retail_price = purchase_price;
+        }
+
+        let raw_reorder = get_field(&row, reorder_col);
+        let reorder_level: Option<i64> = clean_numeric(&raw_reorder).map(|n| n as i64);
+
+        let generic_name = get_field(&row, generic_col);
+        let brand_name = get_field(&row, brand_col);
+        let shelf_location = get_field(&row, shelf_col);
+        let notes = get_field(&row, notes_col);
 
         let dto = CreateMedicineDto {
             name,
-            generic_name: if generic_name.is_empty() {
-                None
-            } else {
-                Some(generic_name)
-            },
-            brand_name: if brand_name.is_empty() {
-                None
-            } else {
-                Some(brand_name)
-            },
+            generic_name: if generic_name.is_empty() { None } else { Some(generic_name) },
+            brand_name: if brand_name.is_empty() { None } else { Some(brand_name) },
             category,
             unit,
             retail_price,
             purchase_price,
             reorder_level,
-            shelf_location: if shelf_location.is_empty() {
-                None
-            } else {
-                Some(shelf_location)
-            },
-            notes: if notes.is_empty() {
-                None
-            } else {
-                Some(notes)
-            },
+            shelf_location: if shelf_location.is_empty() { None } else { Some(shelf_location) },
+            notes: if notes.is_empty() { None } else { Some(notes) },
             initial_stock: None,
             initial_expiry_date: None,
         };
