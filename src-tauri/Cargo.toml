@@ -1,6 +1,6 @@
 [package]
 name = "pharmacare"
-version = "0.1.1"
+version = "0.1.2"
 description = "PharmaCare - Pharmacy Management Desktop Application"
 authors = ["you"]
 edition = "2021"
