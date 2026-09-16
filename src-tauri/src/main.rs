@@ -140,6 +140,7 @@ fn main() {
             commands::backup_commands::start_drive_oauth,
             commands::backup_commands::disconnect_drive,
             commands::backup_commands::list_drive_backups,
+            commands::backup_commands::list_local_backups,
             commands::backup_commands::get_backup_status,
             // Phase 5 settings commands
             commands::settings_commands::update_settings,

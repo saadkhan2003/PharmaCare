@@ -146,14 +146,15 @@ pub fn copy_to_local(file_path: &Path, dest_dir: &Path) -> Result<(), CommandErr
 pub fn run_backup(
     db: &Connection,
     settings_db: &Connection,
+    app_dir: Option<&Path>,
     should_upload: bool,
     local_path: Option<&Path>,
 ) -> Result<BackupResult, CommandError> {
-    let backup_dir = std::env::temp_dir().join("pharmacare_backups");
-    fs::create_dir_all(&backup_dir)?;
+    let temp_backup_dir = std::env::temp_dir().join("pharmacare_backups");
+    fs::create_dir_all(&temp_backup_dir)?;
 
-    // Create snapshot
-    let gz_path = match create_snapshot(db, &backup_dir) {
+    // Create snapshot in temp directory
+    let gz_path = match create_snapshot(db, &temp_backup_dir) {
         Ok(p) => p,
         Err(e) => {
             // Update settings with failure
@@ -217,10 +218,16 @@ pub fn run_backup(
         }
     }
 
+    // Copy to persistent app data backup folder if available
+    if let Some(app_d) = app_dir {
+        let app_backup_dir = app_d.join("backups");
+        let _ = copy_to_local(&gz_path, &app_backup_dir);
+    }
+
     // Copy to local path if configured
     if let Some(local) = local_path {
         match copy_to_local(&gz_path, local) {
-            Ok(_) => message.push_str("Copied to local folder."),
+            Ok(_) => message.push_str("Copied to local folder. "),
             Err(e) => message.push_str(&format!("Local copy failed: {}. ", e.message)),
         }
     }
@@ -230,8 +237,11 @@ pub fn run_backup(
     let _ = settings_repo::set_value(settings_db, "last_backup_time", &now);
     let _ = settings_repo::set_value(settings_db, "last_backup_status", "success");
 
-    // Cleanup old backups
-    let _ = cleanup_old_backups(&backup_dir, MAX_KEEP_BACKUPS);
+    // Cleanup old backups in both locations
+    let _ = cleanup_old_backups(&temp_backup_dir, MAX_KEEP_BACKUPS);
+    if let Some(app_d) = app_dir {
+        let _ = cleanup_old_backups(&app_d.join("backups"), MAX_KEEP_BACKUPS);
+    }
 
     Ok(BackupResult {
         success: true,
@@ -322,12 +332,76 @@ fn validate_db(db_path: &Path) -> Result<(), CommandError> {
 /// 3. Create pre-restore backup of current DB (D-68, BAKP-08)
 /// 4. Open the restored DB as a new connection and VACUUM INTO the live path
 /// This atomically replaces the live database content while the current connection lives.
+pub fn list_local_backups(
+    app_dir: Option<&Path>,
+    local_path: Option<&Path>,
+) -> Result<Vec<BackupFileInfo>, CommandError> {
+    let mut candidate_dirs: Vec<PathBuf> = Vec::new();
+
+    if let Some(d) = app_dir {
+        candidate_dirs.push(d.join("backups"));
+    }
+    if let Some(lp) = local_path {
+        candidate_dirs.push(lp.to_path_buf());
+    }
+    candidate_dirs.push(std::env::temp_dir().join("pharmacare_backups"));
+
+    let mut found_files: Vec<BackupFileInfo> = Vec::new();
+    let mut seen_names: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    for dir in candidate_dirs {
+        if !dir.exists() {
+            continue;
+        }
+        if let Ok(entries) = fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if name.starts_with(BACKUP_PREFIX) && name.ends_with(".db.gz") {
+                        if seen_names.insert(name.to_string()) {
+                            let created_time = if let Ok(meta) = fs::metadata(&path) {
+                                if let Ok(modified) = meta.modified() {
+                                    let dt: chrono::DateTime<Local> = modified.into();
+                                    dt.format("%Y-%m-%d %H:%M:%S").to_string()
+                                } else {
+                                    Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+                                }
+                            } else {
+                                Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+                            };
+
+                            found_files.push(BackupFileInfo {
+                                id: path.to_string_lossy().to_string(),
+                                name: name.to_string(),
+                                created_time,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Sort newest first
+    found_files.sort_by(|a, b| b.created_time.cmp(&a.created_time));
+    Ok(found_files)
+}
+
+/// Restores from a local gzip backup file into the live database.
+/// Process:
+/// 1. Decompress the .db.gz backup file
+/// 2. Validate with PRAGMA integrity_check
+/// 3. Create pre-restore backup of current DB (D-68, BAKP-08)
+/// 4. Stream restored DB pages into live database connection using SQLite Backup API
 pub fn restore_from_local(
-    db: &Connection,
+    db: &mut Connection,
     file_path: &Path,
-    live_db_path: &Path,
     app_dir: &Path,
 ) -> Result<(), CommandError> {
+    if !file_path.exists() {
+        return Err(CommandError::not_found(&format!("Backup file not found: {}", file_path.display())));
+    }
+
     let temp_dir = std::env::temp_dir().join("pharmacare_restore");
     fs::create_dir_all(&temp_dir)?;
 
@@ -337,7 +411,7 @@ pub fn restore_from_local(
     // Step 2: Validate
     validate_db(&restored_db)?;
 
-    // Step 3: Create pre-restore backup (D-68, BAKP-08)
+    // Step 3: Create pre-restore safety snapshot (D-68, BAKP-08)
     let timestamp = Local::now().format("%Y%m%d_%H%M%S").to_string();
     let pre_restore_name = format!("pharmacare_pre_restore_{}.db", timestamp);
     let pre_restore_path = app_dir.join(&pre_restore_name);
@@ -345,23 +419,26 @@ pub fn restore_from_local(
         "VACUUM INTO '{}'",
         pre_restore_path.to_string_lossy().replace("'", "''")
     );
-    db.execute_batch(&pre_restore_sql)?;
+    let _ = db.execute_batch(&pre_restore_sql);
 
-    // Step 4: Open restored DB and VACUUM INTO the live path
+    // Step 4: Open restored DB and stream into the live connection using SQLite Online Backup API
     let restored_conn = Connection::open(&restored_db)?;
-    let live_path_str = live_db_path.to_string_lossy().replace("'", "''");
-    let swap_sql = format!("VACUUM INTO '{}'", live_path_str);
-    restored_conn.execute_batch(&swap_sql)?;
+    {
+        let backup = rusqlite::backup::Backup::new(&restored_conn, db)?;
+        backup.run_to_completion(100, std::time::Duration::from_millis(5), None)?;
+    }
+
+    // Clean up temporary decompressed file
+    let _ = fs::remove_file(&restored_db);
 
     Ok(())
 }
 
 /// Restores from a Google Drive backup: downloads, decompresses, validates, replaces DB.
 pub fn restore_from_drive(
-    db: &Connection,
+    db: &mut Connection,
     file_id: &str,
     access_token: &str,
-    live_db_path: &Path,
     app_dir: &Path,
 ) -> Result<(), CommandError> {
     let temp_dir = std::env::temp_dir().join("pharmacare_restore");
@@ -385,13 +462,17 @@ pub fn restore_from_drive(
         "VACUUM INTO '{}'",
         pre_restore_path.to_string_lossy().replace("'", "''")
     );
-    db.execute_batch(&pre_restore_sql)?;
+    let _ = db.execute_batch(&pre_restore_sql);
 
-    // Step 5: Open restored DB and VACUUM INTO the live path
+    // Step 5: Open restored DB and stream into the live connection using SQLite Online Backup API
     let restored_conn = Connection::open(&restored_db)?;
-    let live_path_str = live_db_path.to_string_lossy().replace("'", "''");
-    let swap_sql = format!("VACUUM INTO '{}'", live_path_str);
-    restored_conn.execute_batch(&swap_sql)?;
+    {
+        let backup = rusqlite::backup::Backup::new(&restored_conn, db)?;
+        backup.run_to_completion(100, std::time::Duration::from_millis(5), None)?;
+    }
+
+    let _ = fs::remove_file(&gz_path);
+    let _ = fs::remove_file(&restored_db);
 
     Ok(())
 }
@@ -491,6 +572,7 @@ pub fn start_backup_timer(_app: tauri::AppHandle, db: Arc<Mutex<Connection>>) {
                 if let Err(e) = run_backup(
                     &conn,
                     &conn,
+                    None,
                     drive_token.is_some(),
                     local_path.as_deref(),
                 ) {
@@ -855,3 +937,4 @@ pub fn complete_and_store_drive_token(
     settings_repo::set_value(db, "google_drive_token", &merged_json)?;
     Ok(())
 }
+

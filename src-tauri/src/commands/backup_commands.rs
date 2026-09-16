@@ -14,10 +14,13 @@ use crate::state::AppState;
 #[tauri::command]
 pub fn trigger_backup(
     state: State<'_, AppState>,
+    app: tauri::AppHandle,
     session_token: String,
 ) -> Result<BackupResult, CommandError> {
     let _session = require_owner(&state, &session_token)?;
     let db = state.db.lock()?;
+
+    let app_dir = app.path().app_data_dir().ok();
 
     // Read settings for backup configuration
     let drive_token = settings_repo::get_string(&db, "google_drive_token")?;
@@ -31,14 +34,15 @@ pub fn trigger_backup(
     backup_service::run_backup(
         &db,
         &db,
+        app_dir.as_deref(),
         upload_to_drive,
         local_path.as_deref(),
     )
 }
 
 /// Restores the database from a backup. Owner only (T-05-02 mitigation).
-/// Creates pre-restore backup first (D-68, BAKP-08).
-/// Uses VACUUM INTO on the restored database to atomically replace the live database.
+/// Creates pre-restore safety backup first (D-68, BAKP-08).
+/// Streams restored database pages into live database connection via SQLite Backup API.
 #[tauri::command]
 pub fn restore_backup(
     state: State<'_, AppState>,
@@ -48,7 +52,7 @@ pub fn restore_backup(
     source: String, // "drive" or "local"
 ) -> Result<BackupResult, CommandError> {
     let _session = require_owner(&state, &session_token)?;
-    let db = state.db.lock()?;
+    let mut db = state.db.lock()?;
 
     let app_dir = app
         .path()
@@ -69,24 +73,61 @@ pub fn restore_backup(
             .ok_or_else(|| CommandError::internal("Drive token missing access_token"))?
             .to_string();
 
-        // Look up file ID by name
         let backups = backup_service::list_drive_backups(&access_token)?;
         let file = backups
             .iter()
-            .find(|b| b.name == file_name)
+            .find(|b| b.id == file_name || b.name == file_name)
             .ok_or_else(|| CommandError::not_found(&format!("Backup file: {}", file_name)))?;
 
-        backup_service::restore_from_drive(&db, &file.id, &access_token, &live_db_path, &app_dir)?;
+        backup_service::restore_from_drive(&mut db, &file.id, &access_token, &app_dir)?;
     } else {
-        let path = PathBuf::from(&file_name);
-        backup_service::restore_from_local(&db, &path, &live_db_path, &app_dir)?;
+        let path = if std::path::Path::new(&file_name).is_absolute() && std::path::Path::new(&file_name).exists() {
+            PathBuf::from(&file_name)
+        } else {
+            let local_path_str = settings_repo::get_string(&db, "local_backup_path")?;
+            let mut candidates = vec![
+                app_dir.join("backups").join(&file_name),
+                std::env::temp_dir().join("pharmacare_backups").join(&file_name),
+            ];
+            if let Some(lp) = local_path_str.filter(|p| !p.is_empty()) {
+                candidates.push(PathBuf::from(lp).join(&file_name));
+            }
+            candidates
+                .into_iter()
+                .find(|p| p.exists())
+                .unwrap_or_else(|| PathBuf::from(&file_name))
+        };
+
+        if !path.exists() {
+            return Err(CommandError::not_found(&format!("Backup file not found: {}", file_name)));
+        }
+
+        backup_service::restore_from_local(&mut db, &path, &app_dir)?;
     }
 
     Ok(BackupResult {
         success: true,
-        message: "Backup restored successfully. Please restart the application.".to_string(),
+        message: "Backup restored successfully. Please reload or restart the application.".to_string(),
         path: live_db_path.to_string_lossy().to_string(),
     })
+}
+
+/// Lists local backup files from app storage, configured local path, and temp directory.
+#[tauri::command]
+pub fn list_local_backups(
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+    session_token: String,
+) -> Result<Vec<BackupFileInfo>, CommandError> {
+    let _session = require_owner(&state, &session_token)?;
+    let db = state.db.lock()?;
+    let app_dir = app.path().app_data_dir().ok();
+    let local_path_str = settings_repo::get_string(&db, "local_backup_path")?;
+    let local_path = local_path_str
+        .filter(|p| !p.is_empty())
+        .map(|p| PathBuf::from(p));
+
+    backup_service::list_local_backups(app_dir.as_deref(), local_path.as_deref())
 }
 
 /// Initiates Google Drive OAuth connection. Owner only.
@@ -138,7 +179,6 @@ pub fn disconnect_drive(
     Ok(())
 }
 
-/// (The legacy `complete_drive_connect` command was replaced by `start_drive_oauth`.)
 /// Lists backup files in Google Drive. Owner only.
 #[tauri::command]
 pub fn list_drive_backups(

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { tauri } from '@/lib/tauri';
 import type { SessionDto } from '@/types/session';
 import type { SettingsMap } from '@/types/settings';
-import type { BackupStatus } from '@/types/report';
+import type { BackupStatus, BackupFileInfo } from '@/types/report';
 import { Loader2, Save, Play, Download, FolderOpen, Cloud, CloudOff, CheckCircle2, ExternalLink } from 'lucide-react';
 import { formatDateTime } from '@/lib/formatDate';
 
@@ -73,7 +73,7 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
     setMessage(null);
     try {
       const result = await tauri.backup.trigger(session.token);
-      setMessage({ type: result.success ? 'success' : 'error', text: result.message });
+      setMessage({ type: result.success ? 'success' : 'error', text: result.message || 'Backup created successfully' });
       if (result.success) {
         dispatchEvent('backup-completed');
         dispatchEvent('settings-changed');
@@ -81,7 +81,8 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
       await fetchStatus();
       onSaved();
     } catch (err: unknown) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Backup failed' });
+      const errMsg = typeof err === 'string' ? err : (err instanceof Error ? err.message : (err as { message?: string })?.message || 'Backup failed');
+      setMessage({ type: 'error', text: errMsg });
     } finally {
       setBackingUp(false);
     }
@@ -91,23 +92,61 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
     setRestoring(true);
     setMessage(null);
     try {
-      const backups = await tauri.backup.listDriveBackups(session.token);
+      // 1. First look for local backups (default and recommended)
+      let backups: BackupFileInfo[] = [];
+      let source: 'local' | 'drive' = 'local';
+
+      try {
+        backups = await tauri.backup.listLocalBackups(session.token);
+      } catch (localErr) {
+        console.warn('Failed to query local backups:', localErr);
+      }
+
+      // 2. If no local backups found and Google Drive is connected, query Google Drive
+      if (backups.length === 0 && backupStatus?.google_drive_connected) {
+        try {
+          backups = await tauri.backup.listDriveBackups(session.token);
+          source = 'drive';
+        } catch (driveErr) {
+          console.warn('Failed to query drive backups:', driveErr);
+        }
+      }
+
       if (backups.length === 0) {
-        setMessage({ type: 'error', text: 'No backups found' });
+        setMessage({
+          type: 'error',
+          text: 'No backup files found. Click "Backup Now" first to create a snapshot.',
+        });
         setRestoring(false);
         return;
       }
+
+      // Sort newest first
       const latest = backups.sort((a, b) => new Date(b.created_time).getTime() - new Date(a.created_time).getTime())[0];
+      const locationLabel = source === 'local' ? 'Local storage' : 'Google Drive';
+
       const confirmed = window.confirm(
         `Restore backup from ${formatDateTime(latest.created_time)}?\n\n` +
-        `File: ${latest.name}\n\n` +
-        '⚠ This will REPLACE all current data. A pre-restore backup will be created automatically.'
+        `File: ${latest.name}\n` +
+        `Source: ${locationLabel}\n\n` +
+        `⚠ This will restore all database records to this snapshot.\nA safety copy of your current database will be saved automatically before restoring.`
       );
-      if (!confirmed) { setRestoring(false); return; }
-      await tauri.backup.restore(session.token, latest.id, 'drive');
-      setMessage({ type: 'success', text: 'Restore complete. Please restart the app.' });
+      if (!confirmed) {
+        setRestoring(false);
+        return;
+      }
+
+      const res = await tauri.backup.restore(session.token, latest.id, source);
+      setMessage({
+        type: 'success',
+        text: res.message || 'Restore completed successfully! Please reload or restart the app.',
+      });
+      dispatchEvent('settings-changed');
+      await fetchStatus();
+      onSaved();
     } catch (err: unknown) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Restore failed' });
+      const errMsg = typeof err === 'string' ? err : (err instanceof Error ? err.message : (err as { message?: string })?.message || 'Restore failed');
+      setMessage({ type: 'error', text: errMsg });
     } finally {
       setRestoring(false);
     }

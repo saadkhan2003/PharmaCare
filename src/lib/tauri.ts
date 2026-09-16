@@ -214,6 +214,8 @@ export const tauri = {
       invoke<void>('disconnect_drive', { sessionToken }),
     listDriveBackups: (sessionToken: string) =>
       invoke<BackupFileInfo[]>('list_drive_backups', { sessionToken }),
+    listLocalBackups: (sessionToken: string) =>
+      invoke<BackupFileInfo[]>('list_local_backups', { sessionToken }),
     getStatus: (sessionToken: string) =>
       invoke<BackupStatus>('get_backup_status', { sessionToken }),
   },
