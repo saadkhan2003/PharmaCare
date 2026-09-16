@@ -1,7 +1,7 @@
 {
   "name": "pharmacare",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "scripts": {
     "seed": "cargo run --manifest-path src-tauri/Cargo.toml --bin seed_demo",
