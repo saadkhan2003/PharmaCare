@@ -4,6 +4,7 @@ version = "0.1.2"
 description = "PharmaCare - Pharmacy Management Desktop Application"
 authors = ["you"]
 edition = "2021"
+default-run = "pharmacare"
 
 [lib]
 name = "pharmacare_lib"

@@ -49,6 +49,12 @@ export function POSCartPanel({
   const [taxEnabled, setTaxEnabled] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  });
 
   const { settings } = useSettings(session.token);
   const { toast } = useToast();
@@ -74,6 +80,8 @@ export function POSCartPanel({
           tax_enabled: taxEnabled,
           payment_method: paymentMethod,
           customer_name: paymentMethod === 'Credit' ? customerName || null : null,
+          customer_phone: paymentMethod === 'Credit' ? customerPhone || null : null,
+          due_date: paymentMethod === 'Credit' ? dueDate || null : null,
         })
       );
 
@@ -81,13 +89,16 @@ export function POSCartPanel({
         toast('success', 'Sale completed successfully');
         dispatchEvent('sales-changed');
         dispatchEvent('medicines-changed');
+        if (paymentMethod === 'Credit') {
+          dispatchEvent('debts-changed');
+        }
         onConfirm(receipt);
       }
     } catch (err: unknown) {
       toast('error', 'Sale failed. Please try again.');
       console.error('Sale confirmation failed:', err);
     }
-  }, [cart, billDiscount, taxEnabled, paymentMethod, customerName, confirmSale, session.token, onConfirm, toast]);
+  }, [cart, billDiscount, taxEnabled, paymentMethod, customerName, customerPhone, dueDate, confirmSale, session.token, onConfirm, toast]);
 
   return (
     <div className="flex flex-col h-full border rounded-lg bg-card overflow-y-auto min-h-0">
@@ -150,6 +161,10 @@ export function POSCartPanel({
             onPaymentMethodChange={setPaymentMethod}
             customerName={customerName}
             onCustomerNameChange={setCustomerName}
+            customerPhone={customerPhone}
+            onCustomerPhoneChange={setCustomerPhone}
+            dueDate={dueDate}
+            onDueDateChange={setDueDate}
             onConfirm={handleConfirm}
             billDiscountRef={billDiscountRef}
             taxToggleRef={taxToggleRef}

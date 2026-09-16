@@ -21,6 +21,8 @@ export interface ConfirmSaleDto {
   tax_enabled: boolean;
   payment_method: string;
   customer_name: string | null;
+  customer_phone?: string | null;
+  due_date?: string | null;
 }
 
 export interface SaleReceiptDto {

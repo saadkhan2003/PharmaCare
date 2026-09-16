@@ -4,6 +4,7 @@
   "version": "0.1.2",
   "type": "module",
   "scripts": {
+    "seed": "cargo run --manifest-path src-tauri/Cargo.toml --bin seed_demo",
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "vitest run",

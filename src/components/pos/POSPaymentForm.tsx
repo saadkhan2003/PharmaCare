@@ -24,6 +24,10 @@ interface POSPaymentFormProps {
   onPaymentMethodChange: (val: string) => void;
   customerName: string;
   onCustomerNameChange: (val: string) => void;
+  customerPhone?: string;
+  onCustomerPhoneChange?: (val: string) => void;
+  dueDate?: string;
+  onDueDateChange?: (val: string) => void;
   onConfirm: () => void;
   // Refs from usePOSKeyboard
   billDiscountRef: React.RefObject<HTMLInputElement>;
@@ -46,6 +50,10 @@ export function POSPaymentForm({
   onPaymentMethodChange,
   customerName,
   onCustomerNameChange,
+  customerPhone = "",
+  onCustomerPhoneChange = () => {},
+  dueDate = "",
+  onDueDateChange = () => {},
   onConfirm,
   billDiscountRef,
   taxToggleRef,
@@ -218,21 +226,50 @@ export function POSPaymentForm({
         </div>
       )}
 
-      {/* Customer name (only for Credit) */}
+      {/* Customer name & credit terms (only for Credit) */}
       {paymentMethod === 'Credit' && (
-        <div>
-          <Label htmlFor="customer-name" className="text-sm font-medium">
-            Customer Name
-          </Label>
-          <Input
-            ref={customerNameRef}
-            id="customer-name"
-            type="text"
-            value={customerName}
-            placeholder="Enter customer name"
-            onChange={(e) => onCustomerNameChange(e.target.value)}
-            className="h-10 text-lg mt-1"
-          />
+        <div className="space-y-2 p-3 bg-muted/30 rounded-lg border border-border">
+          <div>
+            <Label htmlFor="customer-name" className="text-sm font-medium">
+              Customer Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              ref={customerNameRef}
+              id="customer-name"
+              type="text"
+              value={customerName}
+              placeholder="Enter customer name"
+              onChange={(e) => onCustomerNameChange(e.target.value)}
+              className="h-9 text-base mt-1"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label htmlFor="customer-phone" className="text-xs font-medium text-muted-foreground">
+                Phone (Optional)
+              </Label>
+              <Input
+                id="customer-phone"
+                type="text"
+                value={customerPhone}
+                placeholder="0300..."
+                onChange={(e) => onCustomerPhoneChange(e.target.value)}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="due-date" className="text-xs font-medium text-muted-foreground">
+                Due Date
+              </Label>
+              <Input
+                id="due-date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => onDueDateChange(e.target.value)}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+          </div>
         </div>
       )}
 

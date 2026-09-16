@@ -14,6 +14,20 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "pdf-vendor": ["@react-pdf/renderer"],
+          "charts-vendor": ["recharts"],
+          "excel-vendor": ["xlsx"],
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+        },
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

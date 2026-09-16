@@ -29,6 +29,10 @@ pub struct ConfirmSaleDto {
     pub tax_enabled: bool,
     pub payment_method: String, // "Cash" | "Card" | "Credit"
     pub customer_name: Option<String>,
+    #[serde(default)]
+    pub customer_phone: Option<String>,
+    #[serde(default)]
+    pub due_date: Option<String>,
 }
 
 /// Full sale header (DB row)

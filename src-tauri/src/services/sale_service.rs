@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 use crate::errors::CommandError;
 use crate::models::*;
-use crate::repository::{batch_repo, medicine_repo, sale_repo};
+use crate::repository::{batch_repo, debt_repo, medicine_repo, sale_repo};
 use crate::services::stock_ledger_service;
 use crate::services::settings_service;
 use crate::models::pagination::PaginatedList;
@@ -298,6 +298,47 @@ pub fn confirm_sale(
         }
     }
 
+    // --- If Credit sale, create linked debtor and debt_items atomically ---
+    if payload.payment_method == "Credit" && total > 0.0 {
+        let customer_name = payload.customer_name.as_deref().unwrap_or("Credit Customer").trim();
+        let phone = payload.customer_phone.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty());
+        let due_date = payload.due_date.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| {
+                (chrono::Utc::now() + chrono::Duration::days(30)).format("%Y-%m-%d").to_string()
+            });
+
+        tx.execute(
+            "INSERT INTO debtors (customer_name, phone, total_amount, paid_amount, due_date, notes, status)
+             VALUES (?1, ?2, ?3, 0.0, ?4, ?5, 'pending')",
+            rusqlite::params![
+                customer_name,
+                phone,
+                total,
+                due_date,
+                format!("Auto-generated from POS Credit Sale #{}", sale_id),
+            ],
+        ).map_err(|e| CommandError::internal(&format!("Failed to record debtor: {}", e)))?;
+
+        let debt_id = tx.last_insert_rowid();
+
+        for item in &receipt_items {
+            tx.execute(
+                "INSERT INTO debt_items (debt_id, sale_id, medicine_name, quantity, amount)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                rusqlite::params![
+                    debt_id,
+                    sale_id,
+                    item.medicine_name,
+                    item.quantity,
+                    item.line_total,
+                ],
+            ).map_err(|e| CommandError::internal(&format!("Failed to record debt item: {}", e)))?;
+        }
+
+        let _ = debt_repo::update_overdue_status(&tx);
+    }
+
     // --- PHASE 7: Commit — ALL or NOTHING ---
     tx.commit().map_err(|e| {
         CommandError::internal(&format!("Failed to commit sale transaction: {}", e))
@@ -447,6 +488,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let result = confirm_sale(&mut db, &payload, uid, "owner");
         assert!(result.is_err());
@@ -464,6 +507,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
         assert_eq!(receipt.item_count, 1);
@@ -491,6 +536,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
         // 3*10 + 2*20 = 70
@@ -510,6 +557,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
         // 10*10 = 100 subtotal, 5.0 item discount => line_total = 95
@@ -528,6 +577,8 @@ mod tests {
             tax_enabled: true,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
         // subtotal=100, tax_rate defaults to 0.0 in fresh DB => tax_amount=0, total=100
@@ -550,6 +601,8 @@ mod tests {
             tax_enabled: true,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
         // subtotal=100, tax=10% => tax_amount=10, total=110
@@ -570,6 +623,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let result = confirm_sale(&mut db, &payload, uid, "owner");
         assert!(result.is_err());
@@ -590,6 +645,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let result = confirm_sale(&mut db, &payload, uid, "owner");
         assert!(result.is_err());
@@ -607,6 +664,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let result = confirm_sale(&mut db, &payload, uid, "owner");
         assert!(result.is_err());
@@ -639,6 +698,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Cash".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
         // subtotal=100, bill_discount=20 => total=80
@@ -658,6 +719,8 @@ mod tests {
             tax_enabled: false,
             payment_method: "Bitcoin".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let result = confirm_sale(&mut db, &payload, uid, "owner");
         assert!(result.is_err());
@@ -675,8 +738,51 @@ mod tests {
             tax_enabled: false,
             payment_method: "Credit".into(),
             customer_name: None,
+            customer_phone: None,
+            due_date: None,
         };
         let result = confirm_sale(&mut db, &payload, uid, "owner");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_confirm_sale_credit_creates_debtor_and_items() {
+        let mut db = test_helpers::setup_test_db();
+        let uid = test_helpers::seed_owner(&db);
+        let (mid, _) = seed_med_with_batch(&db, "Panadol", 10.0, 50);
+
+        let payload = ConfirmSaleDto {
+            items: vec![ConfirmSaleItemDto { medicine_id: mid, quantity: 2, item_discount: 0.0 }],
+            bill_discount: 0.0,
+            tax_enabled: false,
+            payment_method: "Credit".into(),
+            customer_name: Some("Credit Customer A".into()),
+            customer_phone: Some("03001234567".into()),
+            due_date: Some("2028-12-31".into()),
+        };
+        let receipt = confirm_sale(&mut db, &payload, uid, "owner").unwrap();
+        assert_eq!(receipt.payment_method, "Credit");
+
+        // Verify debtor was inserted
+        let debtor: (String, Option<String>, f64, String) = db.query_row(
+            "SELECT customer_name, phone, total_amount, status FROM debtors WHERE customer_name = ?1",
+            rusqlite::params!["Credit Customer A"],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        ).expect("debtor record");
+
+        assert_eq!(debtor.0, "Credit Customer A");
+        assert_eq!(debtor.1.as_deref(), Some("03001234567"));
+        assert!((debtor.2 - 20.0).abs() < 0.01);
+        assert_eq!(debtor.3, "pending");
+
+        // Verify debt_items was inserted
+        let (qty, amt): (i64, f64) = db.query_row(
+            "SELECT quantity, amount FROM debt_items WHERE sale_id = ?1",
+            rusqlite::params![receipt.sale_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        ).expect("debt_items record");
+
+        assert_eq!(qty, 2);
+        assert!((amt - 20.0).abs() < 0.01);
     }
 }

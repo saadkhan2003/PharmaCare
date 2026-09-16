@@ -600,7 +600,7 @@ mod tests {
         // 3 items for the single purchase
         for _ in 1..=3 {
             db.execute(
-                "INSERT INTO purchase_items (purchase_id, medicine_id, quantity, purchase_price, expiry_date, line_total)                  VALUES (?1, ?2, 10, 16.66, '2028-01-01', 166.6)",
+                "INSERT INTO purchase_items (purchase_id, medicine_id, quantity, purchase_price, expiry_date, line_cost)                  VALUES (?1, ?2, 10, 16.66, '2028-01-01', 166.6)",
                 rusqlite::params![pid, med_id],
             ).unwrap();
         }

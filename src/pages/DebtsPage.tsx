@@ -273,7 +273,7 @@ ${pharmacyName}`
                             >
                               <span>{medicine.name}</span>
                               <span className="shrink-0 text-xs text-muted-foreground">
-                                Rs. {medicine.retail_price.toFixed(2)} | Stock {medicine.current_stock}
+                                {currencySymbol} {medicine.retail_price.toFixed(2)} | Stock {medicine.current_stock}
                               </span>
                             </button>
                           ))

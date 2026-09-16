@@ -45,10 +45,11 @@ export function POSPage({ session }: POSPageProps) {
         }
         return [...prev, { medicine, quantity: 1, item_discount: 0 }];
       });
-      // Focus quantity after adding
-      setTimeout(() => keyboard.quantityRef.current?.focus(), 50);
+      // Clear search query so barcode scanner is ready for immediate next scan
+      setQuery('');
+      setTimeout(() => keyboard.searchRef.current?.focus(), 50);
     },
-    [keyboard.quantityRef]
+    [keyboard.searchRef]
   );
 
   const handleUpdateQuantity = useCallback((medicineId: number, qty: number) => {

@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useSettings } from '@/hooks/useSettings';
 import { tauri } from '@/lib/tauri';
 import type { SessionDto } from '@/types/session';
 import type { MedicinePosDto } from '@/types/sale';
@@ -35,6 +36,8 @@ export function POSSearchPanel({
   const [results, setResults] = useState<MedicinePosDto[]>([]);
   const [loading, setLoading] = useState(false);
   const resultsContainerRef = useRef<HTMLDivElement>(null);
+  const { settings } = useSettings(session.token);
+  const currencySymbol = settings?.currency_symbol || 'Rs.';
 
   const emptyQuery = !query.trim();
   const noResults = query.trim().length > 0 && !loading && results.length === 0;
@@ -196,7 +199,7 @@ export function POSSearchPanel({
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-lg font-bold">Rs. {medicine.retail_price}</span>
+                    <span className="text-lg font-bold">{currencySymbol} {medicine.retail_price}</span>
                     <Badge
                       variant={getStockBadgeVariant(medicine.current_stock, medicine.reorder_level)}
                     >

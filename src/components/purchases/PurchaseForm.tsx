@@ -73,6 +73,12 @@ export function PurchaseForm({
   const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('Pending');
+  const [partialPaidAmount, setPartialPaidAmount] = useState('');
+  const [debtDueDate, setDebtDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  });
   const [items, setItems] = useState<ItemRow[]>([createEmptyItem()]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ purchaseId: number; totalCost: number; itemCount: number } | null>(null);
@@ -230,7 +236,9 @@ export function PurchaseForm({
       // Create supplier debt if payment is not fully paid
       if (paymentStatus !== 'Paid' && selectedSupplierId) {
         try {
-          const paidAmount = paymentStatus === 'Partial' ? totalCost * 0.5 : 0;
+          const paidAmount = paymentStatus === 'Partial'
+            ? Math.min(Math.max(parseFloat(partialPaidAmount) || 0, 0), receipt.total_cost)
+            : 0;
           await tauri.supplierDebts.createFromPurchase(
             sessionToken,
             receipt.purchase_id,
@@ -238,6 +246,7 @@ export function PurchaseForm({
             receipt.total_cost,
             paidAmount,
             paymentStatus,
+            debtDueDate || undefined,
           );
         } catch (debtErr) {
           console.error('[PurchaseForm] Failed to create supplier debt:', debtErr);
@@ -250,6 +259,12 @@ export function PurchaseForm({
       setPurchaseDate(new Date().toISOString().split('T')[0]);
       setNotes('');
       setPaymentStatus('Pending');
+      setPartialPaidAmount('');
+      setDebtDueDate(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return d.toISOString().split('T')[0];
+      });
       setItems([createEmptyItem()]);
       setMedicineSearchTerms({});
       setMedicineResults({});
@@ -389,6 +404,34 @@ export function PurchaseForm({
             </Select>
             </div>
           </div>
+
+          {paymentStatus === 'Partial' && (
+            <div className="grid gap-2">
+              <Label htmlFor="partial_paid_amount">Amount Paid Now *</Label>
+              <Input
+                id="partial_paid_amount"
+                type="number"
+                min="0"
+                max={totalCost}
+                step="0.01"
+                placeholder={`0.00 (Total: ${totalCost.toFixed(2)})`}
+                value={partialPaidAmount}
+                onChange={(e) => setPartialPaidAmount(e.target.value)}
+              />
+            </div>
+          )}
+
+          {paymentStatus !== 'Paid' && (
+            <div className="grid gap-2">
+              <Label htmlFor="debt_due_date">Payment Due Date</Label>
+              <Input
+                id="debt_due_date"
+                type="date"
+                value={debtDueDate}
+                onChange={(e) => setDebtDueDate(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="grid gap-2 sm:col-span-2">
             <Label htmlFor="notes">Notes</Label>
