@@ -278,6 +278,14 @@ export function SupplierReturnForm({
           </div>
         )}
 
+        {/* No items notice */}
+        {purchase && purchase.items.length === 0 && (
+          <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground bg-muted/20">
+            <p className="font-semibold text-foreground mb-1">No Returnable Stock Available</p>
+            <p>This purchase has no items eligible for return (it either has no recorded items or all batches have 0 remaining stock in inventory).</p>
+          </div>
+        )}
+
         {/* Section 3: Batch Selection Table */}
         {purchase && purchase.items.length > 0 && (
           <div>
@@ -387,7 +395,7 @@ export function SupplierReturnForm({
         )}
 
         {/* Section 5: Submit */}
-        {purchase && (
+        {purchase && purchase.items.length > 0 && (
           <div className="flex justify-end">
             <Button
               size="lg"
