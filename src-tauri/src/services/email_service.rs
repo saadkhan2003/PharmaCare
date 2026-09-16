@@ -76,7 +76,7 @@ impl SmtpConfig {
                 .credentials(creds)
         };
 
-        Ok(builder.build())
+        Ok(builder.timeout(Some(std::time::Duration::from_secs(10))).build())
     }
 }
 

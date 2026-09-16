@@ -92,52 +92,67 @@ pub fn create_initial_owner(
 }
 
 #[tauri::command]
-pub fn request_recovery_code(
+pub async fn request_recovery_code(
     state: State<'_, AppState>,
 ) -> Result<RecoveryCodeResponse, CommandError> {
-    let db = state.db.lock()?;
+    let (owner_name, owner_email, code, expires_minutes, smtp_config) = {
+        let db = state.db.lock()?;
 
-    let owner_name: Option<String> = db
-        .query_row(
-            "SELECT full_name FROM users WHERE role = 'owner' AND is_active = 1 ORDER BY id LIMIT 1",
-            [],
-            |row| row.get(0),
-        )
-        .ok();
-    let owner_name = owner_name.ok_or_else(|| CommandError::validation("No owner account found"))?;
+        let owner_name: Option<String> = db
+            .query_row(
+                "SELECT full_name FROM users WHERE role = 'owner' AND is_active = 1 ORDER BY id LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .ok();
+        let owner_name = owner_name.ok_or_else(|| CommandError::validation("No owner account found"))?;
 
-    let owner_email: Option<String> = db
-        .query_row(
-            "SELECT value FROM settings WHERE key = 'owner_email'",
-            [],
-            |row| row.get(0),
-        )
-        .ok();
-    let owner_email = owner_email
-        .map(|email| email.trim().to_string())
-        .filter(|email| !email.is_empty())
-        .unwrap_or_else(|| "admin@pharmacare.org".to_string());
+        let owner_email: Option<String> = db
+            .query_row(
+                "SELECT value FROM settings WHERE key = 'owner_email'",
+                [],
+                |row| row.get(0),
+            )
+            .ok();
+        let owner_email = owner_email
+            .map(|email| email.trim().to_string())
+            .filter(|email| !email.is_empty())
+            .unwrap_or_else(|| "admin@pharmacare.org".to_string());
 
-    let smtp_config = email_service::SmtpConfig::from_env();
+        let smtp_config = email_service::SmtpConfig::from_env();
 
-    let code = email_service::generate_otp();
-    let code_hash = bcrypt::hash(&code, bcrypt::DEFAULT_COST)
+        let code = email_service::generate_otp();
+        let code_hash = bcrypt::hash(&code, bcrypt::DEFAULT_COST)
+            .map_err(|e| CommandError::internal(&e.to_string()))?;
+        let expires_minutes = otp_expires_minutes();
+        let expires = chrono::Utc::now() + chrono::Duration::minutes(expires_minutes);
+
+        db.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('recovery_otp_hash', ?1)",
+            rusqlite::params![&code_hash],
+        )?;
+        db.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('recovery_expires', ?1)",
+            rusqlite::params![expires.format("%Y-%m-%d %H:%M:%S").to_string()],
+        )?;
+        db.execute("DELETE FROM settings WHERE key = 'recovery_code'", [])?;
+
+        (owner_name, owner_email, code, expires_minutes, smtp_config)
+    };
+
+    let dev_code = if let Some(smtp) = smtp_config {
+        let email = owner_email.clone();
+        let code_copy = code.clone();
+        let name = owner_name.clone();
+
+        let res = tauri::async_runtime::spawn_blocking(move || {
+            email_service::send_otp_email(&smtp, &email, &code_copy, &name)
+        })
+        .await
         .map_err(|e| CommandError::internal(&e.to_string()))?;
-    let expires_minutes = otp_expires_minutes();
-    let expires = chrono::Utc::now() + chrono::Duration::minutes(expires_minutes);
 
-    db.execute(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES ('recovery_otp_hash', ?1)",
-        rusqlite::params![&code_hash],
-    )?;
-    db.execute(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES ('recovery_expires', ?1)",
-        rusqlite::params![expires.format("%Y-%m-%d %H:%M:%S").to_string()],
-    )?;
-    db.execute("DELETE FROM settings WHERE key = 'recovery_code'", [])?;
-
-    let dev_code = if let Some(ref smtp) = smtp_config {
-        if let Err(err) = email_service::send_otp_email(smtp, &owner_email, &code, &owner_name) {
+        if let Err(err) = res {
+            let db = state.db.lock()?;
             db.execute("DELETE FROM settings WHERE key = 'recovery_otp_hash'", [])?;
             db.execute("DELETE FROM settings WHERE key = 'recovery_expires'", [])?;
             return Err(CommandError::internal(&format!(

@@ -141,12 +141,23 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
                 Send a one-time recovery code to the configured Owner email address.
               </DialogDescription>
             </DialogHeader>
+            {loading && (
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 p-3.5 my-2 flex items-center gap-3 text-blue-900 dark:text-blue-200 animate-in fade-in duration-200">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <div className="text-xs">
+                  <p className="font-semibold">Contacting SMTP email server...</p>
+                  <p className="text-blue-700 dark:text-blue-300 mt-0.5">
+                    Transmitting secure 6-digit recovery OTP to your inbox.
+                  </p>
+                </div>
+              </div>
+            )}
             {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
             <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
               <Button onClick={handleRequestCode} disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Send Recovery Code
+                {loading ? "Sending Code..." : "Send Recovery Code"}
               </Button>
             </DialogFooter>
           </>
