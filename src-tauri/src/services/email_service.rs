@@ -14,15 +14,29 @@ pub struct SmtpConfig {
     pub secure: bool,
 }
 
+fn get_env_or_compile_time(var_name: &str, compile_val: Option<&'static str>) -> Option<String> {
+    if let Ok(v) = env::var(var_name) {
+        if !v.trim().is_empty() {
+            return Some(v.trim().to_string());
+        }
+    }
+    compile_val.map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
+}
+
 impl SmtpConfig {
     pub fn from_env() -> Option<Self> {
-        let host = env::var("SMTP_HOST").ok()?;
-        let port = env::var("SMTP_PORT").ok()?.parse().ok()?;
-        let username = env::var("SMTP_USERNAME").ok()?;
-        let password = env::var("SMTP_PASSWORD").ok()?;
-        let from_email = env::var("SMTP_FROM_EMAIL").unwrap_or_else(|_| username.clone());
-        let from_name = env::var("SMTP_FROM_NAME").unwrap_or_else(|_| "PharmaCare".to_string());
-        let secure = env::var("SMTP_SECURE").ok().and_then(|s| s.parse().ok()).unwrap_or(true);
+        let host = get_env_or_compile_time("SMTP_HOST", option_env!("SMTP_HOST"))?;
+        let port_str = get_env_or_compile_time("SMTP_PORT", option_env!("SMTP_PORT"))?;
+        let port: u16 = port_str.parse().ok()?;
+        let username = get_env_or_compile_time("SMTP_USERNAME", option_env!("SMTP_USERNAME"))?;
+        let password = get_env_or_compile_time("SMTP_PASSWORD", option_env!("SMTP_PASSWORD"))?;
+        let from_email = get_env_or_compile_time("SMTP_FROM_EMAIL", option_env!("SMTP_FROM_EMAIL"))
+            .unwrap_or_else(|| username.clone());
+        let from_name = get_env_or_compile_time("SMTP_FROM_NAME", option_env!("SMTP_FROM_NAME"))
+            .unwrap_or_else(|| "PharmaCare".to_string());
+        let secure = get_env_or_compile_time("SMTP_SECURE", option_env!("SMTP_SECURE"))
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(true);
 
         Some(Self {
             host,

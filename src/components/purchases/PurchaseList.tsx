@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShoppingCart, CreditCard, Eye, Loader2 } from 'lucide-react';
+import { ShoppingCart, CreditCard, Eye, Loader2, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { tauri } from '@/lib/tauri';
 import { formatDate } from '@/lib/formatDate';
@@ -145,6 +145,7 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[65px]">#ID</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Invoice</TableHead>
             <TableHead>Supplier</TableHead>
@@ -159,6 +160,9 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
         <TableBody>
           {purchases.map((purchase) => (
             <TableRow key={purchase.id}>
+              <TableCell className="font-mono text-xs font-semibold text-muted-foreground">
+                #{purchase.id}
+              </TableCell>
               <TableCell>{formatDate(purchase.purchase_date)}</TableCell>
               <TableCell className="font-mono text-xs font-medium">{purchase.invoice_number || '-'}</TableCell>
               <TableCell className="font-semibold">{purchase.supplier_name}</TableCell>
@@ -203,6 +207,14 @@ export function PurchaseList({ sessionToken, refreshKey }: PurchaseListProps) {
                     <Eye className="size-4 mr-1" />
                     Details
                   </Button>
+                  <Link
+                    to={`/returns/supplier?search=${encodeURIComponent(purchase.invoice_number || purchase.id.toString())}`}
+                    className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 font-semibold px-2 py-1 rounded hover:bg-muted"
+                    title="Return items from this purchase"
+                  >
+                    <RotateCcw className="size-3.5" />
+                    Return
+                  </Link>
                   {purchase.payment_status !== 'Paid' && (
                     <Link
                       to="/supplier-debts"

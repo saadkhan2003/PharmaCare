@@ -242,8 +242,12 @@ export const tauri = {
       invoke<ReturnReceiptDto>('process_write_off', { sessionToken, payload }),
     searchSaleForReturn: (sessionToken: string, saleId: number) =>
       invoke<SaleForReturnDto>('search_sale_for_return', { sessionToken, saleId }),
-    searchPurchaseForReturn: (sessionToken: string, purchaseId: number) =>
-      invoke<PurchaseForReturnDto>('search_purchase_for_return', { sessionToken, purchaseId }),
+    searchPurchaseForReturn: (sessionToken: string, query: string | number) =>
+      invoke<PurchaseForReturnDto>('search_purchase_for_return', {
+        sessionToken,
+        query: query.toString(),
+        purchaseId: typeof query === "number" ? query : (parseInt(query) || null),
+      }),
     listReturns: (sessionToken: string, page: number, perPage: number) =>
       invoke<PaginatedList<ReturnListItemDto>>('list_returns', { sessionToken, page, perPage }),
   },

@@ -82,6 +82,46 @@ pub fn update_purchase_total(
 }
 
 /// Finds a purchase by id.
+pub fn find_by_query(
+    conn: &Connection,
+    query: &str,
+) -> Result<Option<Purchase>, rusqlite::Error> {
+    let trimmed = query.trim();
+    if let Ok(id) = trimmed.parse::<i64>() {
+        if let Some(p) = find_by_id(conn, id)? {
+            return Ok(Some(p));
+        }
+    }
+
+    let mut stmt = conn.prepare(
+        "SELECT id, supplier_id, invoice_number, purchase_date, total_cost, \
+                payment_status, notes, user_id, created_at \
+         FROM purchases \
+         WHERE invoice_number = ?1 COLLATE NOCASE \
+         ORDER BY id DESC LIMIT 1",
+    )?;
+
+    let mut rows = stmt.query_map(rusqlite::params![trimmed], |row| {
+        Ok(Purchase {
+            id: row.get(0)?,
+            supplier_id: row.get(1)?,
+            invoice_number: row.get(2)?,
+            purchase_date: row.get(3)?,
+            total_cost: row.get(4)?,
+            payment_status: row.get(5)?,
+            notes: row.get(6)?,
+            user_id: row.get(7)?,
+            created_at: row.get(8)?,
+        })
+    })?;
+
+    match rows.next() {
+        Some(Ok(purchase)) => Ok(Some(purchase)),
+        Some(Err(e)) => Err(e),
+        None => Ok(None),
+    }
+}
+
 pub fn find_by_id(
     conn: &Connection,
     purchase_id: i64,

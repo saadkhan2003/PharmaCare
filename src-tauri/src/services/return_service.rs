@@ -484,6 +484,15 @@ pub fn search_sale_for_return(
 /// Non-mutating query helper: loads purchase header + items + supplier + batches.
 ///
 /// Supports D-49: supplier return by batch lookup.
+pub fn search_purchase_for_return_by_query(
+    db: &Connection,
+    query: &str,
+) -> Result<PurchaseForReturnDto, CommandError> {
+    let purchase = purchase_repo::find_by_query(db, query)?
+        .ok_or_else(|| CommandError::not_found("Purchase"))?;
+    search_purchase_for_return(db, purchase.id)
+}
+
 pub fn search_purchase_for_return(
     db: &Connection,
     purchase_id: i64,

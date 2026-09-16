@@ -83,9 +83,18 @@ pub fn search_sale_for_return(
 pub fn search_purchase_for_return(
     state: State<'_, AppState>,
     session_token: String,
-    purchase_id: i64,
+    purchase_id: Option<i64>,
+    query: Option<String>,
 ) -> Result<PurchaseForReturnDto, CommandError> {
     let _session = require_owner(&state, &session_token)?; // D-49: Owner only
     let db = state.db.lock()?;
-    return_service::search_purchase_for_return(&db, purchase_id)
+    if let Some(ref q) = query {
+        if !q.trim().is_empty() {
+            return return_service::search_purchase_for_return_by_query(&db, q);
+        }
+    }
+    if let Some(id) = purchase_id {
+        return return_service::search_purchase_for_return(&db, id);
+    }
+    Err(CommandError::validation("Purchase ID or invoice query is required"))
 }

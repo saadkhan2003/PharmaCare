@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,10 +47,10 @@ export function SupplierReturnForm({
   const [success, setSuccess] = useState<ReturnReceiptDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearchPurchase = useCallback(async () => {
-    const id = parseInt(purchaseId);
-    if (isNaN(id) || id <= 0) {
-      setError('Please enter a valid purchase ID');
+  const handleSearchPurchase = useCallback(async (queryOverride?: string) => {
+    const q = (queryOverride !== undefined ? queryOverride : purchaseId).trim();
+    if (!q) {
+      setError("Please enter a valid purchase ID or invoice number");
       return;
     }
 
@@ -63,17 +63,26 @@ export function SupplierReturnForm({
     try {
       const result = await tauri.returns.searchPurchaseForReturn(
         sessionToken,
-        id
+        q
       );
       setPurchase(result);
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : 'Failed to load purchase'
+        err instanceof Error ? err.message : "Failed to load purchase"
       );
     } finally {
       setLoadingPurchase(false);
     }
   }, [purchaseId, sessionToken]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initialQuery = params.get("search") || params.get("purchaseId") || params.get("purchase");
+    if (initialQuery) {
+      setPurchaseId(initialQuery);
+      handleSearchPurchase(initialQuery);
+    }
+  }, [handleSearchPurchase]);
 
   const updateReturnItem = useCallback(
     (itemId: string, updates: Partial<ReturnItemEntry>) => {
@@ -224,13 +233,12 @@ export function SupplierReturnForm({
         {/* Section 1: Purchase Search */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="purchaseId">Purchase ID *</Label>
+            <Label htmlFor="purchaseId">Purchase ID or Invoice # *</Label>
             <div className="flex gap-2">
               <Input
                 id="purchaseId"
-                type="number"
-                min="1"
-                placeholder="Enter purchase ID..."
+                type="text"
+                placeholder="Enter purchase ID or invoice number (e.g. INV-101)..."
                 value={purchaseId}
                 onChange={(e) => setPurchaseId(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -238,7 +246,7 @@ export function SupplierReturnForm({
               />
               <Button
                 variant="secondary"
-                onClick={handleSearchPurchase}
+                onClick={() => handleSearchPurchase()}
                 disabled={!purchaseId.trim() || loadingPurchase}
               >
                 <SearchIcon className="mr-1 h-4 w-4" />
