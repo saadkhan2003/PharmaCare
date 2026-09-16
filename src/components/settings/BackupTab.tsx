@@ -1,3 +1,4 @@
+import { dispatchEvent } from '@/lib/eventBus';
 import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,6 +74,10 @@ export function BackupTab({ settings, session, onSaved }: BackupTabProps) {
     try {
       const result = await tauri.backup.trigger(session.token);
       setMessage({ type: result.success ? 'success' : 'error', text: result.message });
+      if (result.success) {
+        dispatchEvent('backup-completed');
+        dispatchEvent('settings-changed');
+      }
       await fetchStatus();
       onSaved();
     } catch (err: unknown) {
