@@ -260,3 +260,11 @@ pub fn hard_delete(db: &Connection, id: i64) -> Result<(), rusqlite::Error> {
     db.execute("DELETE FROM medicines WHERE id = ?1", rusqlite::params![id])?;
     Ok(())
 }
+
+pub fn update_purchase_price(db: &Connection, id: i64, price: f64) -> Result<(), rusqlite::Error> {
+    db.execute(
+        "UPDATE medicines SET purchase_price = ?1 WHERE id = ?2",
+        rusqlite::params![price, id],
+    )?;
+    Ok(())
+}

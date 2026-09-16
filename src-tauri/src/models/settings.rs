@@ -16,6 +16,7 @@ pub struct SettingsMap {
     pub phone: String,
     pub address: String,
     pub logo_path: String,
+    pub owner_email: Option<String>,
     // Backup
     pub auto_backup_time: String,
     pub local_backup_path: String,
@@ -40,6 +41,7 @@ impl Default for SettingsMap {
             phone: String::new(),
             address: String::new(),
             logo_path: String::new(),
+            owner_email: None,
             auto_backup_time: "23:00".to_string(),
             local_backup_path: String::new(),
             last_backup_time: None,

@@ -65,11 +65,19 @@ pub fn create_from_purchase(
     let dto = CreateSupplierDebtRequest {
         supplier_id,
         purchase_id: Some(purchase_id),
-        total_amount: remaining,
-        paid_amount: Some(0.0),
+        total_amount: total_cost,
+        paid_amount: Some(paid_amount),
         due_date,
         notes: Some(format!("Auto-created from purchase #{}", purchase_id)),
     };
-    supplier_debt_repo::insert_debt(db, &dto)
-        .map_err(|e| CommandError::internal(&e.to_string()))
+    let debt = supplier_debt_repo::insert_debt(db, &dto)
+        .map_err(|e| CommandError::internal(&e.to_string()))?;
+
+    if paid_amount > 0.0 {
+        let _ = db.execute(
+            "INSERT INTO supplier_payments (debt_id, amount, notes, recorded_by) VALUES (?1, ?2, ?3, ?4)",
+            rusqlite::params![debt.id, paid_amount, "Initial payment recorded at purchase time", 1],
+        );
+    }
+    Ok(debt)
 }

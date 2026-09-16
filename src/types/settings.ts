@@ -10,6 +10,7 @@ export interface SettingsMap {
   phone: string;
   address: string;
   logo_path: string;
+  owner_email?: string | null;
   auto_backup_time: string;
   local_backup_path: string;
   last_backup_time: string | null;

@@ -3,6 +3,14 @@ use rusqlite::Connection;
 use crate::errors::CommandError;
 use crate::models::{CreateSupplierDto, SupplierDto, UpdateSupplierDto};
 use crate::repository::supplier_repo;
+fn get_supplier_debt(db: &Connection, supplier_id: i64) -> f64 {
+    db.query_row(
+        "SELECT COALESCE(SUM(total_amount - paid_amount), 0.0) FROM supplier_debts WHERE supplier_id = ?1 AND status != 'Paid'",
+        rusqlite::params![supplier_id],
+        |r| r.get(0),
+    ).unwrap_or(0.0)
+}
+
 
 /// Creates a new supplier. Validates company_name is not empty.
 pub fn create_supplier(
@@ -16,7 +24,9 @@ pub fn create_supplier(
     let id = supplier_repo::insert(db, dto)?;
     let supplier = supplier_repo::find_by_id(db, id)?
         .ok_or_else(|| CommandError::internal("Supplier created but not found"))?;
-    Ok(SupplierDto::from(supplier))
+    let mut dto = SupplierDto::from(supplier);
+    dto.outstanding_debt = get_supplier_debt(db, id);
+    Ok(dto)
 }
 
 /// Updates an existing supplier.
@@ -32,7 +42,9 @@ pub fn update_supplier(
 
     let updated = supplier_repo::find_by_id(db, id)?
         .ok_or_else(|| CommandError::not_found("Supplier"))?;
-    Ok(SupplierDto::from(updated))
+    let mut dto = SupplierDto::from(updated);
+    dto.outstanding_debt = get_supplier_debt(db, id);
+    Ok(dto)
 }
 
 /// Deactivates a supplier (soft delete).
@@ -56,15 +68,29 @@ pub fn delete_supplier(db: &Connection, id: i64) -> Result<(), CommandError> {
     Ok(())
 }
 
-/// Lists all suppliers.
+/// Lists all suppliers with live outstanding debt.
 pub fn list_suppliers(db: &Connection) -> Result<Vec<SupplierDto>, CommandError> {
     let suppliers = supplier_repo::find_all(db)?;
-    Ok(suppliers.into_iter().map(SupplierDto::from).collect())
+    let mut dtos = Vec::new();
+    for s in suppliers {
+        let debt = get_supplier_debt(db, s.id);
+        let mut dto = SupplierDto::from(s);
+        dto.outstanding_debt = debt;
+        dtos.push(dto);
+    }
+    Ok(dtos)
 }
 
-/// Searches suppliers by name or phone.
+/// Searches suppliers by name or phone with live outstanding debt.
 pub fn search_suppliers(db: &Connection, query: &str) -> Result<Vec<SupplierDto>, CommandError> {
     let pattern = format!("%{}%", query);
     let suppliers = supplier_repo::search(db, &pattern)?;
-    Ok(suppliers.into_iter().map(SupplierDto::from).collect())
+    let mut dtos = Vec::new();
+    for s in suppliers {
+        let debt = get_supplier_debt(db, s.id);
+        let mut dto = SupplierDto::from(s);
+        dto.outstanding_debt = debt;
+        dtos.push(dto);
+    }
+    Ok(dtos)
 }

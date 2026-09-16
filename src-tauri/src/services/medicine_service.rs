@@ -51,12 +51,12 @@ pub fn create_medicine(
         if qty > 0 {
             let expiry = dto.initial_expiry_date.as_deref().unwrap_or("2099-12-31");
             let opening_code = format!("OPEN-{}", id);
-            batch_repo::insert(db, id, None, None, dto.purchase_price, qty, qty, expiry, Some(&opening_code))?;
+            let batch_id = batch_repo::insert(db, id, None, None, dto.purchase_price, qty, qty, expiry, Some(&opening_code))?;
             stock_ledger_service::record_movement(
                 db,
                 "purchase",
                 id,
-                None,
+                Some(batch_id),
                 qty,
                 "medicine_creation",
                 None,

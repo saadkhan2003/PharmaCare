@@ -101,6 +101,8 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
       setNewDueDate('');
       setNewNotes('');
       dispatchEvent('supplier-debts-changed');
+      dispatchEvent('purchases-changed');
+      dispatchEvent('suppliers-changed');
       setInternalRefreshKey((k) => k + 1);
       toast('success', 'Supplier debt created');
     } catch (err) {
@@ -125,6 +127,8 @@ export function SupplierDebtsPage({ session }: { session: SessionDto }) {
       setPayAmount('');
       setPayNotes('');
       dispatchEvent('supplier-debts-changed');
+      dispatchEvent('purchases-changed');
+      dispatchEvent('suppliers-changed');
       setInternalRefreshKey((k) => k + 1);
       toast('success', 'Payment recorded');
     } catch (err) {

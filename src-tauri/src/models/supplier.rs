@@ -25,6 +25,7 @@ pub struct SupplierDto {
     pub payment_terms: Option<String>,
     pub notes: Option<String>,
     pub is_active: bool,
+    pub outstanding_debt: f64,
 }
 
 impl From<Supplier> for SupplierDto {
@@ -38,6 +39,7 @@ impl From<Supplier> for SupplierDto {
             payment_terms: s.payment_terms,
             notes: s.notes,
             is_active: s.is_active,
+            outstanding_debt: 0.0,
         }
     }
 }

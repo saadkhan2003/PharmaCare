@@ -136,6 +136,7 @@ pub struct UpdateSettingsPayload {
     pub phone: Option<String>,
     pub address: Option<String>,
     pub logo_path: Option<String>,
+    pub owner_email: Option<String>,
     // Financial
     pub default_tax_rate: Option<f64>,
     pub tax_enabled_default: Option<bool>,

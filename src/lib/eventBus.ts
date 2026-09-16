@@ -12,6 +12,8 @@ type EventMap = {
   'settings-changed': undefined;
   'supplier-debts-changed': undefined;
   'backup-completed': undefined;
+  'batches-changed': undefined;
+  'returns-changed': undefined;
 };
 
 export function dispatchEvent<K extends keyof EventMap>(event: K, detail?: EventMap[K]) {

@@ -49,6 +49,7 @@ pub fn get_settings(db: &Connection) -> Result<SettingsMap, CommandError> {
         phone: get_string(db, "phone", String::new())?,
         address: get_string(db, "address", String::new())?,
         logo_path: get_string(db, "logo_path", String::new())?,
+        owner_email: settings_repo::get_string(db, "owner_email")?,
         // Backup
         auto_backup_time: get_string(db, "auto_backup_time", "23:00".to_string())?,
         local_backup_path: get_string(db, "local_backup_path", String::new())?,
@@ -80,6 +81,9 @@ pub fn update_settings(db: &Connection, payload: &UpdateSettingsPayload) -> Resu
     }
     if let Some(ref v) = payload.logo_path {
         settings_repo::set_value(db, "logo_path", v)?;
+    }
+    if let Some(ref v) = payload.owner_email {
+        settings_repo::set_value(db, "owner_email", v.trim())?;
     }
     // Financial
     if let Some(v) = payload.default_tax_rate {

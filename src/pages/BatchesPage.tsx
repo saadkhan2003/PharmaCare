@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { tauri } from '@/lib/tauri';
-import { useAutoRefresh } from '@/lib/eventBus';
+import { useAutoRefresh, dispatchEvent } from '@/lib/eventBus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,6 +35,9 @@ export function BatchesPage({ session }: { session: SessionDto }) {
   const [page, setPage] = useState(1);
   const perPage = 25;
   const [medicinesRefreshKey] = useAutoRefresh('medicines-changed');
+  const [batchesRefreshKey] = useAutoRefresh('batches-changed');
+  const [purchasesRefreshKey] = useAutoRefresh('purchases-changed');
+  const [returnsRefreshKey] = useAutoRefresh('returns-changed');
 
   const load = async () => {
     if (batches.length === 0) setLoading(true);
@@ -48,7 +51,7 @@ export function BatchesPage({ session }: { session: SessionDto }) {
     }
   };
 
-  useEffect(() => { load(); }, [session.token, medicinesRefreshKey]);
+  useEffect(() => { load(); }, [session.token, medicinesRefreshKey, batchesRefreshKey, purchasesRefreshKey, returnsRefreshKey]);
 
   useEffect(() => {
     setPage(1);
@@ -70,6 +73,8 @@ export function BatchesPage({ session }: { session: SessionDto }) {
       });
       toast('success', 'Batch updated successfully');
       setEditing(null);
+      dispatchEvent('batches-changed');
+      dispatchEvent('medicines-changed');
       load();
     } catch (err: unknown) {
       toast('error', 'Failed to save batch', err instanceof Error ? err.message : String(err));

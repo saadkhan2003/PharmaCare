@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Pencil, Trash2, EyeOff, Truck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { SupplierDto } from '@/types/supplier';
 
 interface SupplierListProps {
@@ -69,6 +70,7 @@ export function SupplierList({
             <TableHead>Contact Person</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Payment Terms</TableHead>
+            <TableHead className="text-right">Outstanding Debt</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -83,6 +85,21 @@ export function SupplierList({
               <TableCell>{supplier.contact_person || '-'}</TableCell>
               <TableCell>{supplier.phone || '-'}</TableCell>
               <TableCell>{supplier.payment_terms || '-'}</TableCell>
+              <TableCell className="text-right font-mono text-sm">
+                {supplier.outstanding_debt > 0 ? (
+                  <Link
+                    to="/supplier-debts"
+                    className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400 hover:underline"
+                    title="Manage supplier debt"
+                  >
+                    Rs. {supplier.outstanding_debt.toFixed(2)}
+                  </Link>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                    Clear
+                  </span>
+                )}
+              </TableCell>
               <TableCell>
                 <Badge
                   variant="outline"

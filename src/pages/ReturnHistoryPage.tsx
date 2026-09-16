@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { tauri } from '@/lib/tauri';
 import { useSettings } from '@/hooks/useSettings';
+import { useAutoRefresh } from '@/lib/eventBus';
 import { Search, RotateCcw } from 'lucide-react';
 import type { ReturnListItemDto } from '@/types/return';
 import type { SessionDto } from '@/types/session';
@@ -55,6 +56,7 @@ export function ReturnHistoryPage({ session }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [returnsRefreshKey] = useAutoRefresh('returns-changed');
   const [typeFilter, setTypeFilter] = useState<'all' | 'customer' | 'supplier' | 'write_off'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const perPage = 50;
@@ -77,7 +79,7 @@ export function ReturnHistoryPage({ session }: Props) {
 
   useEffect(() => {
     loadReturns();
-  }, [loadReturns]);
+  }, [loadReturns, returnsRefreshKey]);
 
   const filteredReturns = useMemo(() => {
     return returns.filter((r) => {
@@ -219,9 +221,17 @@ export function ReturnHistoryPage({ session }: Props) {
                         )}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {ret.return_type === 'write_off'
-                          ? '—'
-                          : `${currencySymbol} ${ret.refund_amount.toFixed(2)}`}
+                        {ret.return_type === 'write_off' ? (
+                          <span className="text-destructive font-medium" title="Inventory Loss">
+                            Loss: {currencySymbol} {ret.refund_amount.toFixed(2)}
+                          </span>
+                        ) : ret.return_type === 'supplier' ? (
+                          <span className="text-emerald-600 font-medium" title="Supplier Credit">
+                            Credit: {currencySymbol} {ret.refund_amount.toFixed(2)}
+                          </span>
+                        ) : (
+                          `${currencySymbol} ${ret.refund_amount.toFixed(2)}`
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

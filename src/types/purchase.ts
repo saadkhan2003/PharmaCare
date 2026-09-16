@@ -26,6 +26,8 @@ export interface PurchaseListDto {
   invoice_number: string | null;
   purchase_date: string;
   total_cost: number;
+  paid_amount: number;
+  remaining_amount: number;
   payment_status: string;
   item_count: number;
   created_at: string;
@@ -38,11 +40,15 @@ export interface PurchaseDetailDto {
   invoice_number: string | null;
   purchase_date: string;
   total_cost: number;
+  paid_amount: number;
+  remaining_amount: number;
   payment_status: string;
+  debt_id?: number | null;
   notes: string | null;
   created_by: string;
   created_at: string;
   items: PurchaseItemDetailDto[];
+  payments: import('./supplier-debt').SupplierPayment[];
 }
 
 export interface PurchaseItemDetailDto {
@@ -54,6 +60,7 @@ export interface PurchaseItemDetailDto {
   line_cost: number;
   expiry_date: string;
   batch_id: number | null;
+  batch_code?: string | null;
 }
 
 export const PAYMENT_STATUSES = ['Paid', 'Pending', 'Partial'] as const;

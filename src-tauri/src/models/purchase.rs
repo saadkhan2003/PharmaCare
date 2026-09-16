@@ -66,6 +66,7 @@ pub struct PurchaseItemDto {
     pub line_cost: f64,
     pub expiry_date: String,
     pub batch_id: Option<i64>,
+    pub batch_code: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,11 +77,15 @@ pub struct PurchaseDetailDto {
     pub invoice_number: Option<String>,
     pub purchase_date: String,
     pub total_cost: f64,
+    pub paid_amount: f64,
+    pub remaining_amount: f64,
     pub payment_status: String,
+    pub debt_id: Option<i64>,
     pub notes: Option<String>,
     pub created_by: String,
     pub created_at: String,
     pub items: Vec<PurchaseItemDto>,
+    pub payments: Vec<crate::models::supplier_debt::SupplierPayment>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,6 +95,8 @@ pub struct PurchaseListDto {
     pub invoice_number: Option<String>,
     pub purchase_date: String,
     pub total_cost: f64,
+    pub paid_amount: f64,
+    pub remaining_amount: f64,
     pub payment_status: String,
     pub item_count: i64,
     pub created_at: String,

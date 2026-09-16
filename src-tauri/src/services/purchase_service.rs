@@ -116,6 +116,9 @@ pub fn record_purchase(
         // Link purchase_item to batch for traceability
         purchase_repo::update_item_batch_id(&tx, item_id, batch_id)?;
 
+        // Update medicine procurement cost in catalog
+        medicine_repo::update_purchase_price(&tx, item.medicine_id, item.purchase_price)?;
+
         // Record positive stock movement (D-22: StockLedgerService as single authority)
         // Pass &tx here — Transaction implements Deref<Target=Connection>, so this works.
         stock_ledger_service::record_movement(
@@ -152,12 +155,26 @@ pub fn list_purchases(db: &Connection) -> Result<Vec<PurchaseListDto>, CommandEr
     let mut dtos = Vec::new();
     for (purchase, supplier_name) in purchases {
         let item_count = purchase_repo::get_item_count(db, purchase.id)?;
+        let total = purchase.total_cost.unwrap_or(0.0);
+        let paid_amount: f64 = if purchase.payment_status == "Paid" {
+            total
+        } else {
+            db.query_row(
+                "SELECT COALESCE(paid_amount, 0.0) FROM supplier_debts WHERE purchase_id = ?1",
+                rusqlite::params![purchase.id],
+                |r| r.get(0),
+            ).unwrap_or(0.0)
+        };
+        let remaining_amount = (total - paid_amount).max(0.0);
+
         dtos.push(PurchaseListDto {
             id: purchase.id,
             supplier_name,
             invoice_number: purchase.invoice_number,
             purchase_date: purchase.purchase_date,
-            total_cost: purchase.total_cost.unwrap_or(0.0),
+            total_cost: total,
+            paid_amount,
+            remaining_amount,
             payment_status: purchase.payment_status,
             item_count,
             created_at: purchase.created_at,
@@ -166,7 +183,7 @@ pub fn list_purchases(db: &Connection) -> Result<Vec<PurchaseListDto>, CommandEr
     Ok(dtos)
 }
 
-/// Gets a single purchase with all items and medicine names.
+/// Gets a single purchase with all items, batches, and supplier payments.
 pub fn get_purchase_detail(
     db: &Connection,
     purchase_id: i64,
@@ -179,6 +196,13 @@ pub fn get_purchase_detail(
     for item in items_raw {
         let medicine = medicine_repo::find_by_id(db, item.medicine_id)?
             .ok_or_else(|| CommandError::not_found("Medicine"))?;
+
+        let batch_code: Option<String> = if let Some(bid) = item.batch_id {
+            db.query_row("SELECT batch_code FROM batches WHERE id = ?1", rusqlite::params![bid], |r| r.get(0)).ok().flatten()
+        } else {
+            None
+        };
+
         items.push(PurchaseItemDto {
             id: item.id,
             medicine_id: item.medicine_id,
@@ -188,12 +212,46 @@ pub fn get_purchase_detail(
             line_cost: item.line_cost,
             expiry_date: item.expiry_date,
             batch_id: item.batch_id,
+            batch_code,
         });
     }
 
-    // Get supplier name
     let supplier = supplier_repo::find_by_id(db, purchase.supplier_id)?
         .ok_or_else(|| CommandError::not_found("Supplier"))?;
+
+    let total = purchase.total_cost.unwrap_or(0.0);
+
+    let debt_info: Option<(i64, f64)> = db.query_row(
+        "SELECT id, paid_amount FROM supplier_debts WHERE purchase_id = ?1",
+        rusqlite::params![purchase_id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    ).ok();
+
+    let (debt_id, paid_amount, payments) = match debt_info {
+        Some((did, paid)) => {
+            let mut stmt = db.prepare(
+                "SELECT id, debt_id, amount, payment_date, notes, recorded_by, created_at                  FROM supplier_payments WHERE debt_id = ?1 ORDER BY created_at ASC",
+            )?;
+            let pmts: Vec<crate::models::supplier_debt::SupplierPayment> = stmt.query_map(rusqlite::params![did], |row| {
+                Ok(crate::models::supplier_debt::SupplierPayment {
+                    id: row.get(0)?,
+                    debt_id: row.get(1)?,
+                    amount: row.get(2)?,
+                    payment_date: row.get(3)?,
+                    notes: row.get(4)?,
+                    recorded_by: row.get(5)?,
+                    created_at: row.get(6)?,
+                })
+            })?.filter_map(|r| r.ok()).collect();
+            (Some(did), paid, pmts)
+        }
+        None => {
+            let p = if purchase.payment_status == "Paid" { total } else { 0.0 };
+            (None, p, vec![])
+        }
+    };
+
+    let remaining_amount = (total - paid_amount).max(0.0);
 
     Ok(PurchaseDetailDto {
         id: purchase.id,
@@ -201,11 +259,15 @@ pub fn get_purchase_detail(
         supplier_name: supplier.company_name,
         invoice_number: purchase.invoice_number,
         purchase_date: purchase.purchase_date,
-        total_cost: purchase.total_cost.unwrap_or(0.0),
+        total_cost: total,
+        paid_amount,
+        remaining_amount,
         payment_status: purchase.payment_status,
+        debt_id,
         notes: purchase.notes,
         created_by: format!("User {}", purchase.user_id),
         created_at: purchase.created_at,
         items,
+        payments,
     })
 }

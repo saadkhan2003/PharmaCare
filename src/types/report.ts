@@ -121,6 +121,7 @@ export interface UpdateSettingsPayload {
   phone?: string | null;
   address?: string | null;
   logo_path?: string | null;
+  owner_email?: string | null;
   default_tax_rate?: number | null;
   tax_enabled_default?: boolean | null;
   cashier_discount_enabled?: boolean | null;

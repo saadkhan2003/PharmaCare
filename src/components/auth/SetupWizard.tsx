@@ -35,8 +35,14 @@ export function SetupWizard({ onComplete, error, loading }: SetupWizardProps) {
     setValidationError(null);
 
     // Validate fields
-    if (!fullName.trim() || !username.trim() || !password) {
+    if (!fullName.trim() || !username.trim() || !password || !ownerEmail.trim()) {
       setValidationError('All fields are required');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(ownerEmail.trim())) {
+      setValidationError('Please enter a valid email address');
       return;
     }
 
@@ -54,7 +60,7 @@ export function SetupWizard({ onComplete, error, loading }: SetupWizardProps) {
       full_name: fullName.trim(),
       username: username.trim(),
       password,
-      owner_email: ownerEmail.trim() || null,
+      owner_email: ownerEmail.trim(),
     });
   };
 
@@ -165,7 +171,7 @@ export function SetupWizard({ onComplete, error, loading }: SetupWizardProps) {
 
       <div>
         <label htmlFor="ownerEmail" className="block text-sm font-medium text-gray-700 mb-1">
-          Recovery Email <span className="text-gray-400 font-normal">(optional)</span>
+          Owner Recovery Email <span className="text-red-500">*</span>
         </label>
         <input
           id="ownerEmail"
@@ -174,10 +180,11 @@ export function SetupWizard({ onComplete, error, loading }: SetupWizardProps) {
           onChange={(e) => setOwnerEmail(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
           placeholder="owner@pharmacy.com"
+          required
           disabled={loading}
         />
-        <p className="text-xs text-gray-400 mt-1">
-          Used for password recovery. Requires internet to send reset code.
+        <p className="text-xs text-gray-500 mt-1">
+          Password reset & OTP recovery codes will be sent to this email address.
         </p>
       </div>
 

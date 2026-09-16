@@ -7,6 +7,7 @@ export interface SupplierDto {
   payment_terms: string | null;
   notes: string | null;
   is_active: boolean;
+  outstanding_debt: number;
 }
 
 export interface CreateSupplierDto {

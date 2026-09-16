@@ -167,6 +167,22 @@ pub fn record_payment(conn: &Connection, dto: &RecordSupplierPaymentRequest) -> 
         rusqlite::params![dto.amount, dto.debt_id],
     )?;
 
+    // Synchronize linked purchase payment_status if this debt belongs to a purchase
+    let debt_info: Option<(Option<i64>, String)> = conn
+        .query_row(
+            "SELECT purchase_id, status FROM supplier_debts WHERE id = ?1",
+            rusqlite::params![dto.debt_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .ok();
+
+    if let Some((Some(purchase_id), status)) = debt_info {
+        let _ = conn.execute(
+            "UPDATE purchases SET payment_status = ?1 WHERE id = ?2",
+            rusqlite::params![status, purchase_id],
+        );
+    }
+
     let payment_id = conn.last_insert_rowid();
     let mut stmt = conn.prepare(
         "SELECT id, debt_id, amount, payment_date, notes, recorded_by, created_at \

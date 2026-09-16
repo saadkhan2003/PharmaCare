@@ -21,7 +21,7 @@ pub fn process_customer_return(
     user_id: i64,
 ) -> Result<ReturnReceiptDto, CommandError> {
     // --- PHASE 1: Validate BEFORE transaction ---
-    let _sale = sale_repo::find_by_id(db, payload.sale_id)?
+    let sale = sale_repo::find_by_id(db, payload.sale_id)?
         .ok_or_else(|| CommandError::not_found("Sale"))?;
 
     let sale_items = sale_repo::find_items_by_sale(db, payload.sale_id)?;
@@ -138,6 +138,26 @@ pub fn process_customer_return(
                 Some(&format!("{} customer return (loss)", item.condition)),
                 user_id,
             )?;
+        }
+    }
+
+    // If original sale was on Credit, credit the refund towards debtor balance
+    if sale.payment_method == "Credit" && total_refund > 0.0 {
+        let debt_id_opt: Option<i64> = tx.query_row(
+            "SELECT debt_id FROM debt_items WHERE sale_id = ?1 LIMIT 1",
+            rusqlite::params![payload.sale_id],
+            |row| row.get(0),
+        ).ok();
+
+        if let Some(debt_id) = debt_id_opt {
+            let _ = tx.execute(
+                "UPDATE debtors SET paid_amount = MIN(total_amount, paid_amount + ?1), updated_at = datetime('now') WHERE id = ?2",
+                rusqlite::params![total_refund, debt_id],
+            );
+            let _ = tx.execute(
+                "UPDATE debtors SET status = 'paid' WHERE id = ?1 AND paid_amount >= total_amount",
+                rusqlite::params![debt_id],
+            );
         }
     }
 
@@ -260,6 +280,35 @@ pub fn process_supplier_return(
         )?;
     }
 
+    // If credit was received from supplier return, apply credit towards outstanding debt for this purchase
+    if total_credit > 0.0 {
+        let debt_opt: Option<i64> = tx.query_row(
+            "SELECT id FROM supplier_debts WHERE purchase_id = ?1 AND status != 'Paid' LIMIT 1",
+            rusqlite::params![payload.purchase_id],
+            |row| row.get(0),
+        ).ok();
+
+        if let Some(debt_id) = debt_opt {
+            let _ = tx.execute(
+                "INSERT INTO supplier_payments (debt_id, amount, notes, recorded_by) VALUES (?1, ?2, ?3, ?4)",
+                rusqlite::params![debt_id, total_credit, "Credit from supplier return", user_id],
+            );
+            let _ = tx.execute(
+                "UPDATE supplier_debts                  SET paid_amount = paid_amount + ?1,                      status = CASE WHEN paid_amount + ?1 >= total_amount THEN 'Paid' ELSE 'Partial' END,                      updated_at = datetime('now')                  WHERE id = ?2",
+                rusqlite::params![total_credit, debt_id],
+            );
+            let debt_status: String = tx.query_row(
+                "SELECT status FROM supplier_debts WHERE id = ?1",
+                rusqlite::params![debt_id],
+                |r| r.get(0),
+            ).unwrap_or_else(|_| "Partial".to_string());
+            let _ = tx.execute(
+                "UPDATE purchases SET payment_status = ?1 WHERE id = ?2",
+                rusqlite::params![debt_status, payload.purchase_id],
+            );
+        }
+    }
+
     // --- PHASE 4: Commit ---
     tx.commit().map_err(|e| {
         CommandError::internal(&format!("Failed to commit supplier return transaction: {}", e))
@@ -330,8 +379,19 @@ pub fn process_write_off(
 
     // --- PHASE 3: Insert returns + mutate stock ---
     let mut return_ids: Vec<i64> = Vec::new();
+    let mut total_cost_loss = 0.0_f64;
 
     for item in &payload.items {
+        let batches = batch_repo::find_by_medicine(&tx, item.medicine_id)?;
+        let batch = batches.iter().find(|b| b.id == item.batch_id).ok_or_else(|| {
+            CommandError::validation(&format!(
+                "Item: batch ID {} not found for medicine ID {}",
+                item.batch_id, item.medicine_id
+            ))
+        })?;
+        let cost_loss = item.quantity as f64 * batch.purchase_price;
+        total_cost_loss += cost_loss;
+
         let return_id = returns_repo::insert(
             &tx,
             "write_off",
@@ -341,7 +401,7 @@ pub fn process_write_off(
             item.quantity,
             item.reason.as_deref(),
             Some(&item.condition),
-            0.0, // refund_amount = 0 for write-off (D-53)
+            cost_loss, // Record inventory monetary loss in refund_amount
             user_id,
         )?;
         return_ids.push(return_id);
@@ -371,7 +431,7 @@ pub fn process_write_off(
     Ok(ReturnReceiptDto {
         return_ids,
         item_count: payload.items.len() as i64,
-        total_refund: 0.0,
+        total_refund: total_cost_loss,
     })
 }
 

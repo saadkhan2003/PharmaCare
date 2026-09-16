@@ -20,6 +20,7 @@ export function PharmacyInfoTab({ settings, session, onSaved }: PharmacyInfoTabP
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [logoPath, setLogoPath] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -29,6 +30,7 @@ export function PharmacyInfoTab({ settings, session, onSaved }: PharmacyInfoTabP
     setPhone(settings.phone ?? '');
     setAddress(settings.address ?? '');
     setLogoPath(settings.logo_path ?? '');
+    setOwnerEmail(settings.owner_email ?? '');
   }, [settings]);
 
   const handleSave = async () => {
@@ -41,6 +43,7 @@ export function PharmacyInfoTab({ settings, session, onSaved }: PharmacyInfoTabP
         phone: phone || null,
         address: address || null,
         logo_path: logoPath || null,
+        owner_email: ownerEmail || null,
       });
       setMessage({ type: 'success', text: 'Pharmacy info saved successfully' });
       dispatchEvent('settings-changed');
@@ -92,7 +95,20 @@ export function PharmacyInfoTab({ settings, session, onSaved }: PharmacyInfoTabP
             placeholder="123 Main Street"
           />
         </div>
-        <div className="space-y-2 md:col-span-2">
+        <div className="space-y-2">
+          <Label htmlFor="owner-email">Owner Recovery Email</Label>
+          <Input
+            id="owner-email"
+            type="email"
+            value={ownerEmail}
+            onChange={(e) => setOwnerEmail(e.target.value)}
+            placeholder="owner@pharmacare.org"
+          />
+          <p className="text-xs text-muted-foreground">
+            Used for OTP password resets.
+          </p>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="logo-path">Logo Path (optional)</Label>
           <Input
             id="logo-path"
