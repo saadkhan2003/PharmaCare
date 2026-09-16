@@ -42,10 +42,24 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
       const result = await tauri.setup.requestRecoveryCode();
       setMaskedEmail(result.masked_email);
       setExpiresMinutes(result.expires_minutes);
+      if (result.dev_code) {
+        setCode(result.dev_code);
+        toast('info', `Recovery Code: ${result.dev_code}`, 'Offline mode: code auto-filled');
+      } else {
+        toast('success', 'Recovery code sent', `Check ${result.masked_email} for the code`);
+      }
       setStep('verify');
-      toast('success', 'Recovery code sent', `Check ${result.masked_email} for the code`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to request code');
+      let message = 'Failed to request code';
+      if (err instanceof Error) {
+        message = err.message;
+      } else if (typeof err === 'string') {
+        message = err;
+      } else if (err && typeof err === 'object') {
+        const candidate = (err as { message?: unknown }).message;
+        if (typeof candidate === 'string') message = candidate;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -66,7 +80,14 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
       }
       setStep('reset');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Invalid code');
+      let message = 'Invalid code';
+      if (err instanceof Error) message = err.message;
+      else if (typeof err === 'string') message = err;
+      else if (err && typeof err === 'object') {
+        const candidate = (err as { message?: unknown }).message;
+        if (typeof candidate === 'string') message = candidate;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -83,7 +104,14 @@ export function ForgotPasswordDialog({ open, onClose }: ForgotPasswordDialogProp
       toast('success', 'Password reset successful', 'You can now log in with your new password');
       setStep('done');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Reset failed');
+      let message = 'Reset failed';
+      if (err instanceof Error) message = err.message;
+      else if (typeof err === 'string') message = err;
+      else if (err && typeof err === 'object') {
+        const candidate = (err as { message?: unknown }).message;
+        if (typeof candidate === 'string') message = candidate;
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }

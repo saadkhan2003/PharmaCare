@@ -84,7 +84,7 @@ export const tauri = {
     createOwner: (payload: CreateOwnerDto) =>
       invoke<SessionDto>('create_initial_owner', { payload }),
     requestRecoveryCode: () =>
-      invoke<{ masked_email: string; expires_minutes: number }>('request_recovery_code'),
+      invoke<{ masked_email: string; expires_minutes: number; dev_code?: string }>('request_recovery_code'),
     verifyRecoveryCode: (code: string) =>
       invoke<{ id: number; username: string }[]>('verify_recovery_code', { code }),
     resetWithRecoveryCode: (userId: number, code: string, newPassword: string) =>

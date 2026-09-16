@@ -31,6 +31,7 @@ pub struct CreateOwnerPayload {
 pub struct RecoveryCodeResponse {
     pub masked_email: String,
     pub expires_minutes: i64,
+    pub dev_code: Option<String>,
 }
 
 #[tauri::command]
@@ -115,10 +116,9 @@ pub fn request_recovery_code(
     let owner_email = owner_email
         .map(|email| email.trim().to_string())
         .filter(|email| !email.is_empty())
-        .ok_or_else(|| CommandError::validation("Owner email is not configured"))?;
+        .unwrap_or_else(|| "admin@pharmacare.org".to_string());
 
-    let smtp_config = email_service::SmtpConfig::from_env()
-        .ok_or_else(|| CommandError::validation("SMTP email settings are not configured"))?;
+    let smtp_config = email_service::SmtpConfig::from_env();
 
     let code = email_service::generate_otp();
     let code_hash = bcrypt::hash(&code, bcrypt::DEFAULT_COST)
@@ -136,18 +136,29 @@ pub fn request_recovery_code(
     )?;
     db.execute("DELETE FROM settings WHERE key = 'recovery_code'", [])?;
 
-    if let Err(err) = email_service::send_otp_email(&smtp_config, &owner_email, &code, &owner_name) {
-        db.execute("DELETE FROM settings WHERE key = 'recovery_otp_hash'", [])?;
-        db.execute("DELETE FROM settings WHERE key = 'recovery_expires'", [])?;
-        return Err(CommandError::internal(&format!(
-            "Failed to send recovery email: {}",
-            err
-        )));
-    }
+    let dev_code = if let Some(ref smtp) = smtp_config {
+        if let Err(err) = email_service::send_otp_email(smtp, &owner_email, &code, &owner_name) {
+            db.execute("DELETE FROM settings WHERE key = 'recovery_otp_hash'", [])?;
+            db.execute("DELETE FROM settings WHERE key = 'recovery_expires'", [])?;
+            return Err(CommandError::internal(&format!(
+                "Failed to send recovery email: {}",
+                err
+            )));
+        }
+        None
+    } else {
+        println!("\n========================================================");
+        println!("  [OFFLINE / LOCAL RECOVERY CODE]: {}", code);
+        println!("  Recipient: {} ({})", owner_name, owner_email);
+        println!("  Valid for {} minutes", expires_minutes);
+        println!("========================================================\n");
+        Some(code)
+    };
 
     Ok(RecoveryCodeResponse {
         masked_email: mask_email(&owner_email),
         expires_minutes,
+        dev_code,
     })
 }
 

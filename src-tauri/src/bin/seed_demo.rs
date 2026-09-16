@@ -87,6 +87,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("setup_complete", "true"),
         ("pharmacy_name", "PharmaCare Health Solutions"),
         ("owner_name", "Dr. Saad Khan"),
+        ("owner_email", "admin@pharmacare.org"),
         ("phone", "+92 300 1234567"),
         ("address", "Main Boulevard, DHA Phase 5, Lahore"),
         ("currency_symbol", "Rs."),
