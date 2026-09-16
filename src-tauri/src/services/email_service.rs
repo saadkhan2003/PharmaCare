@@ -62,12 +62,16 @@ impl SmtpConfig {
     pub fn create_transport(&self) -> Result<SmtpTransport, lettre::transport::smtp::Error> {
         let creds = Credentials::new(self.username.clone(), self.password.clone());
         
-        let builder = if self.secure {
+        let builder = if !self.secure {
+            SmtpTransport::builder_dangerous(&self.host)
+                .port(self.port)
+                .credentials(creds)
+        } else if self.port == 465 {
             SmtpTransport::relay(&self.host)?
                 .port(self.port)
                 .credentials(creds)
         } else {
-            SmtpTransport::builder_dangerous(&self.host)
+            SmtpTransport::starttls_relay(&self.host)?
                 .port(self.port)
                 .credentials(creds)
         };
