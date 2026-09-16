@@ -15,12 +15,22 @@ pub struct SmtpConfig {
 }
 
 fn get_env_or_compile_time(var_name: &str, compile_val: Option<&'static str>) -> Option<String> {
-    if let Ok(v) = env::var(var_name) {
+    let raw = if let Ok(v) = env::var(var_name) {
         if !v.trim().is_empty() {
-            return Some(v.trim().to_string());
+            Some(v)
+        } else {
+            None
         }
+    } else {
+        None
+    };
+    let val = raw.or_else(|| compile_val.map(|s| s.to_string()))?;
+    let trimmed = val.trim().trim_matches('"').trim_matches('\'').trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(trimmed.to_string())
     }
-    compile_val.map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
 }
 
 impl SmtpConfig {
